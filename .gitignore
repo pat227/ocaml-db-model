@@ -1,0 +1,16 @@
+*.cmi
+*.cmo
+*.o
+*.cmx
+*~
+*.txt
+*realrun*
+*dryrun*
+*.opt
+*.a
+*.cmxa
+*.omc
+*.lock
+*omakedb*
+build
+*.key
