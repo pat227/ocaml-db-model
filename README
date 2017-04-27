@@ -1,13 +1,17 @@
+
 The purpose of this porject is to provide a convenient manner for devs to
 "model" a existing database. Especially usefull if the database has a
 large number of tables and fields, this project seeks to provide a fast way
 to generate modules and types that match the tables and fields. This spares
 the dev from having to manually create modules.
 
-We use cppo? since it already does a good job in a Makefile of replacing
-defined constants, but we won't be able to pretty format.
+We do not use cppo. It does a good job in a Makefile of replacing
+defined constants, but we won't be able to pretty format when we replace
+a defined placeholder with a possibly very large type t. Otherwise would
+have been almost perfect. Instead just write files to disk.
 
 Mapping of data types is described below: 
+
 MYSQL:
 
 NOTE: M is the max display width for int types and unrelated to the range of values a type can contain.
@@ -16,21 +20,33 @@ For floating and fixed point types is the maxnumber of digits that can be stored
 Use the uint package in opam that provides Ocaml with unsigned integer types, specifically 8, 16, 32, and 64 unsigned integers.
 Since MySQl provides some integer types that don't map perfectly to any type in Ocaml--such as 24 bit medium integers--
 it is most wise to never use them--including but not limited to the medium integer mysql data type.
-
+--------------------------------------------------------------------------------
 SERIAL alias for BIGINT UNSIGNED NOT NULL ...  -> uint64   (Ocaml-Mysql parses to and from signed Int64?)
+Actually the information schema table shows int!?! 
+
 BIT -> bool
-TINY_INT (8 bit values) -> uint8 when unsigned, else unsupported
-BOOL (as alias for TINY_INT) -> bool when a chosen field name prefix, such as is_*, is found
-  SMALLINT (16bit values) -> uint16 when unsigned...when signed, unsupported
+
+  TINY_INT (8 bit values) -> uint8 when unsigned, else unsupported
+| TINY_INT when field name has prefix is_ -> bool (can chose prefix on which to filter)
+
+  SMALLINT (16bit values) -> uint16 when unsigned, else unsupported
+
   MEDIUMINT (24 bit values) -> UNSUPPORTED
-| INT (32 bit values) -> 
+
+  INT (32 bit values) -> 
 | INTEGER (32 bit values) -> Core.Std.Int32 when SIGNED, else uint32 when unsigned
+
 BIGINT (64 bit values) -> Core.Std.Int64 when SIGNED, else uint64; NOTE that Mysql
                           only permits values of 63 bits at most--SO USE OCAML's 63 bit integer type.
 			  Even UNSIGNED the limit is 63 bits. And mysql converts values to DOUBLE for arithmetic.
-DECIMAL  (??? Why does Ocaml-Mysql perform NO conversion?)
+   DECIMAL  
    FLOAT
  | DOUBLE -> float
+
+   DECIMAL UNSIGNED  
+   FLOAT UNSIGNED
+ | DOUBLE UNSIGNED -> UNSUPPORTED
+
 
 DATE -> Core.Std.Date
 
@@ -40,13 +56,27 @@ DATE -> Core.Std.Date
 TIME -> Core.Std.Time.Span??? UNSUPPORTED
 YEAR -> UNSUPPORTED
 
+  BINARY
+  VARBINARY
+  VARCHAR (variable length 0 - 65,535 stings) -> string (the only thing that could go wrong is the length of your string exceeds field width.
+ | BLOB -> string
 
-VARCHAR (variable length 0 - 65,535 stings) -> string (the only thing that could go wrong is the length of your string exceeds field width.
-CHAR[M] where 0<=M<=255 -> string but again, easy to exceed the length
-BLOB
+   CHAR[M] where 0<=M<=255 -> unsupported
+ | TINYBLOB
+ | TINYTEXT
+ | MEDIUM BLOB -> unsupported
 
+ENUM -> unsupported? We can get the permitted values and create a type that can be serialized to appropriate values? But it is bad practice to use enums with mysql, so I have heard anyway.
 
-FIELD_TYPE_DECIMAL     , Val_long(DECIMAL_TY)},
+So far that's 12 ocaml data types from >12 mysql data types, and several more mysql data types unsupported in the name of type safety.
+If we create a type that lists all the combinations ... we get 12 * 2 (if field is nullable) * 2 (default values) = 48 possible combinations...to many to comfortable type. Just use a struct.
+
+This is the map ocaml-mysq uses to map mysql types to ocaml-mysql types:
+static value
+type2dbty (int type)
+{
+  static struct {int mysql; value caml;} map[] = {
+    {FIELD_TYPE_DECIMAL     , Val_long(DECIMAL_TY)},
     {FIELD_TYPE_TINY        , Val_long(INT_TY)},
     {FIELD_TYPE_SHORT       , Val_long(INT_TY)},
     {FIELD_TYPE_LONG        , Val_long(INT_TY)},
@@ -71,8 +101,77 @@ FIELD_TYPE_DECIMAL     , Val_long(DECIMAL_TY)},
     {FIELD_TYPE_STRING      , Val_long(STRING_TY)},
     {-1 /*default*/         , Val_long(UNKNOWN_TY)}
   };
+  int i;
 
+  /* in principle using bsearch() would be better -- but how can
+   * we know that the left side of the map is properly sorted? 
+   */
 
+  for (i=0; map[i].mysql != -1 && map[i].mysql != type; i++)
+    /* empty */ ;
+
+  return map[i].caml;
+}
+----ocaml_mysql does some conversions between mysql types and ocaml_mysql types-----
+let int2ml   str        = int_of_string str
+let decimal2ml   str    = str
+let int322ml str        = Int32.of_string str
+let int642ml str        = Int64.of_string str
+let nativeint2ml str    = Nativeint.of_string str
+let float2ml str        = float_of_string str
+let str2ml   str        = str
+let enum2ml  str        = str
+let blob2ml  str        = str
+...and a few more for date, time, datetime
+----
+(* ml2xxx encodes OCaml values into strings that match the MysQL syntax of 
+   the corresponding type *)
+
+let ml2str str  = "'" ^ escape str ^ "'"
+let ml2rstr conn str = "'" ^ real_escape conn str ^ "'"
+let ml2blob     = ml2str
+let ml2rblob    = ml2rstr
+let ml2int x    = string_of_int x
+let ml2decimal x    = x
+let ml322int x  = Int32.to_string x
+let ml642int x  = Int64.to_string x
+let mlnative2int x = Nativeint.to_string x
+let ml2float x  = string_of_float x
+let ml2enum x   = escape x
+let ml2renum x  = real_escape x
+...and a few more for date, time, datetime
+--------------------------------------------
+
+------FROM mysql_com.h-------x
+#define CLIENT_MULTI_QUERIES    CLIENT_MULTI_STATEMENTS    
+#define FIELD_TYPE_DECIMAL     MYSQL_TYPE_DECIMAL
+#define FIELD_TYPE_NEWDECIMAL  MYSQL_TYPE_NEWDECIMAL
+#define FIELD_TYPE_TINY        MYSQL_TYPE_TINY
+#define FIELD_TYPE_SHORT       MYSQL_TYPE_SHORT
+#define FIELD_TYPE_LONG        MYSQL_TYPE_LONG
+#define FIELD_TYPE_FLOAT       MYSQL_TYPE_FLOAT
+#define FIELD_TYPE_DOUBLE      MYSQL_TYPE_DOUBLE
+#define FIELD_TYPE_NULL        MYSQL_TYPE_NULL
+#define FIELD_TYPE_TIMESTAMP   MYSQL_TYPE_TIMESTAMP
+#define FIELD_TYPE_LONGLONG    MYSQL_TYPE_LONGLONG
+#define FIELD_TYPE_INT24       MYSQL_TYPE_INT24
+#define FIELD_TYPE_DATE        MYSQL_TYPE_DATE
+#define FIELD_TYPE_TIME        MYSQL_TYPE_TIME
+#define FIELD_TYPE_DATETIME    MYSQL_TYPE_DATETIME
+#define FIELD_TYPE_YEAR        MYSQL_TYPE_YEAR
+#define FIELD_TYPE_NEWDATE     MYSQL_TYPE_NEWDATE
+#define FIELD_TYPE_ENUM        MYSQL_TYPE_ENUM
+#define FIELD_TYPE_SET         MYSQL_TYPE_SET
+#define FIELD_TYPE_TINY_BLOB   MYSQL_TYPE_TINY_BLOB
+#define FIELD_TYPE_MEDIUM_BLOB MYSQL_TYPE_MEDIUM_BLOB
+#define FIELD_TYPE_LONG_BLOB   MYSQL_TYPE_LONG_BLOB
+#define FIELD_TYPE_BLOB        MYSQL_TYPE_BLOB
+#define FIELD_TYPE_VAR_STRING  MYSQL_TYPE_VAR_STRING
+#define FIELD_TYPE_STRING      MYSQL_TYPE_STRING
+#define FIELD_TYPE_CHAR        MYSQL_TYPE_TINY
+#define FIELD_TYPE_INTERVAL    MYSQL_TYPE_ENUM
+#define FIELD_TYPE_GEOMETRY    MYSQL_TYPE_GEOMETRY
+#define FIELD_TYPE_BIT         MYSQL_TYPE_BIT
 
 POSTGRES:
 
