@@ -10,7 +10,7 @@ module Model : sig
   } [@@ppx_deriving show]
   val print_n_flish : string -> unit
   val getcon : host:string -> database:string -> password:string -> user:string -> unit -> Mysql.dbd
-  let closecon : Mysql.dbd -> unit
+  val closecon : Mysql.dbd -> unit
   (*Returns a multimap where key is table name, values are tuples of field names and types*)
   val get_tables : unit -> string list
   val get_fields_for_given_table : table_name: string -> t list 

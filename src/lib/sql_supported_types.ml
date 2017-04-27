@@ -1,7 +1,3 @@
-module Uint8 = Uint8
-module Uint16 = Uint16
-module Uint32 = Uint32
-module Uint64 = Uint64
 open Core.Std
 
 (*Types from mysql that are very safely mapped to Ocaml*)
@@ -58,7 +54,7 @@ module Sql_supported_types = struct
   let of_col_type_and_flags ~data_type ~col_type =
     let open Core.Std in 
     let is_unsigned = String.is_substring col_type ~substring:"unsigned" in
-    let the_col_type s signed nullable =
+    let the_col_type s signed =
       match signed, s with
       | true, "tinyint" -> TINYINT_UNSIGNED
       | false, "tinyint" -> TINYINT_BOOL 
@@ -81,16 +77,16 @@ module Sql_supported_types = struct
       | false, "varchar" -> VARCHAR
       | _, _ -> UNSUPPORTED in
     the_col_type data_type is_unsigned;;
-
+    
   let one_step ~data_type ~col_type =
-    let t = of_col_type_and_flags ~data_type ~col_type in
-    let name_result = ml_type_string_of_supported_sql_type t in
+    let supported_t = of_col_type_and_flags ~data_type ~col_type in
+    let name_result = ml_type_string_of_supported_sql_type supported_t in
     if is_ok name_result then
       (fun x -> match x with
 	       | Ok name -> name
-	       | Error s -> Error s) name_result
+	       | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
     else 
-      Error "Unsupported sql type."
+      raise (Failure "Unsupported sql type.")
 end 
 (*  let of_string s =
     match s with

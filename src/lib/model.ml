@@ -1,31 +1,33 @@
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Mysql = Mysql
-module Uint8 = Uint8;
-module Uint16 = Uint16;
-module Uint32 = Uint32;
-module Uint64 = Uint64;
-open Mysql
-open Core.Std
+module Uint8 = Uint8
+module Uint16 = Uint16
+module Uint32 = Uint32
+module Uint64 = Uint64
 
 module Model = struct
   type t = {
     col_name : string; 
     table_name : string;
-    data_type : string
+    data_type : string;
     is_nullable : bool;
   } [@@ppx_deriving show]
 	     
-  let oc = Out_channel.stdout;;    
+  let oc = Core.Std.Out_channel.stdout;;    
   let print_n_flush s =
+    let open Core.Std in 
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
 
   let getcon ?(host="127.0.0.1") ~database ~password ~user () =
+    let open Mysql in 
     quick_connect
       ~host ~database ~password ~user ();;
-  let closecon c = disconnect c;;
+  let closecon c = Mysql.disconnect c;;
    
   let get_tables () =
+    let open Mysql in
+    let open Core.Std in 
     let table_query = "SELECT table_name, table_type, engine FROM 
 		       information_schema.tables" in
     let rec table_helper accum results nextrow =
@@ -55,10 +57,9 @@ module Model = struct
 		      (Mysql.column results
 				    ~key:"engine" ~row:arrayofstring)) in
 	     let new_table_t =
-	       Table.Fields.create
-		   ~table_name ~table_type ~engine 
+	       Fields.create ~table_name ~table_type ~engine 
 	     in
-	     helper (new_table_t::accum) results (fetch results)
+	     table_helper (new_table_t::accum) results (fetch results)
 	    )
 	  with err ->
 	    let () = print_n_flush ("\nError " ^ (Exn.to_string err) ^
@@ -73,20 +74,22 @@ module Model = struct
 		     let () = closecon conn in Ok(None)
     | StatusOK -> let () = closecon conn in
 		  let () = print_n_flush "\nGot table names..." in 
-		  helper queryresult (fetch queryresult);;
+		  table_helper queryresult (fetch queryresult);;
 
     
   let get_fields_for_given_table ~table_name =
+    let open Mysql in
+    let open Core.Std in 
     (*Only column_type gives us the acceptable values of an enum type if present, unsigned; use the 
       column_comment to input per field directives for ppx extensions...way down the road, such as
       key or default for json ppx extension.*)
-    let fields_query_base = "SELECT column_name, is_nullable, column_comment,
+    let fields_query = "SELECT column_name, is_nullable, column_comment,
 			     column_type, data_type FROM 
 			     information_schema.columns 
 			     WHERE table_name='" ^ table_name ^ "';" in
     (*			     numeric_scale, column_key, column_default, character_maximum_length, 
 			     character_octet_length, numeric_precision, extra*)
-    let rec table_helper accum results nextrow =
+    let rec helper accum results nextrow =
       (match nextrow with
        | None -> Ok accum
        | Some arrayofstring ->
@@ -122,7 +125,7 @@ module Model = struct
 				    ~key:"is_nullable" ~row:arrayofstring)) in
 	       (fun x -> match x with "YES" -> true | _ -> false) is_nullable_yesno in 
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
-	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type
+	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in
 	     let new_field_record =
 	       Fields.create
 		 ~col_name
@@ -137,7 +140,7 @@ module Model = struct
 				      " getting tables from db.") in
 	    Error "Failed to get tables from db."
       ) in 
-    let queryresult = exec conn table_query in
+    let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
     | StatusEmpty | StatusError _ -> 
@@ -149,12 +152,13 @@ module Model = struct
 
 
   let map_of_list ~tlist =
+    let open Core.Std in 
     let rec helper l map =
     match l with
     | [] -> map
-    | h :: t -> let newmap = Core.Std.String.Map.add_multi map h.table_name h in
+    | h :: t -> let newmap = String.Map.add_multi map h.table_name h in
 		helper t newmap in
-    helper tlist Core.Std.String.Map.empty;;
+    helper tlist String.Map.empty;;
 
   (*Supply only keys that exist else find_exn will fail.*)
   let construct_body ~table_name ~map =
@@ -180,7 +184,7 @@ module Model = struct
     let myf sbuf fd = single_write fd ~buf:sbuf in
     try
       let _ = with_file f ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ();
-    with _ -> let () = print_n_flush "Failed to write to file.";;
+    with _ -> print_n_flush "Failed to write to file."
 end 
 
 
