@@ -1,3 +1,5 @@
+module Utilities = Utilities.Utilities
+module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Mysql = Mysql
 module Uint8 = Uint8
@@ -11,72 +13,8 @@ module Model = struct
     table_name : string;
     data_type : string;
     is_nullable : bool;
-  } [@@ppx_deriving show]
-	     
-  let oc = Core.Std.Out_channel.stdout;;    
-  let print_n_flush s =
-    let open Core.Std in 
-    Out_channel.output_string oc s;
-    Out_channel.flush oc;;
+  } [@@deriving show, fields]
 
-  let getcon ?(host="127.0.0.1") ~database ~password ~user () =
-    let open Mysql in 
-    quick_connect
-      ~host ~database ~password ~user ();;
-  let closecon c = Mysql.disconnect c;;
-   
-  let get_tables () =
-    let open Mysql in
-    let open Core.Std in 
-    let table_query = "SELECT table_name, table_type, engine FROM 
-		       information_schema.tables" in
-    let rec table_helper accum results nextrow =
-      (match nextrow with
-       | None -> Ok accum
-       | Some arrayofstring ->
-	  try
-	    (let table_name =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get table name."
-		    (Mysql.column results
-				  ~key:"table_name" ~row:arrayofstring)) in
-	     let table_type =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get table_type."
-		    (Mysql.column results
-				  ~key:"table_type" ~row:arrayofstring)) in
-	     let engine =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		   (Option.value_exn
-		      ~message:"Failed to get table engine."
-		      (Mysql.column results
-				    ~key:"engine" ~row:arrayofstring)) in
-	     let new_table_t =
-	       Fields.create ~table_name ~table_type ~engine 
-	     in
-	     table_helper (new_table_t::accum) results (fetch results)
-	    )
-	  with err ->
-	    let () = print_n_flush ("\nError " ^ (Exn.to_string err) ^
-				      " getting tables from db.") in
-	    Error "Failed to get tables from db."
-      ) in 
-    let queryresult = exec conn table_query in
-    let isSuccess = status conn in
-    match isSuccess with
-    | StatusEmpty | StatusError _ -> 
-		     let () = print_n_flush ("Query for table names returned nothing.  ... \n") in
-		     let () = closecon conn in Ok(None)
-    | StatusOK -> let () = closecon conn in
-		  let () = print_n_flush "\nGot table names..." in 
-		  table_helper queryresult (fetch queryresult);;
-
-    
   let get_fields_for_given_table ~table_name =
     let open Mysql in
     let open Core.Std in 
@@ -133,22 +71,25 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 	     in
-	     helper (table_t::accum) results (fetch results)
+	     helper (new_field_record::accum) results (fetch results)
 	    )
 	  with err ->
-	    let () = print_n_flush ("\nError " ^ (Exn.to_string err) ^
+	    let () = Utilities.print_n_flush ("\nError " ^ (Exn.to_string err) ^
 				      " getting tables from db.") in
 	    Error "Failed to get tables from db."
-      ) in 
+      ) in
+    let conn = Utilities.getcon_defaults () in 
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
-    | StatusEmpty | StatusError _ -> 
-		     let () = print_n_flush ("Query for table names returned nothing.  ... \n") in
-		     let () = closecon conn in Ok(None)
-    | StatusOK -> let () = closecon conn in
-		  let () = print_n_flush "\nGot table names..." in 
-		  helper queryresult (fetch queryresult);;
+    | StatusEmpty ->  let () = Utilities.closecon conn in Ok []
+    | StatusError _ -> 
+		     let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
+		     let () = Utilities.closecon conn in
+		     Error "model.ml::get_fields_for_given_table() Error in sql"
+    | StatusOK -> let () = Utilities.closecon conn in
+		  let () = Utilities.print_n_flush "\nGot fields for table." in 
+		  helper [] queryresult (fetch queryresult);;
 
 
   let map_of_list ~tlist =
@@ -175,7 +116,7 @@ module Model = struct
     let rec helper l tbody =
       match l with
       | [] -> tbody
-      | h :: t -> accum ^ "\n" ^ h.col_name ^ ":" ^ h.data_type in
+      | h :: t -> tbody ^ "\n" ^ h.col_name ^ ":" ^ h.data_type in
     let tbody = helper tfields_list "" in
     start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
     
@@ -183,8 +124,8 @@ module Model = struct
     let open Core.Std.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     try
-      let _ = with_file f ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ();
-    with _ -> print_n_flush "Failed to write to file."
+      let _ = with_file ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ();
+    with _ -> Utilities.print_n_flush "Failed to write to file."
 end 
 
 

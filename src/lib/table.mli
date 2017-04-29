@@ -3,5 +3,8 @@ module Table : sig
     table_name : string;
     table_type: string;
     engine : string;
-  } [@@ppx_deriving fields]
+  } [@@deriving fields]
+
+  (*Change this to return a multimap where key is table name, values are tuples of field names and types*)
+  val get_tables : unit -> (t list, string) Core.Std.Result.t
 end

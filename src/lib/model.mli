@@ -7,14 +7,10 @@ module Model : sig
     data_type : string;
     (*In our ml, if true, then the type is optional.*)
     is_nullable : bool;
-  } [@@ppx_deriving show]
-  val print_n_flish : string -> unit
-  val getcon : host:string -> database:string -> password:string -> user:string -> unit -> Mysql.dbd
-  val closecon : Mysql.dbd -> unit
-  (*Returns a multimap where key is table name, values are tuples of field names and types*)
-  val get_tables : unit -> string list
-  val get_fields_for_given_table : table_name: string -> t list 
-  val map_of_list : t list -> t list Core.Std.String.Map.t
+  } [@@deriving show, fields]
+    
+  val get_fields_for_given_table : table_name: string -> (t list, string) Core.Std.Result.t 
+  val map_of_list : tlist:t list -> t list Core.Std.String.Map.t
   val construct_body : table_name:string -> map:t list Core.Std.String.Map.t -> string
   (*With a fully constructed body, save a module to a file*)
   val write_module : fname:string -> body:string -> unit
