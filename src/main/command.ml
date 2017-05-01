@@ -11,7 +11,8 @@ module Command = struct
       let l = ok_or_failwith list_result in
       let map = Model.map_of_list ~tlist:l in 
       let body = Model.construct_body ~table_name:"scrapings" ~map in 
-      Utilities.print_n_flush body
+      let () = Utilities.print_n_flush body in
+      Model.write_module ~fname:"test_module.ml" ~body
     else
       Utilities.print_n_flush "Failed to get fields for table."
   

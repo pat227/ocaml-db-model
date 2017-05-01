@@ -39,7 +39,7 @@ module Sql_supported_types = struct
     | DOUBLE -> Ok "float"
     | DATE -> Ok "Core.Std.Date.t"
     | DATETIME 
-    | TIMESTAMP -> Ok "Core.Std.Time "
+    | TIMESTAMP -> Ok "Core.Std.Time.t"
     | BINARY
     | BLOB
     | MEDIUMTEXT

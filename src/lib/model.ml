@@ -120,7 +120,7 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let tbody_new = tbody ^ "\n\t" ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 let tbody_new = tbody ^ "\n  " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
@@ -129,12 +129,19 @@ module Model = struct
     let open Core.Std.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     try
-      let _ = with_file ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ();
-    with _ -> Utilities.print_n_flush "Failed to write to file."
+      let _bytes_written = with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ()
+    with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 end 
 
 
 (*
+  let write2file ~len ~buf ~name =
+    let open Unix in
+    let func fd =
+      Core.Std.Unix.write ~pos:0 ~len fd ~buf:(Bigbuffer.contents !buf) in
+    Core.Std.Unix.with_file ~perm:0o600 name
+			    ~mode:[O_RDWR;O_TRUNC;O_CREAT] ~f:func;;
+
 The type of a database field. Each of these represents one or more MySQL data types.
 type dbty =
 | IntTy
