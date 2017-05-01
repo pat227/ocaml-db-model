@@ -6,11 +6,11 @@ module Command = struct
 
   let execute () =
     let open Core.Std.Result in 
-    let list_result = Model.get_fields_for_given_table ~table_name:"nyt" in
+    let list_result = Model.get_fields_for_given_table ~table_name:"scrapings" in
     if is_ok list_result then
       let l = ok_or_failwith list_result in
       let map = Model.map_of_list ~tlist:l in 
-      let body = Model.construct_body ~table_name:"nyt" ~map in 
+      let body = Model.construct_body ~table_name:"scrapings" ~map in 
       Utilities.print_n_flush body
     else
       Utilities.print_n_flush "Failed to get fields for table."

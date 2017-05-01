@@ -114,10 +114,14 @@ module Model = struct
     let start_type_t = "type t = {" in
     let end_type_t = "}\n" in 
     let tfields_list = String.Map.find_exn map table_name in
+    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
+					(Int.to_string (List.length tfields_list))) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
-      | h :: t -> tbody ^ "\n" ^ h.col_name ^ ":" ^ h.data_type in
+      | h :: t ->
+	 let tbody_new = tbody ^ "\n\t" ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
     

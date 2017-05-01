@@ -18,6 +18,7 @@ module Sql_supported_types = struct
     | TIMESTAMP
     | BINARY
     | VARBINARY
+    | MEDIUMTEXT
     | VARCHAR
     | BLOB
   (*| ENUM*)
@@ -41,6 +42,7 @@ module Sql_supported_types = struct
     | TIMESTAMP -> Ok "Core.Std.Time "
     | BINARY
     | BLOB
+    | MEDIUMTEXT
     | VARBINARY
     | VARCHAR -> Ok "string"
   (*| ENUM*)
@@ -74,6 +76,7 @@ module Sql_supported_types = struct
       | false, "blob"
       | false, "binary"
       | false, "varbinary"
+      | false, "mediumtext" 
       | false, "varchar" -> VARCHAR
       | _, _ -> UNSUPPORTED in
     the_col_type data_type is_unsigned;;
