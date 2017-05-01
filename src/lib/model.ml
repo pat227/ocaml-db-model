@@ -2,10 +2,11 @@ module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Mysql = Mysql
+(*
 module Uint8 = Uint8
 module Uint16 = Uint16
 module Uint32 = Uint32
-module Uint64 = Uint64
+module Uint64 = Uint64*)
 
 module Model = struct
   type t = {
