@@ -4,17 +4,17 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core.Std
 module Command = struct
 
-  let execute host user password db () =
+  let execute host user password database () =
     let open Core.Std.Result in
-    let conn = Utilities.getcon ~host ~user ~password ~db in
+    let conn = Utilities.getcon ~host ~user ~password ~database in
     let fields_map = Model.get_fields_map_for_all_tables ~conn () in
     let keys = Map.keys fields_map in 
     let rec helper klist map =
       match klist with
       | [] -> ()
       | h::t ->
-	 let body = Model.construct_body ~table_name:h map in
-	 let mli = Model.construct_mli ~table_name:h map in
+	 let body = Model.construct_body ~table_name:h ~map in
+	 let mli = Model.construct_mli ~table_name:h ~map in
 	 let () = Model.write_module ~fname:(h ^ ".ml") ~body in
 	 let () = Model.write_module ~fname:(h ^ ".mli") ~body:mli in
 	 let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in

@@ -66,7 +66,8 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 	     in
-	     helper (new_field_record::accum) results (fetch results)
+	     let newmap = Core.Std.String.Map.add_multi accum table_name new_field_record in 
+	     helper newmap results (fetch results)
 	    )
 	  with err ->
 	    let () = Utilities.print_n_flush ("\nError " ^ (Exn.to_string err) ^
@@ -77,14 +78,14 @@ module Model = struct
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
-    | StatusEmpty ->  Ok []
+    | StatusEmpty ->  Ok Core.Std.String.Map.empty
     | StatusError _ -> 
 		     let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
 		     let () = Utilities.closecon conn in
 		     Error "model.ml::get_fields_for_given_table() Error in sql"
     | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
-		  helper [] queryresult (fetch queryresult);;
-
+		  helper Core.Std.String.Map.empty queryresult (fetch queryresult);;
+(*
   let map_of_list ~tlist =
     let open Core.Std in 
     let rec helper l map =
@@ -102,7 +103,7 @@ module Model = struct
     | h :: t ->
        let newmap = String.Map.add_multi map h.table_name h in
        add_list_to_multi_map ~tlist:t ~map:newmap;;
-    
+ *)  
   let get_fields_map_for_all_tables ~conn () =
     let open Core.Std in
     let open Core.Std.Result in 
@@ -113,10 +114,9 @@ module Model = struct
 	match ltables with
 	| [] -> map
 	| h::t ->
-	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.table_name in
+	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.Table.table_name in
 	   if is_ok fs_result then
-	     let fs = ok_or_failwith fs_result in 
-	     let newmap = add_list_to_multi_map fs map in
+	     let newmap = ok_or_failwith fs_result in 
 	     helper t newmap
 	   else	     
 	     helper t map in
