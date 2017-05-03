@@ -2,12 +2,6 @@ module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Mysql = Mysql
-(*
-module Uint8 = Uint8
-module Uint16 = Uint16
-module Uint32 = Uint32
-module Uint64 = Uint64*)
-
 module Model = struct
   type t = {
     col_name : string; 
@@ -16,7 +10,7 @@ module Model = struct
     is_nullable : bool;
   } [@@deriving show, fields]
 
-  let get_fields_for_given_table ~table_name =
+  let get_fields_for_given_table ?conn ~table_name =
     let open Mysql in
     let open Core.Std in 
     (*Only column_type gives us the acceptable values of an enum type if present, unsigned; use the 
@@ -79,40 +73,68 @@ module Model = struct
 				      " getting tables from db.") in
 	    Error "Failed to get tables from db."
       ) in
-    let conn = Utilities.getcon_defaults () in 
+    let conn = (fun c -> if is_none c then Utilities.getcon_defaults () else Option.value_exn c) conn in 
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
-    | StatusEmpty ->  let () = Utilities.closecon conn in Ok []
+    | StatusEmpty ->  Ok []
     | StatusError _ -> 
 		     let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
 		     let () = Utilities.closecon conn in
 		     Error "model.ml::get_fields_for_given_table() Error in sql"
-    | StatusOK -> let () = Utilities.closecon conn in
-		  let () = Utilities.print_n_flush "\nGot fields for table." in 
+    | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
 		  helper [] queryresult (fetch queryresult);;
-
 
   let map_of_list ~tlist =
     let open Core.Std in 
     let rec helper l map =
     match l with
     | [] -> map
-    | h :: t -> let newmap = String.Map.add_multi map h.table_name h in
-		helper t newmap in
+    | h :: t ->
+       let newmap = String.Map.add_multi map h.table_name h in
+       helper t newmap in
     helper tlist String.Map.empty;;
 
-  (*Supply only keys that exist else find_exn will fail.*)
+  let rec add_list_to_multi_map ~tlist ~map =
+    let open Core.Std in 
+    match tlist with
+    | [] -> map
+    | h :: t ->
+       let newmap = String.Map.add_multi map h.table_name h in
+       add_list_to_multi_map ~tlist:t ~map:newmap;;
+    
+  let get_fields_map_for_all_tables ~conn () =
+    let open Core.Std in
+    let open Core.Std.Result in 
+    let table_list_result = Table.get_tables ~conn () in
+    if is_ok table_list_result then
+      let tables = ok_or_failwith table_list_result in
+      let rec helper ltables map =
+	match ltables with
+	| [] -> map
+	| h::t ->
+	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.table_name in
+	   if is_ok fs_result then
+	     let fs = ok_or_failwith fs_result in 
+	     let newmap = add_list_to_multi_map fs map in
+	     helper t newmap
+	   else	     
+	     helper t map in
+      helper tables Core.Std.String.Map.empty
+    else
+      let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
+      Core.Std.String.Map.empty;;
+
   let construct_body ~table_name ~map =
     let open Core.Std in 
-    (*todo - ensure capital first letter in module name *)
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct \n" in 
     let start_type_t = "type t = {" in
-    let end_type_t = "}\n" in 
+    let end_type_t = "}\n" in
+    (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list = String.Map.find_exn map table_name in
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in 
@@ -124,6 +146,29 @@ module Model = struct
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
+
+  let construct_mli ~table_name ~map =
+    let open Core.Std in 
+    let module_first_char = String.get table_name 0 in
+    let uppercased_first_char = Char.uppercase module_first_char in
+    let module_name = String.copy table_name in
+    let () = String.set module_name 0 uppercased_first_char in 
+    let start_module = "module " ^ module_name ^ " : sig \n" in 
+    let start_type_t = "type t = {" in
+    let end_type_t = "}\n" in
+    (*Supply only keys that exist else find_exn will fail.*)
+    let tfields_list = String.Map.find_exn map table_name in
+    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
+					(Int.to_string (List.length tfields_list))) in 
+    let rec helper l tbody =
+      match l with
+      | [] -> tbody
+      | h :: t ->
+	 let tbody_new = tbody ^ "\n  " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 helper t tbody_new in 
+    let tbody = helper tfields_list "" in
+    start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
+    
     
   let write_module ~fname ~body = 
     let open Core.Std.Unix in
