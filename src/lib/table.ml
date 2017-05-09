@@ -7,12 +7,13 @@ module Table = struct
     engine : string;
   } [@@deriving fields]
    
-  let get_tables ?conn () =
+  let get_tables ?conn ~schema =
     let open Mysql in
     let open Core.Std in
     let open Core.Std.Result in 
-    let table_query = "SELECT table_name, table_type, engine FROM 
-		       information_schema.tables" in
+    let table_query ~schema =
+      "SELECT table_name, table_schema, table_type, engine FROM 
+       information_schema.tables WHERE table_schema='" ^ schema ^ "';" in
     let rec table_helper accum results nextrow =
       (match nextrow with
        | None -> Ok accum
@@ -49,7 +50,7 @@ module Table = struct
 	    Error "table.ml::get_tables() line 46"
       ) in
     let conn = (fun c -> if is_none c then Utilities.getcon_defaults () else Option.value_exn c) conn in 
-    let queryresult = exec conn table_query in
+    let queryresult = exec conn (table_query ~schema) in
     let isSuccess = status conn in
     match isSuccess with
     | StatusEmpty ->

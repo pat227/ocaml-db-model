@@ -85,29 +85,11 @@ module Model = struct
 		     Error "model.ml::get_fields_for_given_table() Error in sql"
     | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
 		  helper Core.Std.String.Map.empty queryresult (fetch queryresult);;
-(*
-  let map_of_list ~tlist =
-    let open Core.Std in 
-    let rec helper l map =
-    match l with
-    | [] -> map
-    | h :: t ->
-       let newmap = String.Map.add_multi map h.table_name h in
-       helper t newmap in
-    helper tlist String.Map.empty;;
 
-  let rec add_list_to_multi_map ~tlist ~map =
-    let open Core.Std in 
-    match tlist with
-    | [] -> map
-    | h :: t ->
-       let newmap = String.Map.add_multi map h.table_name h in
-       add_list_to_multi_map ~tlist:t ~map:newmap;;
- *)  
-  let get_fields_map_for_all_tables ~conn () =
+  let get_fields_map_for_all_tables ~conn ~schema =
     let open Core.Std in
     let open Core.Std.Result in 
-    let table_list_result = Table.get_tables ~conn () in
+    let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
       let rec helper ltables map =
@@ -125,50 +107,61 @@ module Model = struct
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
       Core.Std.String.Map.empty;;
 
-  let construct_body ~table_name ~map =
+  let construct_body ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct \n" in 
-    let start_type_t = "type t = {" in
-    let end_type_t = "}\n" in
+    let start_type_t = "  type t = {" in
+    let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list = String.Map.find_exn map table_name in
+    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
       | h :: t ->
-	 let tbody_new = tbody ^ "\n  " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 let tbody_new = tbody ^ "\n    " ^ h.col_name ^ " : " ^ h.data_type ^ ";" in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
+    let almost_done = start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t in
+    match ppx_decorators with
+    | [] -> almost_done ^ "end"
+    | h :: t ->
+       let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+       almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\nend";;
 
-  let construct_mli ~table_name ~map =
+  let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " : sig \n" in 
-    let start_type_t = "type t = {" in
-    let end_type_t = "}\n" in
+    let start_type_t = "  type t = {" in
+    let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list = String.Map.find_exn map table_name in
+    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
       | h :: t ->
-	 let tbody_new = tbody ^ "\n  " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 let tbody_new = tbody ^ "\n    " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t ^ "end";;
-    
+    let almost_done = start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t in
+    match ppx_decorators with
+    | [] -> almost_done ^ "end"
+    | h :: t ->
+       let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+       almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\nend";;
     
   let write_module ~fname ~body = 
     let open Core.Std.Unix in

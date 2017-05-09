@@ -13,8 +13,8 @@ module Utilities = struct
     quick_connect
       ~host ~database ~password ~user ();;
     
-  let getcon_defaults () =
-    getcon ~host:"127.0.0.1" ~database:"nyt" ~password:"root" ~user:"root";;
+  let getcon_defaults () = raise (Failure "Parameterless db connections no longer supported") 
+    (*getcon ~host:"127.0.0.1" ~database:"test_model" ~password:"root" ~user:"root";;*)
     
   let closecon c = Mysql.disconnect c;;
 

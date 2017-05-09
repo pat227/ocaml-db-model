@@ -6,5 +6,5 @@ module Table : sig
   } [@@deriving fields]
 
   (*Change this to return a multimap where key is table name, values are tuples of field names and types*)
-  val get_tables : ?conn:Mysql.dbd -> unit -> (t list, string) Core.Std.Result.t
+  val get_tables : ?conn:Mysql.dbd -> schema:string -> (t list, string) Core.Std.Result.t
 end

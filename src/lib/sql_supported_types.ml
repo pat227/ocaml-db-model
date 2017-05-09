@@ -24,7 +24,11 @@ module Sql_supported_types = struct
   (*| ENUM*)
     | UNSUPPORTED
 
-  (*Return a string we can use in writing a module that is a type. Cannot return a Uint8.t for example*)
+  (*Return a string we can use in writing a module that is a type. Cannot return a Uint8.t for example
+NOTE THAT Unfortunatelt there is no way to distinguish a field created with bool from a field created 
+with tinyint--except by some naming convention, which we do--otherwise bool wouldn't be supported at all.
+Also recall that BOOL cannot be combined with UNSIGNED in mysql.
+*)
   let ml_type_string_of_supported_sql_type t =
     match t with
       TINYINT_UNSIGNED -> Ok "Uint8.t"
