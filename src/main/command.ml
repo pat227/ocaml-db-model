@@ -13,8 +13,10 @@ module Command = struct
       match klist with
       | [] -> ()
       | h::t ->
-	 let body = Model.construct_body ~table_name:h ~map ~ppx_decorators:["fields";"show"] in
-	 let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators:["fields";"show"] in
+	 (*===TODO=== all the uint types DO NOT SUPPORT ANY ppx extensions...write them and use them*)
+	 let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
+	 let body = Model.construct_body ~table_name:h ~map ~ppx_decorators in
+	 let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
 	 let () = Model.write_module ~fname:(h ^ ".ml") ~body in
 	 let () = Model.write_module ~fname:(h ^ ".mli") ~body:mli in
 	 let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
@@ -27,6 +29,7 @@ module Command = struct
     Core.Std.Command.basic
       ~summary:"Connect to a mysql db, get schema"
       ~readme: (fun () -> "README")
+      (*===TODO===add option for each ppx extension*)
       Core.Std.Command.Spec.(empty
 			     +> flag "-host" (required string) ~doc:"ip of the db host."
 			     +> flag "-user" (required string) ~doc:"db user."
