@@ -17,9 +17,9 @@ MYSQL:
 NOTE: M is the max display width for int types and unrelated to the range of values a type can contain.
 For floating and fixed point types is the maxnumber of digits that can be stored.
 
-Use the uint package in opam that provides Ocaml with unsigned integer types, specifically 8, 16, 32, and 64 unsigned integers.
+Use the uint package in opam that provides Ocaml with unsigned integer types, specifically 8, 16, 32, and 64 bit unsigned integers.
 Since MySQl provides some integer types that don't map perfectly to any type in Ocaml--such as 24 bit medium integers--
-it is most wise to never use them--including but not limited to the medium integer mysql data type.
+it is most wise to never use them--including but not limited to the medium integer mysql data type. 
 --------------------------------------------------------------------------------
 SERIAL alias for BIGINT UNSIGNED NOT NULL ...  -> uint64   (Ocaml-Mysql parses to and from signed Int64?)
 Actually the information schema table shows int!?! 

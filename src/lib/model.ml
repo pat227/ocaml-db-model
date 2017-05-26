@@ -8,6 +8,7 @@ module Model = struct
     table_name : string;
     data_type : string;
     is_nullable : bool;
+    is_primary_key : bool;
   } [@@deriving show, fields]
 
   let get_fields_for_given_table ?conn ~table_name =
@@ -15,13 +16,14 @@ module Model = struct
     let open Core.Std in 
     (*Only column_type gives us the acceptable values of an enum type if present, unsigned; use the 
       column_comment to input per field directives for ppx extensions...way down the road, such as
-      key or default for json ppx extension.*)
+      key or default for json ppx extension. For Core Comparable interface, use the column that is 
+      primary key.*)
     let fields_query = "SELECT column_name, is_nullable, column_comment,
-			     column_type, data_type FROM 
+			     column_type, data_type, column_key, extra, column_comment FROM 
 			     information_schema.columns 
 			     WHERE table_name='" ^ table_name ^ "';" in
-    (*			     numeric_scale, column_key, column_default, character_maximum_length, 
-			     character_octet_length, numeric_precision, extra*)
+    (*			     numeric_scale, column_default, character_maximum_length, 
+			     character_octet_length, numeric_precision,*)
     let rec helper accum results nextrow =
       (match nextrow with
        | None -> Ok accum
@@ -56,7 +58,16 @@ module Model = struct
 		      ~message:"Failed to get if field is nullable."
 		      (Mysql.column results
 				    ~key:"is_nullable" ~row:arrayofstring)) in
-	       (fun x -> match x with "YES" -> true | _ -> false) is_nullable_yesno in 
+	       (fun x -> match x with "YES" -> true | _ -> false) is_nullable_yesno in
+	     let is_primary_key =
+	       let is_pri =
+		 String.strip
+		   ~drop:Char.is_whitespace
+		   (Option.value_exn
+		      ~message:"Failed to get if field is primary key."
+		      (Mysql.column results
+				    ~key:"column_key" ~row:arrayofstring)) in
+	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in	     
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
 	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in
 	     let new_field_record =
@@ -65,8 +76,9 @@ module Model = struct
 		 ~table_name
 		 ~data_type:type_for_module
 		 ~is_nullable
+		 ~is_primary_key
 	     in
-	     let newmap = Core.Std.String.Map.add_multi accum table_name new_field_record in 
+	     let newmap = String.Map.add_multi accum table_name new_field_record in 
 	     helper newmap results (fetch results)
 	    )
 	  with err ->
@@ -74,17 +86,20 @@ module Model = struct
 				      " getting tables from db.") in
 	    Error "Failed to get tables from db."
       ) in
-    let conn = (fun c -> if is_none c then Utilities.getcon_defaults () else Option.value_exn c) conn in 
+    let conn = (fun c -> if is_none c then
+			   Utilities.getcon_defaults ()
+			 else
+			   Option.value_exn c) conn in 
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
-    | StatusEmpty ->  Ok Core.Std.String.Map.empty
+    | StatusEmpty ->  Ok String.Map.empty
     | StatusError _ -> 
 		     let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
 		     let () = Utilities.closecon conn in
 		     Error "model.ml::get_fields_for_given_table() Error in sql"
     | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
-		  helper Core.Std.String.Map.empty queryresult (fetch queryresult);;
+		  helper String.Map.empty queryresult (fetch queryresult);;
 
   let get_fields_map_for_all_tables ~conn ~schema =
     let open Core.Std in
@@ -102,10 +117,10 @@ module Model = struct
 	     helper t newmap
 	   else	     
 	     helper t map in
-      helper tables Core.Std.String.Map.empty
+      helper tables String.Map.empty
     else
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
-      Core.Std.String.Map.empty;;
+      String.Map.empty;;
 
   let construct_body ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
@@ -167,8 +182,10 @@ module Model = struct
     let open Core.Std.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     try
-      let _bytes_written = with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC] ~perm:0o644 ~f:(myf body) in ()
-    with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
+      let _bytes_written =
+	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
+		  ~perm:0o644 ~f:(myf body) in ()
+    with () -> Utilities.print_n_flush "\nFailed to write to file.\n"
 end 
 
 

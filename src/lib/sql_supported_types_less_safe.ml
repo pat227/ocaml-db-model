@@ -1,9 +1,6 @@
 open Core.Std
-module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
-module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
-module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
-module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
-(*Types from mysql that are relatively more safely mapped to Ocaml*)
+
+(*Types from mysql that are very safely mapped to Ocaml*)
 module Sql_supported_types = struct
   type t =
       TINYINT_UNSIGNED
@@ -34,13 +31,13 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
 *)
   let ml_type_string_of_supported_sql_type t =
     match t with
-      TINYINT_UNSIGNED -> Ok "Uint8_w_sexp.t"
+      TINYINT_UNSIGNED -> Ok "Uint8.t"
     | TINYINT_BOOL -> Ok "bool"
-    | SMALLINT_UNSIGNED -> Ok "Uint16_w_sexp.t"
+    | SMALLINT_UNSIGNED -> Ok "Uint16.t"
     | INTEGER -> Ok "int"
-    | INTEGER_UNSIGNED -> Ok "Uint64_w_sexp.t"
+    | INTEGER_UNSIGNED -> Ok "Uint64.t"
     | BIGINT -> Ok "Int64.t"
-    | BIGINT_UNSIGNED -> Ok "Uint64_w_sexp.t"
+    | BIGINT_UNSIGNED -> Ok "Uint64.t"
     | DECIMAL
     | FLOAT 
     | DOUBLE -> Ok "float"
