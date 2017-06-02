@@ -1,12 +1,13 @@
 module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
+module Types_we_emit = Types_we_emit.Types_we_emit
 module Mysql = Mysql
 module Model = struct
   type t = {
     col_name : string; 
     table_name : string;
-    data_type : string;
+    data_type : Types_we_emit.t;
     is_nullable : bool;
     is_primary_key : bool;
   } [@@deriving show, fields]
@@ -16,8 +17,8 @@ module Model = struct
     let open Core.Std in 
     (*Only column_type gives us the acceptable values of an enum type if present, unsigned; use the 
       column_comment to input per field directives for ppx extensions...way down the road, such as
-      key or default for json ppx extension. For Core Comparable interface, use the column that is 
-      primary key.*)
+      key or default for json ppx extension. For comapre ppx extension, set all fields to return zero
+      EXCEPT for the primary key of table. This is also useful for Core Comparable interface.*)
     let fields_query = "SELECT column_name, is_nullable, column_comment,
 			     column_type, data_type, column_key, extra, column_comment FROM 
 			     information_schema.columns 
@@ -67,7 +68,7 @@ module Model = struct
 		      ~message:"Failed to get if field is primary key."
 		      (Mysql.column results
 				    ~key:"column_key" ~row:arrayofstring)) in
-	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in	     
+	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
 	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in
 	     let new_field_record =
@@ -95,9 +96,9 @@ module Model = struct
     match isSuccess with
     | StatusEmpty ->  Ok String.Map.empty
     | StatusError _ -> 
-		     let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
-		     let () = Utilities.closecon conn in
-		     Error "model.ml::get_fields_for_given_table() Error in sql"
+       let () = Utilities.print_n_flush ("Query for table names returned nothing.  ... \n") in
+       let () = Utilities.closecon conn in
+       Error "model.ml::get_fields_for_given_table() Error in sql"
     | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
@@ -122,6 +123,51 @@ module Model = struct
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
       String.Map.empty;;
 
+  (**Construct an otherwise tedious function that creates instances of type t from
+     a query.*)
+  let construct_sql_query_function ~table_name ~map =
+    let preamble =
+      "  let get_from_db ~query =\
+       let open Mysql in\
+       let open Core.Std.Result in \n
+       let open Core.Std in\
+       let conn = Utilities.get_conn in" in 
+    let helper_preamble =
+      "    let rec helper accum results nextrow =\
+       (match nextrow with\
+       | None -> Ok accum\
+       | Some arrayofstring ->\
+       try" in
+    let suffix =
+      "    let queryresult = exec conn query in\
+       let isSuccess = status conn in\
+       match isSuccess with\
+       | StatusEmpty ->  Ok []\
+       | StatusError _ -> \
+       let () = Utilities.print_n_flush (\"Error during query of table...\n\") in\
+       let () = Utilities.closecon conn in\
+       Error \"get_from_db() Error in sql\"\
+       | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from table.\" in \
+       helper [] queryresult (fetch queryresult);;" in    
+    let rec for_each_field flist accum =
+      match flist with
+      | [] -> String.concat ~sep:"\n" accum
+      | h :: t ->
+	 let non_optional_field =
+	   "let " ^ h.col_name ^ " = \nString.strip\n~drop:Char.is_whitespace\n\
+				  (Option.value_exn ~message:\"Failed to get " ^
+	     h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
+	       "~row:arrayofstring)) in" in
+	 let optional_string_field = "let " ^ h.col_name ^ " = Mysql.column results ~key:" ^ h.col_name ^ "~row:array_of_string" in
+	 (*NEED TO TRY TO PARSE AND RETURN Some t on success or None if fail*)
+	 let optional_t_field =
+	   let parser_function_of_string = Types_we_emit.converter_of_string_for_type h.data_type in 
+	   "let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
+				  (Option.value ~default:\"\" " ^
+	     h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
+	       "~row:arrayofstring)) in\n try\n(Some\n(" ^ parser_function_of_string ^ " s))\nwith _ -> None in"  in
+    ();;
+      
   let construct_body ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
     let module_first_char = String.get table_name 0 in
@@ -140,15 +186,30 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let tbody_new = tbody ^ "\n    " ^ h.col_name ^ " : " ^ h.data_type ^ ";" in
+	 let string_of_data_type = Types_we_emit.to_string h.data_type in 
+	 let tbody_new =
+	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    let almost_done = start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t in
-    match ppx_decorators with
-    | [] -> almost_done ^ "end"
-    | h :: t ->
-       let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-       almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\nend";;
+    let almost_done = Core.Std.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
+    let finished_type_t =
+      match ppx_decorators with
+      | [] -> almost_done ^ "end"
+      | h :: t ->
+	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+	 almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\n\n" in
+    (*Insert a few functions and variables.*)
+    let table_related_lines =
+      "  let tablename=\"" ^ table_name ^
+	"\" \n\n\
+	  let get_tablename () = tablename;;\n" in
+    (*General purpose query...client code can create others*)
+    let sql_query_function =
+      "  let get_sql_query () = \
+       let fs = Fields.names in \
+       let fs_csv = Core.Std.String.concat ~sep:',' fs in 
+       \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in   
+    finished_type_t ^ table_related_lines ^ sql_query_function ^ "\nend";;
 
   let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
@@ -168,7 +229,9 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let tbody_new = tbody ^ "\n    " ^ h.col_name ^ ":" ^ h.data_type ^ ";" in
+	 let string_of_data_type = Types_we_emit.to_string h.data_type in 
+	 let tbody_new = Core.Std.String.concat
+			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done = start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t in

@@ -4,6 +4,7 @@ module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 (*Types from mysql that are relatively more safely mapped to Ocaml*)
+module Types_we_emit = Types_we_emit.Types_we_emit
 module Sql_supported_types = struct
   type t =
       TINYINT_UNSIGNED
@@ -27,31 +28,27 @@ module Sql_supported_types = struct
   (*| ENUM*)
     | UNSUPPORTED
 
-  (*Return a string we can use in writing a module that is a type. Cannot return a Uint8.t for example
-NOTE THAT Unfortunately there is no way to distinguish a field created with bool from a field created 
-with tinyint--except by some naming convention, which we do--otherwise bool wouldn't be supported at all.
-Also recall that BOOL cannot be combined with UNSIGNED in mysql.
-*)
-  let ml_type_string_of_supported_sql_type t =
+
+  let ml_type_of_supported_sql_type t =
     match t with
-      TINYINT_UNSIGNED -> Ok "Uint8_w_sexp.t"
-    | TINYINT_BOOL -> Ok "bool"
-    | SMALLINT_UNSIGNED -> Ok "Uint16_w_sexp.t"
-    | INTEGER -> Ok "int"
-    | INTEGER_UNSIGNED -> Ok "Uint64_w_sexp.t"
-    | BIGINT -> Ok "Int64.t"
-    | BIGINT_UNSIGNED -> Ok "Uint64_w_sexp.t"
+      TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
+    | TINYINT_BOOL -> Ok Types_we_emit.Bool
+    | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_w_sexp_t
+    | INTEGER -> Ok Types_we_emit.int
+    | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
+    | BIGINT -> Ok Types_we_emit.Int64_t
+    | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
     | DECIMAL
     | FLOAT 
-    | DOUBLE -> Ok "float"
-    | DATE -> Ok "Core.Std.Date.t"
+    | DOUBLE -> Ok Types_we_emit.Float
+    | DATE -> Ok Types_we_emit.Date
     | DATETIME 
-    | TIMESTAMP -> Ok "Core.Std.Time.t"
+    | TIMESTAMP -> Ok Types_we_emit.Time
     | BINARY
     | BLOB
     | MEDIUMTEXT
     | VARBINARY
-    | VARCHAR -> Ok "string"
+    | VARCHAR -> Ok Types_we_emit.String
   (*| ENUM*)
     | UNSUPPORTED -> Error "to_ml_type::UNSUPPORTED_TYPE" 
 	
@@ -90,7 +87,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
     
   let one_step ~data_type ~col_type =
     let supported_t = of_col_type_and_flags ~data_type ~col_type in
-    let name_result = ml_type_string_of_supported_sql_type supported_t in
+    let name_result = ml_type_of_supported_sql_type supported_t in
     if is_ok name_result then
       (fun x -> match x with
 	       | Ok name -> name
