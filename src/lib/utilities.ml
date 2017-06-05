@@ -1,3 +1,5 @@
+(*===TODO===Need to make a verison of this file as part of the output so that we can
+share functions from here instead of repeating them, to allow easier refactoring, etc *)
 module Mysql = Mysql
 open Core.Std
 module Utilities = struct

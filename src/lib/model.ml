@@ -122,9 +122,13 @@ module Model = struct
     else
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
       String.Map.empty;;
-
+    
   (**Construct an otherwise tedious function that creates instances of type t from
-     a query.*)
+     a query; for each field in struct, get the string option from the string option array
+     provided by Mysql under the same name, parse it into it's correct type using the
+     correct conversion function, and then use Fields.create to create a new record,
+     add it to an accumulator, and finally return that accumulator after we have 
+     exhausted all the records returned by the query.*)
   let construct_sql_query_function ~table_name ~map =
     let preamble =
       "  let get_from_db ~query =\
@@ -153,19 +157,36 @@ module Model = struct
       match flist with
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
-	 let non_optional_field =
+	 let non_optional_string_field =
 	   "let " ^ h.col_name ^ " = \nString.strip\n~drop:Char.is_whitespace\n\
 				  (Option.value_exn ~message:\"Failed to get " ^
 	     h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
 	       "~row:arrayofstring)) in" in
 	 let optional_string_field = "let " ^ h.col_name ^ " = Mysql.column results ~key:" ^ h.col_name ^ "~row:array_of_string" in
-	 (*NEED TO TRY TO PARSE AND RETURN Some t on success or None if fail*)
+	 (*NEED TO TRY TO PARSE AND RETURN Some t on success or None if fail---NEED TO PLACE CONVERSION FUNCTION INTO UTILS FILE, NOT HERE!*)
 	 let optional_t_field =
-	   let parser_function_of_string = Types_we_emit.converter_of_string_for_type h.data_type in 
-	   "let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
-				  (Option.value ~default:\"\" " ^
-	     h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
-	       "~row:arrayofstring)) in\n try\n(Some\n(" ^ parser_function_of_string ^ " s))\nwith _ -> None in"  in
+	   let parser_function_of_string = Types_we_emit.converter_of_string_for_type ~is_optional:h.is_nullable  ~t:h.data_type in
+	   match h.is_nullable with
+	   | false ->
+	      if is_None parser_function_of_string then
+		"let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
+				       (Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
+		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
+		    "~row:arrayofstring)) in\n " ^ parser_function_of_string ^ " s \n"
+	      else
+		raise (Failure "Unsupported")
+	   | true ->
+	      if is_None parser_function_of_string then 
+		"let " ^ h.col_name ^ " = \n Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
+		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
+		    "~row:arrayofstring)) in\n "
+	      else
+		"let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
+				       (Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
+		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
+		    "~row:arrayofstring)) in\n " ^ parser_function_of_string ^ " s \n"
+	      
+	   
     ();;
       
   let construct_body ~table_name ~map ~ppx_decorators =
