@@ -35,7 +35,7 @@ module Command = struct
 			     +> flag "-user" (required string) ~doc:"db user."
 			     +> flag "-password" (required string) ~doc:"db password."
 			     +> flag "-db" (required string) ~doc:"db name."
-			    ) execute;;   
+			    ) execute;;
 
   let () =
     let open Core.Std.Command in

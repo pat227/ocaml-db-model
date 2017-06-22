@@ -31,43 +31,15 @@ module Model = struct
        | Some arrayofstring ->
 	  try
 	    (let col_name =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get col name."
-		    (Mysql.column results
-				  ~key:"column_name" ~row:arrayofstring)) in
+	       Utilities.extract_field_as_string ~fieldname:"column_name" ~results ~arrayofstring in 
 	     let data_type =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get data_type."
-		    (Mysql.column results
-				  ~key:"data_type" ~row:arrayofstring)) in
+	       Utilities.extract_field_as_string ~fieldname:"data_type" ~results ~arrayofstring in 
 	     let col_type =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get column_type."
-		    (Mysql.column results
-				  ~key:"column_type" ~row:arrayofstring)) in
+	       Utilities.extract_field_as_string ~fieldname:"column_type" ~results ~arrayofstring in 
 	     let is_nullable =
-	       let is_nullable_yesno =
-		 String.strip
-		   ~drop:Char.is_whitespace
-		   (Option.value_exn
-		      ~message:"Failed to get if field is nullable."
-		      (Mysql.column results
-				    ~key:"is_nullable" ~row:arrayofstring)) in
-	       (fun x -> match x with "YES" -> true | _ -> false) is_nullable_yesno in
+	       Utilities.parse_mysql_bool_field  ~fieldname:"is_nullable" ~results ~arrayofstring in 
 	     let is_primary_key =
-	       let is_pri =
-		 String.strip
-		   ~drop:Char.is_whitespace
-		   (Option.value_exn
-		      ~message:"Failed to get if field is primary key."
-		      (Mysql.column results
-				    ~key:"column_key" ~row:arrayofstring)) in
+	       let is_pri = Utilities.extract_field_as_string ~fieldname:"column_key" ~results ~arrayofstring in 
 	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
 	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in

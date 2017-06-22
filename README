@@ -10,22 +10,64 @@ defined constants, but we won't be able to pretty format when we replace
 a defined placeholder with a possibly very large type t. Otherwise would
 have been almost perfect. Instead just write files to disk.
 
-Mapping of data types is described below: 
+You may wish to set your Mysql schema to strict mode to reject all out-of-range
+values on insert instead of clipping values to the max or min permissible endpoint
+value of the column's data type.
+
+
+------Command line options------
+ -> Plain modules output - define modules each with a name matching that of
+ a table in the schema and with a type t that is a record (a product type).
+ Each component of each type t record bears the name of a field in the table
+ for which the module is named. The type of each component matches that of
+ it's corresponding field as closely as possible. Nullable fields must be
+ optional. An mli is also created. No functions are defined. Types that are
+ not supported are prohibited, such as 24-bit integer types for which
+ we have no matching type in Ocaml. Some unsigned types ar supported. See below
+ for full details on which types are supported. 
+
+ -> with ppx decoration - modules are written with ppx extensions. Supported
+ ppx extensions presently include yojson, sexp, ord, eq, show, and fields.
+
+ -> with query functions - modules are written with (at least) the fields
+ ppx extension and a function of type:
+ conn:Mysql.dbd -> query:string -> (t list, string) Core.Std.Result.t
+ This function is named get_from_db and requires that any field not of type
+ string be parsed in an appropriate manner, such as for integers of several
+ supported types, dates, timestamps, etc. Errors must be caught. No other
+ types are supported--yet--such as a field whose type is defined as another
+ module.
+
+-> include serial fields - if some tables contain a Serial data type field
+   we can choose to include it. By default we exclude it. If included. these
+   are always optional. Mysql permits null as a value on insert for fields of
+   type Serial and by default will use an auto-incremented next sequence value.
+   Instances of any type that includes a field that is of type Serial in the
+   db can enjoy a None value of this field if created at runtime and later
+   inserted into the db. Note that if the Serial field is NOT declared with
+   NOT NULL, then inserts that include a null will actually insert a null,
+   not an auto-incremented next in sequence value; so don't do that unless
+   you really mean it.
+
+
+-----------------Mapping of data types is described below: --------------------
 
 MYSQL:
 
 NOTE: M is the max display width for int types and unrelated to the range of values a type can contain.
-For floating and fixed point types is the maxnumber of digits that can be stored.
+For floating and fixed point types M is the maxnumber of digits that can be stored.
 
-Use the uint package in opam that provides Ocaml with unsigned integer types, specifically 8, 16, 32, and 64 bit unsigned integers.
-Since MySQl provides some integer types that don't map perfectly to any type in Ocaml--such as 24 bit medium integers--
-it is most wise to never use them--including but not limited to the medium integer mysql data type. 
+We use the uint package in opam that provides Ocaml with unsigned integer types, specifically
+8, 16, 32, and 64 bit unsigned integers. We also extend these to play nicely with ppx
+when desired. Since MySQl provides some integer types that don't map perfectly to any
+type in Ocaml--such as 24 bit medium integers--it is most wise to never use them--including but not limited to the medium integer mysql data type. 
 --------------------------------------------------------------------------------
-SERIAL alias for BIGINT UNSIGNED NOT NULL ...  -> uint64   (Ocaml-Mysql parses to and from signed Int64?)
+SERIAL is alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ...  -> uint64   (Ocaml-Mysql parses to and from signed Int64?)
 Actually the information schema table shows int!?! 
 
-BIT -> bool
 
+| BIT(M) -> The bit data type is used to store bit values of width M that is 1 to 64; we leave it
+  	    users to self-impose a maximum that matches their field width.
   TINY_INT (8 bit values) -> uint8 when unsigned, else unsupported
 | TINY_INT when field name has prefix is_ -> bool (can chose prefix on which to filter)
 
@@ -36,19 +78,25 @@ BIT -> bool
   INT (32 bit values) -> 
 | INTEGER (32 bit values) -> Core.Std.Int32 when SIGNED, else uint32 when unsigned
 
-BIGINT (64 bit values) -> Core.Std.Int64 when SIGNED, else uint64; NOTE that Mysql
-                          only permits values of 63 bits at most--SO USE OCAML's 63 bit integer type.
-			  Even UNSIGNED the limit is 63 bits. And mysql converts values to DOUBLE for arithmetic.
-   DECIMAL  
+| BIGINT (63/64 bit values) -> Core.Std.Int64 when SIGNED, else uint64; NOTE that Mysql
+                           only permits values of 63 bits at most--SO USE OCAML's 63 bit integer type?????
+			   Even UNSIGNED the limit is 63 bits; Mysql converts values to
+			   DOUBLE for arithmetic above 63 bits. Exact values can be stored in BigInt column
+			   by using a string else Mysql does a conversion step using Double that can
+			   create rouding errors; a strint-to-number conversion involves no such intermediate
+			   step using the Double type.
+   DECIMAL
+   DEC
+   FIXED
    FLOAT
  | DOUBLE -> float
 
    DECIMAL UNSIGNED  
    FLOAT UNSIGNED
- | DOUBLE UNSIGNED -> UNSUPPORTED
+ | DOUBLE UNSIGNED -> UNSUPPORTED    NOTE: Unsigned floating point types in Mysql does not alter the upper range of these types.
 
 
-DATE -> Core.Std.Date
+  DATE -> Core.Std.Date
 
    DATETIME
  | TIMESTAMP -> Core.Std.Time
