@@ -49,8 +49,7 @@ module Model = struct
 		 ~table_name
 		 ~data_type:type_for_module
 		 ~is_nullable
-		 ~is_primary_key
-	     in
+		 ~is_primary_key in
 	     let newmap = String.Map.add_multi accum table_name new_field_record in 
 	     helper newmap results (fetch results)
 	    )
@@ -130,11 +129,11 @@ module Model = struct
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
 	 let non_optional_string_field =
-	   "let " ^ h.col_name ^ " = \nString.strip\n~drop:Char.is_whitespace\n\
-				  (Option.value_exn ~message:\"Failed to get " ^
-	     h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
-	       "~row:arrayofstring)) in" in
-	 let optional_string_field = "let " ^ h.col_name ^ " = Mysql.column results ~key:" ^ h.col_name ^ "~row:array_of_string" in
+	   String.concat ["let ";h.col_name;" = Utilities.extract_field_as_string ~fieldname:";
+			  h.col_name;" ~results ~arrayofstring"] in
+	 let optional_string_field =
+	   String.concat ["let ";h.col_name;" = Utilities.extract_optional_field ~fieldname:";
+			  h.col_name;"~results ~arrayofstring" in
 	 (*NEED TO TRY TO PARSE AND RETURN Some t on success or None if fail---NEED TO PLACE CONVERSION FUNCTION INTO UTILS FILE, NOT HERE!*)
 	 let optional_t_field =
 	   let parser_function_of_string = Types_we_emit.converter_of_string_for_type ~is_optional:h.is_nullable  ~t:h.data_type in

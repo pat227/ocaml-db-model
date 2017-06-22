@@ -22,16 +22,23 @@ module Utilities : sig
 
   val extract_field_as_string :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:array string array option -> string
-  val extract_optional_field_as_string :
+    arrayofstring:string option array -> string
+  val extract_optional_field :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:array string array option -> string option
+    arrayofstring:string option array -> string option
 
   val parse_mysql_int_field :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string array string option -> int
+    arraystring:string option array -> int
   val parse_mysql_optional_int_field :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string array string option -> int
+    arraystring:string option array -> int option
 
+  val parse_mysql_bool_field :
+    fieldname:string -> results:Mysql.result ->
+    arraystring:string option array -> bool
+  val parse_mysql_optional_bool_field :
+    fieldname:string -> results:Mysql.result ->
+    arraystring:string option array -> bool option
+										       
 end 

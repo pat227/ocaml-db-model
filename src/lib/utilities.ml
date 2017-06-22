@@ -103,18 +103,8 @@ module Utilities = struct
 	 (Mysql.column results
 		       ~key:fieldname ~row:arrayofstring));;
 
-  let extract_optional_field_as_string ~fieldname ~results ~arrayofstring =
-    let op = (Mysql.column results ~key:fieldname ~row:arrayofstring) in 
-    if Option.is_some op then  
-      let s = String.strip
-	~drop:Char.is_whitespace
-	(Option.value_exn
-	   ~message:("Failed to get col " ^ fieldname)
-	   (Mysql.column results
-			 ~key:fieldname ~row:arrayofstring)) in 
-      Some s
-    else
-      None
+  let extract_optional_field ~fieldname ~results ~arrayofstring =
+    Mysql.column results ~key:fieldname ~row:arrayofstring;;
 
   let parse_mysql_int_field ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string ~fieldname ~results ~arrayofstring in 
@@ -128,6 +118,12 @@ module Utilities = struct
 
   let parse_mysql_bool_field ~fieldname ~results ~arrayofstring = 
     let s = extract_field_as_string ~fieldname ~results ~arrayofstring in 
-    parse_boolean_field s;;  
+    parse_boolean_field s;;
+
+  let parse_mysql_optional_bool_field ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field_as_string ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let b = parse_boolean_field s in Some b
+    | None -> None;;  
     
 end 
