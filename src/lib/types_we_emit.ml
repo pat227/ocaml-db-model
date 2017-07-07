@@ -37,26 +37,26 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
    is_optional - is the field, of whatever type, optional in the type t of the module
    *)
   let converter_of_string_for_type ~is_optional ~t =
-    match is_optional t with
+    match is_optional, t with
       false, String -> None
     | true, String -> None
-    | false, Bool -> Some "Utilities.parse_boolean_field"
-    | true, Bool -> Some "Utilities.parse_optional_boolean_field"
-    | false, Int -> Some "Core.Std.Int.of_string"
-    | true, Int -> Some "Utilities.parse_optional_int"
-    | false, Uint8_w_sexp_t -> Some "Uint8_w_sexp.of_string"
-    | true, Uint8_w_sexp_t -> Some "Utilities.parse_optional_uint8"
-    | false, Uint16_w_sexp_t -> Some "Uint16_w_sexp.of_string"
-    | true, Uint16_w_sexp_t -> Some "Utilities.parse_optional_uint16"
-    | false, Uint32_w_sexp_t -> Some "Uint32_w_sexp.of_string"
-    | true, Uint32_w_sexp_t -> Some "Utilities.parse_optional_uint32"
-    | false, Uint64_w_sexp_t -> Some "Uint64_w_sexp.of_string"
-    | true, Uint64_w_sexp_t -> Some "Utilities.parse_optional_uint64"
+    | false, Bool -> Some "Utilities.parse_bool_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Bool -> Some "Utilities.parse_optional_bool_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Int -> Some "Utilities.parse_int_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Int -> Some "Utilities.parse_optional_int_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Uint8_w_sexp_t -> Some "Utilities.parse_uint8_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Uint8_w_sexp_t -> Some "Utilities.parse_optional_uint8_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Uint16_w_sexp_t -> Some "Utilities.parse_uint16_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Uint16_w_sexp_t -> Some "Utilities.parse_optional_uint16_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Uint32_w_sexp_t -> Some "Utilities.parse_uint32_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Uint32_w_sexp_t -> Some "Utilities.parse_optional_uint32_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Uint64_w_sexp_t -> Some "Utilities.parse_uint64_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Uint64_w_sexp_t -> Some "Utilities.parse_optional_uint64_field_exn ~fieldname ~results ~arrayofstring"
     (*These are from Core.Std*)
-    | false, Float -> Some "Core.Std.Float.of_string"
-    | true, Float -> Some "Utilities.parse_optional_float"
-    | false, Date -> Some "Core.Std.Date.of_string"
-    | true, Date -> Some "Utilities.parse_optional_date"
-    | false, Time -> -> Some "Core.Std.Time.of_string"
-    | true, Time -> -> Some "Utilities.parse_optional_time"
+    | false, Float -> Some "Utilities.parse_float_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Float -> Some "Utilities.parse_optional_float_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Date -> Some "Utilities.parse_date_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Date -> Some "Utilities.parse_optional_date_field_exn ~fieldname ~results ~arrayofstring"
+    | false, Time -> -> Some "Utilities.parse_time_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Time -> -> Some "Utilities.parse_optional_time_field_exn ~fieldname ~results ~arrayofstring"
 end 
