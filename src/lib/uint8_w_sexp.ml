@@ -3,7 +3,7 @@
 module Uint8 = Uint8
 open Sexplib.Std
 open Sexplib
-module Uint8_with_sexp = struct
+module Uint8_w_sexp = struct
   include Uint8
 
   let sexp_of_t t =

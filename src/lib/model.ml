@@ -115,16 +115,21 @@ module Model = struct
        | Some arrayofstring ->\
        try" in
     let suffix =
-      "    let queryresult = exec conn query in\
-       let isSuccess = status conn in\
-       match isSuccess with\
-       | StatusEmpty ->  Ok []\
-       | StatusError _ -> \
-       let () = Utilities.print_n_flush (\"Error during query of table " ^ table_name ^ "...\n\") in\
-       let () = Utilities.closecon conn in\
-       Error \"get_from_db() Error in sql\"\
-       | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from " ^ table_name ^ "table.\" in \
-       helper [] queryresult (fetch queryresult);;" in    
+      String.concat 
+	["    let queryresult = exec conn query in\
+	  let isSuccess = status conn in\
+	  match isSuccess with\
+	  | StatusEmpty ->  Ok []\
+	  | StatusError _ -> \
+	  let () = Utilities.print_n_flush (\"Error during query of table ";
+	 table_name;
+	 "...\n\") in\
+	  let () = Utilities.closecon conn in\
+	  Error \"get_from_db() Error in sql\"\
+	  | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from ";
+	 table_name;
+	 "table.\" in \
+	  helper [] queryresult (fetch queryresult);;"] in    
     let rec for_each_field flist accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
@@ -160,7 +165,8 @@ module Model = struct
 	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    let almost_done = Core.Std.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
+    let almost_done =
+      Core.Std.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
       | [] -> almost_done ^ "end"
@@ -179,7 +185,8 @@ module Model = struct
        let fs_csv = Core.Std.String.concat ~sep:',' fs in 
        \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
     let query_function = construct_sql_query_function ~table_name ~map in 
-    String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;query_function;"\nend"];;
+    String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
+			     query_function;"\nend"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
@@ -204,7 +211,7 @@ module Model = struct
 			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    let almost_done = start_module ^ start_type_t ^ tbody ^ "\n" ^ end_type_t in
+    let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
     match ppx_decorators with
     | [] -> almost_done ^ "end"
     | h :: t ->

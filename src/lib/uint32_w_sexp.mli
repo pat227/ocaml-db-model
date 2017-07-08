@@ -1,5 +1,5 @@
 (*Unfortunately Uint32 module does not define sexp converters, so we have to.*)
-module Uint32_with_sexp :
+module Uint32_w_sexp :
 sig
   type t = Uint32.t
   type uint32 = t
@@ -24,12 +24,6 @@ sig
   val to_int : uint32 -> int
   val of_float : float -> uint32
   val to_float : uint32 -> float
-  val of_int32 : int32 -> uint32
-  val to_int32 : uint32 -> int32
-  val of_nativeint : nativeint -> uint32
-  val to_nativeint : uint32 -> nativeint
-  val of_int32 : int32 -> uint32
-  val to_int32 : uint32 -> int32
   val of_string : string -> uint32
   val to_string : uint32 -> string
   val to_string_bin : uint32 -> string

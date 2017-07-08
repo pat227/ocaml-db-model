@@ -1,5 +1,5 @@
 (*Unfortunately Uint16 module does not define sexp converters, so we have to.*)
-module Uint16_with_sexp :
+module Uint16_w_sexp :
 sig
   type t = Uint16.t
   type uint16 = t
@@ -24,12 +24,6 @@ sig
   val to_int : uint16 -> int
   val of_float : float -> uint16
   val to_float : uint16 -> float
-  val of_int16 : int16 -> uint16
-  val to_int16 : uint16 -> int16
-  val of_nativeint : nativeint -> uint16
-  val to_nativeint : uint16 -> nativeint
-  val of_int16 : int16 -> uint16
-  val to_int16 : uint16 -> int16
   val of_string : string -> uint16
   val to_string : uint16 -> string
   val to_string_bin : uint16 -> string

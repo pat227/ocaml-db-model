@@ -3,7 +3,7 @@
 module Uint64 = Uint64
 open Sexplib.Std
 open Sexplib
-module Uint64_with_sexp = struct
+module Uint64_w_sexp = struct
   include Uint64
 
   let sexp_of_t t =

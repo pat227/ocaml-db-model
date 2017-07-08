@@ -1,7 +1,7 @@
-module Uint8_with_sexp = Uint8_with_sexp.Uint8_with_sexp
-module Uint16_with_sexp = Uint16_with_sexp.Uint8_with_sexp
-module Uint32_with_sexp = Uint32_with_sexp.Uint8_with_sexp
-module Uint64_with_sexp = Uint64_with_sexp.Uint8_with_sexp
+module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
+module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
+module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
+module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
 module Utilities : sig
   val print_n_flush : string -> unit 
   val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
@@ -43,28 +43,28 @@ module Utilities : sig
 
   val parse_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint8_with_sexp.t
+    arraystring:string option array -> Uint8_w_sexp.t
   val parse_optional_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint8_with_sexp.t option
+    arraystring:string option array -> Uint8_w_sexp.t option
   val parse_uint16_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint16_with_sexp.t
+    arraystring:string option array -> Uint16_w_sexp.t
   val parse_optional_uint16_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint16_with_sexp.t option
+    arraystring:string option array -> Uint16_w_sexp.t option
   val parse_uint32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint32_with_sexp.t
+    arraystring:string option array -> Uint32_w_sexp.t
   val parse_optional_uint32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint32_with_sexp.t option
+    arraystring:string option array -> Uint32_w_sexp.t option
   val parse_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint64_with_sexp.t
+    arraystring:string option array -> Uint64_w_sexp.t
   val parse_optional_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arraystring:string option array -> Uint64_with_sexp.t option
+    arraystring:string option array -> Uint64_w_sexp.t option
 					   
   val parse_bool_field_exn :
     fieldname:string -> results:Mysql.result ->

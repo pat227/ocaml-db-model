@@ -34,7 +34,7 @@ module Sql_supported_types = struct
       TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
     | TINYINT_BOOL -> Ok Types_we_emit.Bool
     | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_w_sexp_t
-    | INTEGER -> Ok Types_we_emit.int
+    | INTEGER -> Ok Types_we_emit.Int
     | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
     | BIGINT -> Ok Types_we_emit.Int64_t
     | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t

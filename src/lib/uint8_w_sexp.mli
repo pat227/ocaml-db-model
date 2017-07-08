@@ -1,5 +1,5 @@
 (*Unfortunately Uint8 module does not define sexp converters, so we have to.*)
-module Uint8_with_sexp :
+module Uint8_w_sexp :
 sig
   type t = Uint8.t
   type uint8 = t
@@ -24,12 +24,12 @@ sig
   val to_int : uint8 -> int
   val of_float : float -> uint8
   val to_float : uint8 -> float
-  val of_int8 : int8 -> uint8
+  (*val of_int8 : int8 -> uint8
   val to_int8 : uint8 -> int8
   val of_nativeint : nativeint -> uint8
   val to_nativeint : uint8 -> nativeint
   val of_int8 : int8 -> uint8
-  val to_int8 : uint8 -> int8
+  val to_int8 : uint8 -> int8*)
   val of_string : string -> uint8
   val to_string : uint8 -> string
   val to_string_bin : uint8 -> string

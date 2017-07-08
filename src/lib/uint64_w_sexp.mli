@@ -1,5 +1,5 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to.*)
-module Uint64_with_sexp :
+module Uint64_w_sexp :
 sig
   type t = Uint64.t
   type uint64 = t
@@ -24,12 +24,6 @@ sig
   val to_int : uint64 -> int
   val of_float : float -> uint64
   val to_float : uint64 -> float
-  val of_int32 : int32 -> uint64
-  val to_int32 : uint64 -> int32
-  val of_nativeint : nativeint -> uint64
-  val to_nativeint : uint64 -> nativeint
-  val of_int64 : int64 -> uint64
-  val to_int64 : uint64 -> int64
   val of_string : string -> uint64
   val to_string : uint64 -> string
   val to_string_bin : uint64 -> string

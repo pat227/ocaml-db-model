@@ -13,7 +13,6 @@ module Command = struct
       match klist with
       | [] -> ()
       | h::t ->
-	 (*===TODO=== all the uint types DO NOT SUPPORT ANY ppx extensions...write them and use them*)
 	 let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
 	 let body = Model.construct_body ~table_name:h ~map ~ppx_decorators in
 	 let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
