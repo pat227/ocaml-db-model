@@ -85,8 +85,9 @@ module Model = struct
 	| h::t ->
 	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.Table.table_name in
 	   if is_ok fs_result then
-	     let newmap = ok_or_failwith fs_result in 
-	     helper t newmap
+	     let newmap = ok_or_failwith fs_result in
+	     let combinedmaps = Map.merge map newmap in  
+	     helper t combinedmaps
 	   else	     
 	     helper t map in
       helper tables String.Map.empty
@@ -119,46 +120,22 @@ module Model = struct
        match isSuccess with\
        | StatusEmpty ->  Ok []\
        | StatusError _ -> \
-       let () = Utilities.print_n_flush (\"Error during query of table...\n\") in\
+       let () = Utilities.print_n_flush (\"Error during query of table " ^ table_name ^ "...\n\") in\
        let () = Utilities.closecon conn in\
        Error \"get_from_db() Error in sql\"\
-       | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from table.\" in \
+       | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from " ^ table_name ^ "table.\" in \
        helper [] queryresult (fetch queryresult);;" in    
     let rec for_each_field flist accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
-	 let non_optional_string_field =
-	   String.concat ["let ";h.col_name;" = Utilities.extract_field_as_string ~fieldname:";
-			  h.col_name;" ~results ~arrayofstring"] in
-	 let optional_string_field =
-	   String.concat ["let ";h.col_name;" = Utilities.extract_optional_field ~fieldname:";
-			  h.col_name;"~results ~arrayofstring" in
-	 (*NEED TO TRY TO PARSE AND RETURN Some t on success or None if fail---NEED TO PLACE CONVERSION FUNCTION INTO UTILS FILE, NOT HERE!*)
-	 let optional_t_field =
-	   let parser_function_of_string = Types_we_emit.converter_of_string_for_type ~is_optional:h.is_nullable  ~t:h.data_type in
-	   match h.is_nullable with
-	   | false ->
-	      if is_None parser_function_of_string then
-		"let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
-				       (Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
-		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
-		    "~row:arrayofstring)) in\n " ^ parser_function_of_string ^ " s \n"
-	      else
-		raise (Failure "Unsupported")
-	   | true ->
-	      if is_None parser_function_of_string then 
-		"let " ^ h.col_name ^ " = \n Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
-		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
-		    "~row:arrayofstring)) in\n "
-	      else
-		"let " ^ h.col_name ^ " = \nlet s = String.strip\n~drop:Char.is_whitespace\n\
-				       (Option.value_exn ~message:\"Failed to get from table " ^ h.table_name ^ " col\" " ^
-		  h.col_name ^ ".\n(Mysql.column results ~key:" ^ h.col_name ^
-		    "~row:arrayofstring)) in\n " ^ parser_function_of_string ^ " s \n"
-	      
-	   
-    ();;
+	 let parser_function_call = Types_we_emit.converter_of_string_for_type
+				      ~is_optional:h.is_nullable ~t:h.data_type in
+	 let output = String.concat ["let ";h.col_name;" = ";parser_function_call;" in "] in
+	 for_each_field t (output::accum) in
+    let fields_list = Map.find table_name map in 
+    let parser_lines = for_each_field fields_list [] in
+    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;suffix];;
       
   let construct_body ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
@@ -200,8 +177,9 @@ module Model = struct
       "  let get_sql_query () = \
        let fs = Fields.names in \
        let fs_csv = Core.Std.String.concat ~sep:',' fs in 
-       \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in   
-    finished_type_t ^ table_related_lines ^ sql_query_function ^ "\nend";;
+       \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
+    let query_function = construct_sql_query_function ~table_name ~map in 
+    String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;query_function;"\nend"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core.Std in 

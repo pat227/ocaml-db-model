@@ -10,5 +10,5 @@ module Types_we_emit : sig
     | `String
 
   val to_string : t -> string
-  val converter_of_string_of_type : t -> string option      
+  val converter_of_string_of_type : is_optional:bool -> t:t -> string
   end 
