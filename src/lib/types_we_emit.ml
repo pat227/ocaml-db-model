@@ -5,7 +5,11 @@ module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 
 module Types_we_emit = struct
   type t =
-      Int 
+      Int
+    | Int64
+    | Int32
+    | CoreInt64
+    | CoreInt32
     | Uint8_w_sexp_t
     | Uint16_w_sexp_t
     | Uint32_w_sexp_t
@@ -23,6 +27,10 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
   let to_string t =
     match t with
       Int -> "int"
+    | Int64 -> "int64"
+    | Int32 -> "int32"
+    | CoreInt64 -> "Core.Std.Int64.t"
+    | CoreInt32 -> "Core.Std.Int32.t"
     | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
     | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
     | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
@@ -45,6 +53,14 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | true, Bool -> "Utilities.parse_optional_bool_field_exn ~fieldname ~results ~arrayofstring"
     | false, Int -> "Utilities.parse_int_field_exn ~fieldname ~results ~arrayofstring"
     | true, Int -> "Utilities.parse_optional_int_field_exn ~fieldname ~results ~arrayofstring"
+    | false, CoreInt64 -> 
+    | true, CoreInt64 ->
+    | false, CoreInt32 -> 
+    | true, CoreInt32 ->
+    | false, Int64 -> 
+    | true, Int32 ->
+    | false, Int32 -> 
+    | true, Int64 -> 
     | false, Uint8_w_sexp_t -> "Utilities.parse_uint8_field_exn ~fieldname ~results ~arrayofstring"
     | true, Uint8_w_sexp_t -> "Utilities.parse_optional_uint8_field_exn ~fieldname ~results ~arrayofstring"
     | false, Uint16_w_sexp_t -> "Utilities.parse_uint16_field_exn ~fieldname ~results ~arrayofstring"
