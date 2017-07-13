@@ -1,6 +1,10 @@
 module Types_we_emit : sig
   type t =
     | Int
+    | Int64
+    | Int32
+    | CoreInt64
+    | CoreInt32
     | Uint8_w_sexp_t
     | Uint16_w_sexp_t
     | Uint32_w_sexp_t
