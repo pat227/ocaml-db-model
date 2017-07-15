@@ -74,10 +74,10 @@ module Utilities = struct
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
-		  
+(*		  
   let parse_64bit_int_field_exn ~field =
     Core.Std.Int64.of_string field
-
+ *)
   let extract_field_as_string_exn ~fieldname ~results ~arrayofstring =
     try
       String.strip
@@ -94,7 +94,7 @@ module Utilities = struct
 
   let extract_optional_field ~fieldname ~results ~arrayofstring =
     Mysql.column results ~key:fieldname ~row:arrayofstring;;
-    
+    (*
   let parse_int_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
     Int.of_string s;;
@@ -104,7 +104,42 @@ module Utilities = struct
     match s_opt with
     | Some s -> let i = Int.of_string s in Some i
     | None -> None;;
+     *)
 
+  let parse_int64_field_exn ~fieldname ~results ~arrayofstring =
+    try
+      let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
+      Core.Std.Int64.of_string s
+    with err ->
+	 let () = print_n_flush "\nutilities::parse_int64_field_exn() failed" in
+	 raise err;;
+
+  let parse_int32_field_exn ~fieldname ~results ~arrayofstring =
+    try
+      let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
+      Core.Std.Int32.of_string s
+    with err ->
+      let () = print_n_flush "\nutilities::parse_int32_field_exn() failed" in
+      raise err;;
+    
+(*  let parse_optional_int_field_exn ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Int.of_string s in Some i
+    | None -> None;;*)
+    
+  let parse_optional_int64_field_exn ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Int64.of_string s in Some i
+    | None -> None;;
+
+  let parse_optional_int32_field_exn ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Int32.of_string s in Some i
+    | None -> None;;
+    
   let parse_uint8_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
     Uint8_w_sexp.of_string s;;
