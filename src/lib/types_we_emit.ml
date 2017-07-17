@@ -21,7 +21,7 @@ module Types_we_emit = struct
     | Time 
     | String
     | Bool
-
+	[@@deriving show]
 (*Return a string we can use in writing a module that is a type. Cannot return a Uint8.t for example
 NOTE THAT Unfortunately there is no way to distinguish a field created with bool from a field created 
 with tinyint--except by some naming convention, which we do--otherwise bool wouldn't be supported at all.
@@ -47,7 +47,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
    t - the type of the field
    *)
-  let converter_of_string_for_type ~is_optional ~t ~fieldname =
+  let converter_of_string_of_type ~is_optional ~t ~fieldname =
     let open Core.Std in 
     match is_optional, t with
       false, String ->
@@ -73,17 +73,17 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | false, Int32 -> 
     | true, Int64 ->*) 
     | false, Uint8_w_sexp_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:";fieldname;" ~results ~arrayofstring"]
-    | true, Uint8_w_sexp_t -> "Utilities.parse_optional_uint8_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Uint16_w_sexp_t -> "Utilities.parse_uint16_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Uint16_w_sexp_t -> "Utilities.parse_optional_uint16_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Uint32_w_sexp_t -> "Utilities.parse_uint32_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Uint32_w_sexp_t -> "Utilities.parse_optional_uint32_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Uint64_w_sexp_t -> "Utilities.parse_uint64_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Uint64_w_sexp_t -> "Utilities.parse_optional_uint64_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Float -> "Utilities.parse_float_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Float -> "Utilities.parse_optional_float_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Date -> "Utilities.parse_date_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Date -> "Utilities.parse_optional_date_field_exn ~fieldname ~results ~arrayofstring"
-    | false, Time -> "Utilities.parse_time_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Time -> "Utilities.parse_optional_time_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Uint8_w_sexp_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Uint16_w_sexp_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Uint16_w_sexp_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Uint32_w_sexp_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Uint32_w_sexp_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Uint64_w_sexp_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Uint64_w_sexp_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | false, Time -> String.concat ["Utilities.parse_time_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
+    | true, Time -> String.concat ["Utilities.parse_optional_time_field_exn ~fieldname";fieldname;" ~results ~arrayofstring"]
 end 

@@ -28,15 +28,15 @@ module Sql_supported_types = struct
   (*| ENUM*)
     | UNSUPPORTED
 
-
+  (*--by default just use core int 64 type...*)
   let ml_type_of_supported_sql_type t =
     match t with
       TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
     | TINYINT_BOOL -> Ok Types_we_emit.Bool
     | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_w_sexp_t
-    | INTEGER -> Ok Types_we_emit.Int
+    | INTEGER -> Ok Types_we_emit.CoreInt64
     | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
-    | BIGINT -> Ok Types_we_emit.Int64_t
+    | BIGINT -> Ok Types_we_emit.CoreInt64
     | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
     | DECIMAL
     | FLOAT 

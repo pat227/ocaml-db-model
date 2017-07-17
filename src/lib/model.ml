@@ -31,15 +31,15 @@ module Model = struct
        | Some arrayofstring ->
 	  try
 	    (let col_name =
-	       Utilities.extract_field_as_string ~fieldname:"column_name" ~results ~arrayofstring in 
+	       Utilities.extract_field_as_string_exn ~fieldname:"column_name" ~results ~arrayofstring in 
 	     let data_type =
-	       Utilities.extract_field_as_string ~fieldname:"data_type" ~results ~arrayofstring in 
+	       Utilities.extract_field_as_string_exn ~fieldname:"data_type" ~results ~arrayofstring in 
 	     let col_type =
-	       Utilities.extract_field_as_string ~fieldname:"column_type" ~results ~arrayofstring in 
+	       Utilities.extract_field_as_string_exn ~fieldname:"column_type" ~results ~arrayofstring in 
 	     let is_nullable =
-	       Utilities.parse_mysql_bool_field  ~fieldname:"is_nullable" ~results ~arrayofstring in 
+	       Utilities.parse_bool_field_exn  ~fieldname:"is_nullable" ~results ~arrayofstring in 
 	     let is_primary_key =
-	       let is_pri = Utilities.extract_field_as_string ~fieldname:"column_key" ~results ~arrayofstring in 
+	       let is_pri = Utilities.extract_field_as_string_exn ~fieldname:"column_key" ~results ~arrayofstring in 
 	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
 	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in
@@ -86,7 +86,16 @@ module Model = struct
 	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.Table.table_name in
 	   if is_ok fs_result then
 	     let newmap = ok_or_failwith fs_result in
-	     let combinedmaps = Map.merge map newmap in  
+	     let combinedmaps =
+	       Map.merge
+		 map newmap
+		 ~f:
+		 (fun ~key vals ->
+		  match vals with
+		  | `Left v1 -> Some v1
+		  | `Right v2 -> Some v2
+		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
+		 ) in  
 	     helper t combinedmaps
 	   else	     
 	     helper t map in
@@ -102,6 +111,7 @@ module Model = struct
      add it to an accumulator, and finally return that accumulator after we have 
      exhausted all the records returned by the query.*)
   let construct_sql_query_function ~table_name ~map =
+    let open Core.Std in 
     let preamble =
       "  let get_from_db ~query =\
        let open Mysql in\
@@ -128,17 +138,16 @@ module Model = struct
 	  Error \"get_from_db() Error in sql\"\
 	  | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from ";
 	 table_name;
-	 "table.\" in \
-	  helper [] queryresult (fetch queryresult);;"] in    
+	 "table.\" in helper [] queryresult (fetch queryresult);;"] in
     let rec for_each_field flist accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
-	 let parser_function_call = Types_we_emit.converter_of_string_for_type
-				      ~is_optional:h.is_nullable ~t:h.data_type in
+	 let parser_function_call = Types_we_emit.converter_of_string_of_type
+				      ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
 	 let output = String.concat ["let ";h.col_name;" = ";parser_function_call;" in "] in
 	 for_each_field t (output::accum) in
-    let fields_list = Map.find table_name map in 
+    let fields_list = Map.find_exn map table_name in 
     let parser_lines = for_each_field fields_list [] in
     String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;suffix];;
       
@@ -225,7 +234,7 @@ module Model = struct
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
-    with () -> Utilities.print_n_flush "\nFailed to write to file.\n"
+    with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 end 
 
 

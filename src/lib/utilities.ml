@@ -185,7 +185,7 @@ module Utilities = struct
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
     parse_boolean_field_exn s;;
 
-  let parse_optional_bool_field ~fieldname ~results ~arrayofstring =
+  let parse_optional_bool_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
     | Some s -> let b = parse_boolean_field_exn s in Some b
