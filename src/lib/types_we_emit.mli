@@ -1,8 +1,5 @@
 module Types_we_emit : sig
   type t =
-    | Int
-    | Int64
-    | Int32
     | CoreInt64
     | CoreInt32
     | Uint8_w_sexp_t
@@ -14,7 +11,8 @@ module Types_we_emit : sig
     | Time 
     | String
     | Bool
+	[@@deriving show]
 
   val to_string : t -> string
-  val converter_of_string_of_type : is_optional:bool -> t:t -> string
+  val converter_of_string_of_type : is_optional:bool -> t:t -> fieldname:string -> string
   end 

@@ -1,12 +1,14 @@
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
+module Types_we_emit = Types_we_emit.Types_we_emit
 module Model : sig
   type t = {
     col_name : string; 
     table_name : string;
     (*a type, such as Uint8.t, but as a string that we can use in directly in output.*)
-    data_type : string;
+    data_type : Types_we_emit.t;
     (*In our ml, if true, then the type is optional.*)
     is_nullable : bool;
+    is_primary_key: bool;
   } [@@deriving show, fields]
   val get_fields_map_for_all_tables : conn:Mysql.dbd -> schema:string ->
 				      t list Core.Std.String.Map.t 
