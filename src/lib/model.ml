@@ -42,7 +42,7 @@ module Model = struct
 	       let is_pri = Utilities.extract_field_as_string_exn ~fieldname:"column_key" ~results ~arrayofstring in 
 	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
 	     (*--todo--convert data types and nullables into ml types as strings for use in writing a module*)
-	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type in
+	     let type_for_module = Sql_supported_types.one_step ~data_type ~col_type ~col_name in
 	     let new_field_record =
 	       Fields.create
 		 ~col_name
@@ -113,29 +113,29 @@ module Model = struct
   let construct_sql_query_function ~table_name ~map =
     let open Core.Std in 
     let preamble =
-      "  let get_from_db ~query =\
-       let open Mysql in\
-       let open Core.Std.Result in \n
-       let open Core.Std in\
-       let conn = Utilities.get_conn in" in 
+      "  let get_from_db ~query =\n \
+       let open Mysql in \n \
+       let open Core.Std.Result in \n \
+       let open Core.Std in \n \
+       let conn = Utilities.get_conn in \n" in 
     let helper_preamble =
-      "    let rec helper accum results nextrow =\
-       (match nextrow with\
-       | None -> Ok accum\
-       | Some arrayofstring ->\
-       try" in
+      "    let rec helper accum results nextrow = \n \
+       (match nextrow with \n \
+       | None -> Ok accum \n \
+       | Some arrayofstring ->\n \
+       try\n " in
     let suffix =
       String.concat 
-	["    let queryresult = exec conn query in\
-	  let isSuccess = status conn in\
-	  match isSuccess with\
-	  | StatusEmpty ->  Ok []\
-	  | StatusError _ -> \
+	["    let queryresult = exec conn query in\n \
+	  let isSuccess = status conn in\n \
+	  match isSuccess with\n \
+	  | StatusEmpty ->  Ok []\n \
+	  | StatusError _ -> \n \
 	  let () = Utilities.print_n_flush (\"Error during query of table ";
 	 table_name;
-	 "...\n\") in\
-	  let () = Utilities.closecon conn in\
-	  Error \"get_from_db() Error in sql\"\
+	 "...\n\") in\n \
+	  let () = Utililies.closecon conn in\n \
+	  Error \"get_from_db() Error in sql\"\n \
 	  | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from ";
 	 table_name;
 	 "table.\" in helper [] queryresult (fetch queryresult);;"] in
@@ -145,7 +145,7 @@ module Model = struct
       | h :: t ->
 	 let parser_function_call = Types_we_emit.converter_of_string_of_type
 				      ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
-	 let output = String.concat ["let ";h.col_name;" = ";parser_function_call;" in "] in
+	 let output = String.concat ["let ";h.col_name;" = ";parser_function_call;" in \n"] in
 	 for_each_field t (output::accum) in
     let fields_list = Map.find_exn map table_name in 
     let parser_lines = for_each_field fields_list [] in
@@ -181,7 +181,7 @@ module Model = struct
       | [] -> almost_done ^ "end"
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-	 almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\n\n" in
+	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
       "  let tablename=\"" ^ table_name ^
@@ -190,8 +190,8 @@ module Model = struct
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \
-       let fs = Fields.names in \
-       let fs_csv = Core.Std.String.concat ~sep:',' fs in 
+       let fs = Fields.names in \n \
+       let fs_csv = Core.Std.String.concat ~sep:',' fs in \n \ 
        \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
     let query_function = construct_sql_query_function ~table_name ~map in 
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
@@ -225,7 +225,7 @@ module Model = struct
     | [] -> almost_done ^ "end"
     | h :: t ->
        let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-       almost_done ^ "\n             [@@deriving " ^ ppx_extensions ^ "]\nend";;
+       almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\nend";;
     
   let write_module ~fname ~body = 
     let open Core.Std.Unix in
