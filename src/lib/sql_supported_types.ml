@@ -5,6 +5,7 @@ module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 (*Types from mysql that are relatively more safely mapped to Ocaml*)
 module Types_we_emit = Types_we_emit.Types_we_emit
+module Utilities = Utilities.Utilities
 module Sql_supported_types = struct
   type t =
       TINYINT_UNSIGNED
@@ -57,13 +58,12 @@ module Sql_supported_types = struct
     match on but lacks the unsigned flag. The unsigned flag is disallowed if not in 
     combination with a numeric type in mysql, so we'll never see it here except with a 
     numeric type. *)
-  let of_col_type_and_flags ~data_type ~col_type =
+  let of_col_type_and_flags ~data_type ~col_type ~col_name =
     let open Core.Std in 
     let is_unsigned = String.is_substring col_type ~substring:"unsigned" in
-    let the_col_type s signed =
-      match signed, s with
-      | true, "tinyint" -> TINYINT_UNSIGNED
-      | false, "tinyint" -> TINYINT_BOOL 
+    let the_col_type ~is_unsigned ~data_type =
+      match is_unsigned, data_type with
+      | _, "tinyint" -> if String.is_substring col_name ~substring:"is_" then TINYINT_BOOL else TINYINT_UNSIGNED
       | true, "smallint" -> SMALLINT_UNSIGNED
       | true, "int" 
       | true, "integer" -> INTEGER_UNSIGNED
@@ -72,8 +72,8 @@ module Sql_supported_types = struct
       | false, "integer" -> INTEGER
       | false, "bigint" -> BIGINT
       | false, "decimal" 
-      | false, "float"
-      | false, "double" -> FLOAT
+      | _, "float"
+      | _, "double" -> FLOAT
       | false, "date" -> DATE 
       | false, "datetime" -> DATETIME
       | false, "timestamp" -> TIMESTAMP
@@ -82,11 +82,12 @@ module Sql_supported_types = struct
       | false, "varbinary"
       | false, "mediumtext" 
       | false, "varchar" -> VARCHAR
-      | _, _ -> UNSUPPORTED in
-    the_col_type data_type is_unsigned;;
+      | _, _ -> let () = Utilities.print_n_flush (String.concat [col_name;" with type ";col_type;" is not supported."])
+		in UNSUPPORTED in
+    the_col_type ~is_unsigned ~data_type;;
     
-  let one_step ~data_type ~col_type =
-    let supported_t = of_col_type_and_flags ~data_type ~col_type in
+  let one_step ~data_type ~col_type ~col_name =
+    let supported_t = of_col_type_and_flags ~data_type ~col_type ~col_name in
     let name_result = ml_type_of_supported_sql_type supported_t in
     if is_ok name_result then
       (fun x -> match x with

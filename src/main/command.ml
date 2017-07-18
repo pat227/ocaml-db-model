@@ -21,7 +21,6 @@ module Command = struct
 	 let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	 helper t map in
     helper keys fields_map;;
-	 
 
   let main_command =
     let open Core.Std.Command in
