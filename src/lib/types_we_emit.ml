@@ -26,22 +26,39 @@ module Types_we_emit = struct
 NOTE THAT Unfortunately there is no way to distinguish a field created with bool from a field created 
 with tinyint--except by some naming convention, which we do--otherwise bool wouldn't be supported at all.
 Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
-  let to_string t =
-    match t with
-    (*  Int -> "int"
-    | Int64 -> "int64"
-    | Int32 -> "int32"*)
-    | CoreInt64 -> "Core.Std.Int64.t"
-    | CoreInt32 -> "Core.Std.Int32.t"
-    | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
-    | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
-    | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
-    | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
-    | Float -> "Core.Std.Float.t"
-    | Date -> "Core.Std.Date.t"
-    | Time -> "Core.Std.Time.t"
-    | String -> "Core.Std.String.t"
-    | Bool -> "bool"
+  let to_string ~t ~is_nullable =
+    if is_nullable then
+      match t with
+      (*  Int -> "int"
+      | Int64 -> "int64"
+      | Int32 -> "int32"*)
+      | CoreInt64 -> "Core.Std.Int64.t option"
+      | CoreInt32 -> "Core.Std.Int32.t option"
+      | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
+      | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
+      | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
+      | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
+      | Float -> "Core.Std.Float.t option"
+      | Date -> "Core.Std.Date.t option"
+      | Time -> "Core.Std.Time.t option"
+      | String -> "string option"
+      | Bool -> "bool option"
+    else 
+      match t with
+      (*  Int -> "int"
+      | Int64 -> "int64"
+      | Int32 -> "int32"*)
+      | CoreInt64 -> "Core.Std.Int64.t"
+      | CoreInt32 -> "Core.Std.Int32.t"
+      | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
+      | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
+      | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
+      | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
+      | Float -> "Core.Std.Float.t"
+      | Date -> "Core.Std.Date.t"
+      | Time -> "Core.Std.Time.t"
+      | String -> "string"
+      | Bool -> "bool";;
 		
   (**
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
