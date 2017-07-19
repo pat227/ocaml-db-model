@@ -13,6 +13,6 @@ module Types_we_emit : sig
     | Bool
 	[@@deriving show]
 
-  val to_string : t -> string
+  val to_string : t:t -> is_nullable:bool -> string
   val converter_of_string_of_type : is_optional:bool -> t:t -> fieldname:string -> string
   end 

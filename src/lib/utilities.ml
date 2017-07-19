@@ -55,17 +55,18 @@ module Utilities = struct
     Int.to_string (Float.to_int (field *. 100.0));;
 
   (*===========parsers=============*)
-    
   let parse_boolean_field_exn ~field =
     match field with
-      "1" -> true
-    | "0" -> false
+      "1" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning true" in true
+    | "0" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning false" in false
     | "YES"
+    | "yes"
     | "true"
-    | "TRUE" -> true
-    | "NO" 
+    | "TRUE" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning true" in true
+    | "NO"
+    | "no"
     | "false" 
-    | "FALSE" -> false
+    | "FALSE" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning false" in false
     | _ -> raise (Failure "Utilities::parse_boolean_field unrecognized value")
     
   let parse_optional_boolean_field_exn ~field =
@@ -183,12 +184,12 @@ module Utilities = struct
   (*-----booleans------*)
   let parse_bool_field_exn ~fieldname ~results ~arrayofstring = 
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    parse_boolean_field_exn s;;
+    parse_boolean_field_exn ~field:s;;
 
   let parse_optional_bool_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let b = parse_boolean_field_exn s in Some b
+    | Some s -> let b = parse_boolean_field_exn ~field:s in Some b
     | None -> None;;
   (*----------------floats--------------*)
   let parse_float_field_exn ~fieldname ~results ~arrayofstring =

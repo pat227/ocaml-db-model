@@ -37,7 +37,7 @@ module Model = struct
 	     let col_type =
 	       Utilities.extract_field_as_string_exn ~fieldname:"column_type" ~results ~arrayofstring in 
 	     let is_nullable =
-	       Utilities.parse_bool_field_exn  ~fieldname:"is_nullable" ~results ~arrayofstring in 
+	       Utilities.parse_bool_field_exn ~fieldname:"is_nullable" ~results ~arrayofstring in 
 	     let is_primary_key =
 	       let is_pri = Utilities.extract_field_as_string_exn ~fieldname:"column_key" ~results ~arrayofstring in 
 	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
@@ -113,43 +113,33 @@ module Model = struct
   let construct_sql_query_function ~table_name ~map =
     let open Core.Std in 
     let preamble =
-      "  let get_from_db ~query =\n \
-       let open Mysql in \n \
-       let open Core.Std.Result in \n \
-       let open Core.Std in \n \
-       let conn = Utilities.get_conn in \n" in 
+      "  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Std.Result in \n    let open Core.Std in \n    let conn = Utilities.get_conn in" in 
     let helper_preamble =
-      "    let rec helper accum results nextrow = \n \
-       (match nextrow with \n \
-       | None -> Ok accum \n \
-       | Some arrayofstring ->\n \
-       try\n " in
+      "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
     let suffix =
       String.concat 
-	["    let queryresult = exec conn query in\n \
-	  let isSuccess = status conn in\n \
-	  match isSuccess with\n \
-	  | StatusEmpty ->  Ok []\n \
-	  | StatusError _ -> \n \
-	  let () = Utilities.print_n_flush (\"Error during query of table ";
-	 table_name;
-	 "...\n\") in\n \
-	  let () = Utililies.closecon conn in\n \
-	  Error \"get_from_db() Error in sql\"\n \
-	  | StatusOK -> let () = Utilities.print_n_flush \"\nQuery successful from ";
-	 table_name;
-	 "table.\" in helper [] queryresult (fetch queryresult);;"] in
-    let rec for_each_field flist accum =
+	["    let queryresult = exec conn query in\n    let isSuccess = status conn in\n    match isSuccess with\n    | StatusEmpty ->  Ok [] \n    | StatusError _ -> \n       let () = Utilities.print_n_flush (\"Error during query of table ";
+	 table_name;"...\") in\n       let () = Utililies.closecon conn in\n       Error \"get_from_db() Error in sql\"\n    | StatusOK -> \n       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n       helper [] queryresult (fetch queryresult);;"] in
+    let rec for_each_field ~flist ~accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
 	 let parser_function_call = Types_we_emit.converter_of_string_of_type
 				      ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
-	 let output = String.concat ["let ";h.col_name;" = ";parser_function_call;" in \n"] in
-	 for_each_field t (output::accum) in
-    let fields_list = Map.find_exn map table_name in 
+	 let output = String.concat ["            let ";h.col_name;" = ";parser_function_call;" in "] in
+	 for_each_field ~flist:t ~accum:(output::accum) in
+    let rec make_fields_create_line ~flist ~accum =
+      match flist with
+      | [] -> let fields = String.concat accum in
+	      String.concat ["            let new_t = Fields.create ";fields;" in "]
+      | h :: t ->
+	 let onef = String.concat ["~";h.col_name] in
+	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
+    let fields_list = Map.find_exn map table_name in
+    let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
+    let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
     let parser_lines = for_each_field fields_list [] in
-    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;suffix];;
+    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;recursive_call;"      )";"      with\n      | err ->";"         let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n         helper accum results (fetch results) in";suffix];;
       
   let construct_body ~table_name ~map ~ppx_decorators =
     let open Core.Std in 
@@ -169,7 +159,7 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let string_of_data_type = Types_we_emit.to_string h.data_type in 
+	 let string_of_data_type = Types_we_emit.to_string h.data_type h.is_nullable in 
 	 let tbody_new =
 	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	 helper t tbody_new in 
@@ -181,18 +171,14 @@ module Model = struct
       | [] -> almost_done ^ "end"
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n\n" in
+	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
       "  let tablename=\"" ^ table_name ^
-	"\" \n\n\
-	  let get_tablename () = tablename;;\n" in
+	"\" \n\n  let get_tablename () = tablename;;\n" in
     (*General purpose query...client code can create others*)
     let sql_query_function =
-      "  let get_sql_query () = \
-       let fs = Fields.names in \n \
-       let fs_csv = Core.Std.String.concat ~sep:',' fs in \n \ 
-       \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
+      "  let get_sql_query () = \n    let fs = Fields.names in \n    let fs_csv = Core.Std.String.concat ~sep:',' fs in \n    \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
     let query_function = construct_sql_query_function ~table_name ~map in 
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
@@ -215,7 +201,7 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let string_of_data_type = Types_we_emit.to_string h.data_type in 
+	 let string_of_data_type = Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	 let tbody_new = Core.Std.String.concat
 			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
 	 helper t tbody_new in 
