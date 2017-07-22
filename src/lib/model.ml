@@ -110,16 +110,17 @@ module Model = struct
      correct conversion function, and then use Fields.create to create a new record,
      add it to an accumulator, and finally return that accumulator after we have 
      exhausted all the records returned by the query.*)
-  let construct_sql_query_function ~table_name ~map =
+  let construct_sql_query_function ~table_name ~map ~host ~user ~password ~database =
     let open Core.Std in 
     let preamble =
-      "  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Std.Result in \n    let open Core.Std in \n    let conn = Utilities.get_conn in" in 
+      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Std.Result in \n    let open Core.Std in \n    let conn = Utilities.getcon ";
+		     "     ~host:\"";host;"\" ~user:\"";user;"\" ~password:\"";password;"\" ~database:\"";database;"\" in \n"] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
     let suffix =
       String.concat 
 	["    let queryresult = exec conn query in\n    let isSuccess = status conn in\n    match isSuccess with\n    | StatusEmpty ->  Ok [] \n    | StatusError _ -> \n       let () = Utilities.print_n_flush (\"Error during query of table ";
-	 table_name;"...\") in\n       let () = Utililies.closecon conn in\n       Error \"get_from_db() Error in sql\"\n    | StatusOK -> \n       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n       helper [] queryresult (fetch queryresult);;"] in
+	 table_name;"...\") in\n       let () = Utilities.closecon conn in\n       Error \"get_from_db() Error in sql\"\n    | StatusOK -> \n       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n       helper [] queryresult (fetch queryresult);;"] in
     let rec for_each_field ~flist ~accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
@@ -139,15 +140,22 @@ module Model = struct
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
     let parser_lines = for_each_field fields_list [] in
-    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;recursive_call;"      )";"      with\n      | err ->";"         let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n         helper accum results (fetch results) in";suffix];;
+    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;recursive_call;"          with\n          | err ->";"             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
       
-  let construct_body ~table_name ~map ~ppx_decorators =
+  let construct_body ~table_name ~map ~ppx_decorators ~host ~user ~password ~database =
     let open Core.Std in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
-    let start_module = "module " ^ module_name ^ " = struct \n" in 
+    let start_module = "module " ^ module_name ^ " = struct\n" in
+    let other_modules =
+      String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
+			       "module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp";
+			       "module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp";
+			       "module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp";
+			       "module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp";
+			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -165,7 +173,7 @@ module Model = struct
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done =
-      Core.Std.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
+      Core.Std.String.concat [other_modules;start_module;start_type_t;tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
       | [] -> almost_done ^ "end"
@@ -178,8 +186,8 @@ module Model = struct
 	"\" \n\n  let get_tablename () = tablename;;\n" in
     (*General purpose query...client code can create others*)
     let sql_query_function =
-      "  let get_sql_query () = \n    let fs = Fields.names in \n    let fs_csv = Core.Std.String.concat ~sep:',' fs in \n    \"SELECT \" ^ fs_csv ^ \"FROM \" ^ tablename ^ \" WHERE TRUE;;\"" in
-    let query_function = construct_sql_query_function ~table_name ~map in 
+      "  let get_sql_query () = \n    let open Core.Std in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
+    let query_function = construct_sql_query_function ~table_name ~map ~host ~user ~password ~database in 
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
 
@@ -207,11 +215,18 @@ module Model = struct
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
-    match ppx_decorators with
-    | [] -> almost_done ^ "end"
-    | h :: t ->
-       let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-       almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\nend";;
+    let with_ppx_decorators = 
+      match ppx_decorators with
+      | [] -> almost_done ^ "end"
+      | h :: t ->
+	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
+    let function_lines =
+      String.concat ~sep:"\n" ["  val get_tablename : unit -> string";
+			       "  val get_sql_query : unit -> string";
+			       "  val get_from_db : query:string -> (t list, string) Core.Std.Result.t";
+			      "end"] in
+    String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
     
   let write_module ~fname ~body = 
     let open Core.Std.Unix in
