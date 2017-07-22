@@ -17,7 +17,8 @@ module Model : sig
     table_name:Core.Std.String.Map.Key.t ->
     (t list Core.Std.String.Map.t, string) Core.Std.Result.t 
   val construct_body : table_name:string -> map:t list Core.Std.String.Map.t ->
-		       ppx_decorators:string list -> string
+		       ppx_decorators:string list -> host:string -> user:string ->
+		       password:string -> database:string -> string
   val construct_mli : table_name:string -> map:t list Core.Std.String.Map.t ->
 		      ppx_decorators:string list -> string
   val write_module : fname:string -> body:string -> unit
