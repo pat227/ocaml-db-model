@@ -2,7 +2,7 @@ module Utilities = Utilities.Utilities
 module Model = Model.Model
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core.Std
-module Command = struct
+module Ocaml_mysql_model = struct
 
   let execute host user password database () =
     let open Core.Std.Result in
@@ -25,9 +25,10 @@ module Command = struct
   let main_command =
     let open Core.Std.Command in
     Core.Std.Command.basic
-      ~summary:"Connect to a mysql db, get schema"
+      ~summary:"Connect to a mysql db, get schema, write modules and (primitive) types \
+		out of thin air with ppx extensions and a utility module for parsing mysql strings."
       ~readme: (fun () -> "README")
-      (*===TODO===add option for each ppx extension*)
+      (*===TODO===add option for each ppx extension?*)
       Core.Std.Command.Spec.(empty
 			     +> flag "-host" (required string) ~doc:"ip of the db host."
 			     +> flag "-user" (required string) ~doc:"db user."
