@@ -1,4 +1,4 @@
-PKG core mysql uint
+PKG core mysql uint pcre ppx_deriving ppx_deriving.show fieldslib ppx_fields_conv pcre
 S src/lib
 S src/main
 B build/src/lib

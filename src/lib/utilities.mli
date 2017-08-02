@@ -16,9 +16,9 @@ module Utilities : sig
   val serialize_optional_float_field_as_int : field:float option -> string
   val serialize_float_field_as_int : field:float -> string
 
-  val parse_boolean_field_exn : field:string -> bool
+  (*val parse_boolean_field_exn : field:string -> bool
   val parse_optional_boolean_field_exn : field:string option -> bool option
-							    
+   *)							    
   (*
   val parse_int64_field_exn : string -> Core.Std.Int64.t  
   val parse_int_field_exn : string option -> int
@@ -40,6 +40,13 @@ module Utilities : sig
   val parse_optional_int64_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Int64.t option
+  val parse_int32_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Core.Std.Int32.t
+  val parse_optional_int32_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Core.Std.Int32.t option
+  (*---uint 8,16,32,64----*)  
   val parse_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint8_w_sexp.t
@@ -64,28 +71,27 @@ module Utilities : sig
   val parse_optional_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint64_w_sexp.t option
-					   
+  (*---bool---*)					   
   val parse_bool_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> bool
   val parse_optional_bool_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> bool option
-
+  (*---float/double---*)
   val parse_float_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Float.t
   val parse_optional_float_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Float.t option
-
+  (*---date/time---*)
   val parse_date_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Date.t
   val parse_optional_date_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Date.t option
-
   val parse_time_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Std.Time.t
