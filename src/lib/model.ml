@@ -1,3 +1,4 @@
+module Pcre = Pcre
 module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
@@ -73,19 +74,34 @@ module Model = struct
     | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
-  let get_fields_map_for_all_tables ~conn ~schema =
+  let make_regexp s =
+    let open Core.Std in 
+    match s with
+    | Some sr -> let regexp = Pcre.regexp sr in Some regexp
+    | None -> None;;
+    
+  let parse_list s =
+    let open Core.Std in 
+    try
+      match s with
+      | Some sl -> let l = Core.Std.String.split sl ~on:',' in Some l
+      | None -> None
+    with
+    | _ -> None;;
+    
+  let get_fields_map_for_all_tables ~tables_filter ~conn ~schema =
     let open Core.Std in
     let open Core.Std.Result in 
     let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
+      let regexp_opt = make_regexp tables_filter in
+      let table_list_opt = parse_list tables_filter in 
       let rec helper ltables map =
-	match ltables with
-	| [] -> map
-	| h::t ->
-	   let fs_result = get_fields_for_given_table ~conn ~table_name:h.Table.table_name in
-	   if is_ok fs_result then
-	     let newmap = ok_or_failwith fs_result in
+	let update_map ~table_name =
+	  let fs_result = get_fields_for_given_table ~conn ~table_name in
+	  if is_ok fs_result then
+	    let newmap = ok_or_failwith fs_result in
 	     let combinedmaps =
 	       Map.merge
 		 map newmap
@@ -96,9 +112,33 @@ module Model = struct
 		  | `Right v2 -> Some v2
 		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
 		 ) in  
-	     helper t combinedmaps
-	   else	     
-	     helper t map in
+	     combinedmaps
+	  else  
+	    map in 
+	match ltables with
+	| [] -> map
+	| h::t ->
+	   (**---filter on regexp or list here, if present at all---*)
+	   (match tables_filter, regexp_opt, table_list_opt with
+	    | Some _, None, Some l ->
+	       if List.mem l h.Table.table_name then
+		 let newmap = update_map ~table_name:h.Table.table_name in
+		 helper t newmap
+	       else
+		 helper t map
+	    | Some _, Some r, None ->
+	       (try
+		   let _intarray = Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
+		   let newmap = update_map ~table_name:h.Table.table_name in
+		   helper t newmap
+		 with
+		 | _ -> helper t map
+	       )
+	    | Some _, _, _ -> raise (Failure "Provided regexp or table name list failed to parse.")
+	    | None, _, _ -> 
+	       let newmap = update_map ~table_name:h.Table.table_name in
+	       helper t newmap
+	   ) in
       helper tables String.Map.empty
     else
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
@@ -109,7 +149,8 @@ module Model = struct
      provided by Mysql under the same name, parse it into it's correct type using the
      correct conversion function, and then use Fields.create to create a new record,
      add it to an accumulator, and finally return that accumulator after we have 
-     exhausted all the records returned by the query.*)
+     exhausted all the records returned by the query. Cannot use long line continuation
+     backslashes here; screws up the formatting in the output.*)
   let construct_sql_query_function ~table_name ~map ~host ~user ~password ~database =
     let open Core.Std in 
     let preamble =
@@ -169,11 +210,13 @@ module Model = struct
       | h :: t ->
 	 let string_of_data_type = Types_we_emit.to_string h.data_type h.is_nullable in 
 	 let tbody_new =
-	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
+	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";
+				   string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done =
-      Core.Std.String.concat [other_modules;start_module;start_type_t;tbody;"\n";end_type_t] in
+      Core.Std.String.concat [other_modules;start_module;start_type_t;
+			      tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
       | [] -> almost_done ^ "end"
@@ -187,7 +230,8 @@ module Model = struct
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core.Std in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
-    let query_function = construct_sql_query_function ~table_name ~map ~host ~user ~password ~database in 
+    let query_function = construct_sql_query_function ~table_name ~map ~host
+						      ~user ~password ~database in 
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
 
@@ -209,7 +253,8 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 let string_of_data_type = Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
+	 let string_of_data_type =
+	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	 let tbody_new = Core.Std.String.concat
 			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
 	 helper t tbody_new in 

@@ -1,3 +1,4 @@
+module Pcre = Pcre
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Model : sig
@@ -10,8 +11,11 @@ module Model : sig
     is_nullable : bool;
     is_primary_key: bool;
   } [@@deriving show, fields]
-  val get_fields_map_for_all_tables : conn:Mysql.dbd -> schema:string ->
-				      t list Core.Std.String.Map.t 
+
+  val get_fields_map_for_all_tables :
+    tables_filter:string option ->
+    conn:Mysql.dbd -> schema:string ->
+    t list Core.Std.String.Map.t 
   val get_fields_for_given_table :
     ?conn:Mysql.dbd ->
     table_name:Core.Std.String.Map.Key.t ->

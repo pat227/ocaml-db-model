@@ -2,12 +2,12 @@ module Utilities = Utilities.Utilities
 module Model = Model.Model
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core.Std
-module Ocaml_mysql_model = struct
+module Command = struct
 
-  let execute host user password database () =
+  let execute tables_filter host user password database () =
     let open Core.Std.Result in
     let conn = Utilities.getcon ~host ~user ~password ~database in
-    let fields_map = Model.get_fields_map_for_all_tables ~conn ~schema:database in
+    let fields_map = Model.get_fields_map_for_all_tables ~tables_filter ~conn ~schema:database in
     let keys = Map.keys fields_map in 
     let rec helper klist map =
       match klist with
@@ -26,10 +26,14 @@ module Ocaml_mysql_model = struct
     let open Core.Std.Command in
     Core.Std.Command.basic
       ~summary:"Connect to a mysql db, get schema, write modules and (primitive) types \
-		out of thin air with ppx extensions and a utility module for parsing mysql strings."
+		out of thin air with ppx extensions and a utility module for parsing \
+		mysql strings into present directory. Use basic regexp, or a list, to filter table names."
       ~readme: (fun () -> "README")
-      (*===TODO===add option for each ppx extension?*)
+      (*add option for each ppx extension? Or just default all of them?*)
       Core.Std.Command.Spec.(empty
+			     +> flag "-tablesfilter" (optional string)
+				     ~doc:"Only model those tables that match a regexp \
+					   or csv-with-no-spaces table-name list."
 			     +> flag "-host" (required string) ~doc:"ip of the db host."
 			     +> flag "-user" (required string) ~doc:"db user."
 			     +> flag "-password" (required string) ~doc:"db password."
