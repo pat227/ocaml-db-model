@@ -6,21 +6,24 @@ module Command = struct
 
   let execute tables_filter host user password database () =
     let open Core.Std.Result in
-    let conn = Utilities.getcon ~host ~user ~password ~database in
-    let fields_map = Model.get_fields_map_for_all_tables ~tables_filter ~conn ~schema:database in
-    let keys = Map.keys fields_map in 
-    let rec helper klist map =
-      match klist with
-      | [] -> ()
-      | h::t ->
-	 let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
-	 let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
-	 let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	 let () = Model.write_module ~fname:(h ^ ".ml") ~body in
-	 let () = Model.write_module ~fname:(h ^ ".mli") ~body:mli in
-	 let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
-	 helper t map in
-    helper keys fields_map;;
+    try
+      let conn = Utilities.getcon ~host ~user ~password ~database in
+      let fields_map = Model.get_fields_map_for_all_tables ~tables_filter ~conn ~schema:database in
+      let keys = Map.keys fields_map in 
+      let rec helper klist map =
+	match klist with
+	| [] -> ()
+	| h::t ->
+	   let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
+	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
+	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
+	   let () = Model.write_module ~fname:(h ^ ".ml") ~body in
+	   let () = Model.write_module ~fname:(h ^ ".mli") ~body:mli in
+	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
+	   helper t map in
+      helper keys fields_map
+    with
+    | Failure s -> Utilities.print_n_flush s
 
   let main_command =
     let open Core.Std.Command in
