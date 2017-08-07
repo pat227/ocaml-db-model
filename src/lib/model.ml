@@ -77,14 +77,20 @@ module Model = struct
   let make_regexp s =
     let open Core.Std in 
     match s with
-    | Some sr -> let regexp = Pcre.regexp sr in Some regexp
+    | Some sr ->
+       let () = Utilities.print_n_flush ("make_regexp() from " ^ sr) in 
+       let regexp = Pcre.regexp sr in Some regexp
     | None -> None;;
     
   let parse_list s =
     let open Core.Std in 
     try
       match s with
-      | Some sl -> let l = Core.Std.String.split sl ~on:',' in Some l
+      | Some sl ->
+	 let () = Utilities.print_n_flush ("parse_list() from " ^ sl) in
+	 let l = Core.Std.String.split sl ~on:',' in
+	 let len = Core.Std.List.count l ~f:(fun x -> true) in
+	 if len > 1 then Some l else None
       | None -> None
     with
     | _ -> None;;
@@ -134,7 +140,15 @@ module Model = struct
 		 with
 		 | _ -> helper t map
 	       )
-	    | Some _, _, _ -> raise (Failure "Provided regexp or table name list failed to parse.")
+	    | Some _, Some r, Some l -> (*--presume regexp over list---*)
+	       (try
+		   let _intarray = Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
+		   let newmap = update_map ~table_name:h.Table.table_name in
+		   helper t newmap
+		 with
+		 | _ -> helper t map
+	       )
+	    | Some _, None, None -> raise (Failure "Provided regexp or table name list failed to parse.")
 	    | None, _, _ -> 
 	       let newmap = update_map ~table_name:h.Table.table_name in
 	       helper t newmap
