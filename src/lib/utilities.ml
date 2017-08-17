@@ -1,5 +1,6 @@
-(*===TODO===Need to make a verison of this file as part of the output so that we can
-share functions from here instead of repeating them, to allow easier refactoring, etc *)
+(*Note:Any project that uses this one to generate modules will need to reference 
+this file. OR we need to copy this file into the projects src/lib directory, 
+which has the advantage of allowing user to tinker with it.*)
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
@@ -19,7 +20,8 @@ module Utilities = struct
     quick_connect
       ~host ~database ~password ~user ();;
     
-  let getcon_defaults () = raise (Failure "Parameterless db connections no longer supported") 
+  let getcon_defaults () =
+    raise (Failure "Parameterless db connections no longer supported") 
     (*getcon ~host:"127.0.0.1" ~database:"test_model" ~password:"root" ~user:"root";;*)
     
   let closecon c = Mysql.disconnect c;;
@@ -57,16 +59,20 @@ module Utilities = struct
   (*===========parsers=============*)
   let parse_boolean_field_exn ~field =
     match field with
-      "1" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning true" in true
-    | "0" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning false" in false
+      "1" -> (*let () = print_n_flush 
+               "\nutilities::parse_boolean_field_exn() returning true" in*) true
+    | "0" -> (*let () = print_n_flush 
+               "\nutilities::parse_boolean_field_exn() returning false" in*) false
     | "YES"
     | "yes"
     | "true"
-    | "TRUE" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning true" in true
+    | "TRUE" -> (*let () = print_n_flush 
+                  "\nutilities::parse_boolean_field_exn() returning true" in*) true
     | "NO"
     | "no"
     | "false" 
-    | "FALSE" -> let () = print_n_flush "\nutilities::parse_boolean_field_exn() returning false" in false
+    | "FALSE" -> (*let () = print_n_flush 
+                   "\nutilities::parse_boolean_field_exn() returning false" in*) false
     | _ -> raise (Failure "Utilities::parse_boolean_field unrecognized value")
     
   let parse_optional_boolean_field_exn ~field =
@@ -88,10 +94,11 @@ module Utilities = struct
 	   (Mysql.column results
 			 ~key:fieldname ~row:arrayofstring))
     with
-    | _ -> let () = print_n_flush ("\nutilities.ml::extract_field_as_string_exn() failed. \
-				    most likely bad field name:" ^ fieldname) in
-	   raise (Failure "utilities.ml::extract_field_as_string_exn() failed. \
-			   most likely bad field name")
+    | _ ->
+       let () = print_n_flush ("\nutilities.ml::extract_field_as_string_exn() failed. \
+				most likely bad field name:" ^ fieldname) in
+       raise (Failure "utilities.ml::extract_field_as_string_exn() failed. \
+		       most likely bad field name")
 
   let extract_optional_field ~fieldname ~results ~arrayofstring =
     Mysql.column results ~key:fieldname ~row:arrayofstring;;
