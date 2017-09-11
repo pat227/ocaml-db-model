@@ -1,21 +1,26 @@
+The purpose of this project is to provide a convenient manner to
+"model" an existing database. This would be especially usefull if a database
+has a large number of tables and fields. This project seeks to provide a
+fast way to generate modules and types that match the tables and fields; thus
+sparing us from having to manually create modules and fields and assigning
+the correct types manually, which is more error-prone too.
 
-The purpose of this porject is to provide a convenient manner for devs to
-"model" a existing database. Especially usefull if the database has a
-large number of tables and fields, this project seeks to provide a fast way
-to generate modules and types that match the tables and fields. This spares
-the dev from having to manually create modules.
+This project does not use the conversion functions provided by ocaml-mysql, but
+instead does its own string parsing. Unlike ocaml-mysql, this project also rejects
+possible combinations of mysql data types and ocaml data types where clipping
+or overflow might be possible. Thanks so library support for 8,16,32, and 64 bit
+data types--both signed and unsigned--thankfully the only mysql numeric data type this
+project will reject is the 24-bit data type. Needless to say varchar
+clipping is unavoidable given a sufficiently large input string; perhaps we can
+come up with a string type in future that is aware of the field's max size. (You may in
+general wish to set your Mysql schema to strict mode to reject all out-of-range
+values on insert instead of clipping values to the max or min permissible
+endpoint value of the column's data type.)
 
-We do not use cppo. It does a good job in a Makefile of replacing
-defined constants, but we won't be able to pretty format when we replace
-a defined placeholder with a possibly very large type t. Otherwise would
-have been almost perfect. Instead just write files to disk.
+At present this project will output modules with some ppx extensions by default:
+fields, show, sexp, eq, and ord.
 
-You may wish to set your Mysql schema to strict mode to reject all out-of-range
-values on insert instead of clipping values to the max or min permissible endpoint
-value of the column's data type.
-
-
-------Command line options------
+----TODO----Command line options------
  -> Plain modules output - define modules each with a name matching that of
  a table in the schema and with a type t that is a record (a product type).
  Each component of each type t record bears the name of a field in the table
