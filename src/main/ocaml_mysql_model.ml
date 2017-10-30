@@ -4,11 +4,13 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core.Std
 module Command = struct
 
-  let execute tables_filter host user password database () =
+  let execute regexp_opt table_list_opt host user password database () =
     let open Core.Std.Result in
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
-      let fields_map = Model.get_fields_map_for_all_tables ~tables_filter ~conn ~schema:database in
+      let fields_map =
+	Model.get_fields_map_for_all_tables
+	  ~regexp_opt ~table_list_opt ~conn ~schema:database in
       let keys = Map.keys fields_map in 
       let rec helper klist map =
 	match klist with
@@ -17,11 +19,14 @@ module Command = struct
 	   let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	   let () = Model.write_module ~fname:(h ^ ".ml") ~body in
-	   let () = Model.write_module ~fname:(h ^ ".mli") ~body:mli in
+	   let () = Model.write_module ~fname:("src/lib/" ^ h ^ ".ml") ~body in
+	   let () = Model.write_module ~fname:("src/lib/" ^ h ^ ".mli") ~body:mli in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   helper t map in
       helper keys fields_map
+      (*--copy the utilities.ml(i) files into the project; do not depend on this 
+          project for building, and allow user to tweak the utilities file.--*)
+      
     with
     | Failure s -> Utilities.print_n_flush s
 
@@ -34,9 +39,10 @@ module Command = struct
       ~readme: (fun () -> "README")
       (*add option for each ppx extension? Or just default all of them?*)
       Core.Std.Command.Spec.(empty
-			     +> flag "-tablesfilter" (optional string)
-				     ~doc:"Only model those tables that match a regexp \
-					   or csv-with-no-spaces table-name list."
+			     +> flag "-table_regexp" (optional string)
+				     ~doc:"Only model those tables that match a regexp."
+			     +> flag "-table_list" (optional string)
+				     ~doc:"Csv-with-no-spaces table-name list"
 			     +> flag "-host" (required string) ~doc:"ip of the db host."
 			     +> flag "-user" (required string) ~doc:"db user."
 			     +> flag "-password" (required string) ~doc:"db password."

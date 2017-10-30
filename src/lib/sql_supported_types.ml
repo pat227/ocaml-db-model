@@ -8,7 +8,8 @@ module Types_we_emit = Types_we_emit.Types_we_emit
 module Utilities = Utilities.Utilities
 module Sql_supported_types = struct
   type t =
-      TINYINT_UNSIGNED
+      TINYINT
+    | TINYINT_UNSIGNED
     | TINYINT_BOOL
     | SMALLINT_UNSIGNED
     | INTEGER
@@ -32,7 +33,8 @@ module Sql_supported_types = struct
   (*--by default just use core int 64 type...*)
   let ml_type_of_supported_sql_type t =
     match t with
-      TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
+    | TINYINT -> Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
+    | TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
     | TINYINT_BOOL -> Ok Types_we_emit.Bool
     | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_w_sexp_t
     | INTEGER -> Ok Types_we_emit.CoreInt64

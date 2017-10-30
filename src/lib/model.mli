@@ -13,9 +13,8 @@ module Model : sig
   } [@@deriving show, fields]
 
   val get_fields_map_for_all_tables :
-    tables_filter:string option ->
-    conn:Mysql.dbd -> schema:string ->
-    t list Core.Std.String.Map.t 
+    regexp_opt:string option -> table_list_opt:string option ->
+    conn:Mysql.dbd -> schema:string -> t list Core.Std.String.Map.t 
   val get_fields_for_given_table :
     ?conn:Mysql.dbd ->
     table_name:Core.Std.String.Map.Key.t ->
