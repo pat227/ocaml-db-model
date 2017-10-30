@@ -7,7 +7,6 @@ clean:
 	rm -rvf build 
 
 lib: $(libdir)uint64_w_sexp.ml $(libdir)uint64_w_sexp.mli $(libdir)uint32_w_sexp.ml $(libdir)uint32_w_sexp.mli $(libdir)uint16_w_sexp.ml $(libdir)uint16_w_sexp.mli $(libdir)uint8_w_sexp.ml $(libdir)uint8_w_sexp.mli $(libdir)utilities.ml $(libdir)utilities.mli $(libdir)sql_supported_types.ml $(libdir)sql_supported_types.mli $(libdir)model.ml $(libdir)model.mli $(libdir)table.ml $(libdir)table.mli
-	ocamlbuild -classic-display -use-ocamlfind -j 1 -tag thread -tag principal -r -package 'core uint mysql ppx_deriving ppx_deriving.show fieldslib ppx_fields_conv pcre' -build-dir build -I src/lib -I src/main -I build/src/lib src/lib/uint8_w_sexp.cma
 	ocamlbuild -classic-display -use-ocamlfind -j 1 -tag thread -tag principal -r -package 'core uint mysql ppx_deriving ppx_deriving.show fieldslib ppx_fields_conv pcre' -build-dir build -I src/lib -I src/main -I build/src/lib src/lib/lib.cma
 
 ocaml_mysql_model: lib $(maindir)ocaml_mysql_model.ml

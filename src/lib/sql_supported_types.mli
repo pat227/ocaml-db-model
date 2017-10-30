@@ -1,7 +1,8 @@
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Sql_supported_types : sig 
   type t =
-      TINYINT_UNSIGNED
+    | TINYINT
+    | TINYINT_UNSIGNED
     | TINYINT_BOOL
     | SMALLINT_UNSIGNED
     | INTEGER

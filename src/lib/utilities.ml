@@ -59,20 +59,26 @@ module Utilities = struct
   (*===========parsers=============*)
   let parse_boolean_field_exn ~field =
     match field with
-      "1" -> (*let () = print_n_flush 
-               "\nutilities::parse_boolean_field_exn() returning true" in*) true
-    | "0" -> (*let () = print_n_flush 
-               "\nutilities::parse_boolean_field_exn() returning false" in*) false
-    | "YES"
-    | "yes"
-    | "true"
-    | "TRUE" -> (*let () = print_n_flush 
-                  "\nutilities::parse_boolean_field_exn() returning true" in*) true
-    | "NO"
-    | "no"
-    | "false" 
-    | "FALSE" -> (*let () = print_n_flush 
-                   "\nutilities::parse_boolean_field_exn() returning false" in*) false
+      "1" -> let () = print_n_flush 
+			"\nutilities::parse_boolean_field_exn() 1 returning true" in true
+    | "0" -> let () = print_n_flush 
+			"\nutilities::parse_boolean_field_exn() 0 returning false" in false
+    | "YES" -> let () = print_n_flush 
+			  "\nutilities::parse_boolean_field_exn() YES returning true" in true 
+    | "yes" -> let () = print_n_flush 
+			  "\nutilities::parse_boolean_field_exn() yes returning true" in true 
+    | "true" -> let () = print_n_flush 
+			   "\nutilities::parse_boolean_field_exn() true returning true" in true 
+    | "TRUE" -> let () = print_n_flush 
+			   "\nutilities::parse_boolean_field_exn() TRUE returning true" in true
+    | "NO" -> let () = print_n_flush 
+               "\nutilities::parse_boolean_field_exn() NO returning false" in false 
+    | "no" -> let () = print_n_flush 
+               "\nutilities::parse_boolean_field_exn() no returning false" in false 
+    | "false" -> let () = print_n_flush 
+               "\nutilities::parse_boolean_field_exn() false returning false" in false
+    | "FALSE" -> let () = print_n_flush 
+                   "\nutilities::parse_boolean_field_exn() FALSE returning false" in false
     | _ -> raise (Failure "Utilities::parse_boolean_field unrecognized value")
     
   let parse_optional_boolean_field_exn ~field =
