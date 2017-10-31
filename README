@@ -8,8 +8,8 @@ the correct types manually, which is more error-prone too.
 This project does not use the conversion functions provided by ocaml-mysql, but
 instead does its own string parsing. Unlike ocaml-mysql, this project also rejects
 possible combinations of mysql data types and ocaml data types where clipping
-or overflow might be possible. Thanks so library support for 8,16,32, and 64 bit
-data types--both signed and unsigned--thankfully the only mysql numeric data type this
+or overflow might be possible. Library support for signed and unsigned 8,16,32,
+and 64 bit data types is almost total. The only mysql numeric data type so far this
 project will reject is the 24-bit data type. Needless to say varchar
 clipping is unavoidable given a sufficiently large input string; perhaps we can
 come up with a string type in future that is aware of the field's max size. (You may in
@@ -21,6 +21,8 @@ At present this project will output modules with some ppx extensions by default:
 fields, show, sexp, eq, and ord.
 
 ----TODO----Command line options------
+ -> Provide a version without Core?
+ -> Support POSTGRES
  -> Plain modules output - define modules each with a name matching that of
  a table in the schema and with a type t that is a record (a product type).
  Each component of each type t record bears the name of a field in the table
@@ -65,14 +67,14 @@ For floating and fixed point types M is the maxnumber of digits that can be stor
 We use the uint package in opam that provides Ocaml with unsigned integer types, specifically
 8, 16, 32, and 64 bit unsigned integers. We also extend these to play nicely with ppx
 when desired. Since MySQl provides some integer types that don't map perfectly to any
-type in Ocaml--such as 24 bit medium integers--it is most wise to never use them--including but not limited to the medium integer mysql data type. 
+type in Ocaml--such as 24 bit medium integers--it is most wise to never use them--
+including but not limited to the medium integer mysql data type. 
 --------------------------------------------------------------------------------
-SERIAL is alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ...  -> uint64   (Ocaml-Mysql parses to and from signed Int64?)
+SERIAL is alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ...  ->
+  uint64   (Ocaml-Mysql parses to and from signed Int64?)
 Actually the information schema table shows int!?! 
 
 
-| BIT(M) -> The bit data type is used to store bit values of width M that is 1 to 64; we leave it
-  	    users to self-impose a maximum that matches their field width.
   TINY_INT (8 bit values) -> uint8 when unsigned, else unsupported
 | TINY_INT when field name has prefix is_ -> bool (can chose prefix on which to filter)
 
@@ -83,7 +85,7 @@ Actually the information schema table shows int!?!
   INT (32 bit values) -> 
 | INTEGER (32 bit values) -> Core.Std.Int32 when SIGNED, else uint32 when unsigned
 
-| BIGINT (63/64 bit values) -> Core.Std.Int64 when SIGNED, else uint64; NOTE that Mysql
+| BIGINT (64 bit values) -> Core.Std.Int64 when SIGNED, else uint64; NOTE that Mysql
                            only permits values of 63 bits at most--SO USE OCAML's 63 bit integer type?????
 			   Even UNSIGNED the limit is 63 bits; Mysql converts values to
 			   DOUBLE for arithmetic above 63 bits. Exact values can be stored in BigInt column
@@ -111,7 +113,8 @@ YEAR -> UNSUPPORTED
 
   BINARY
   VARBINARY
-  VARCHAR (variable length 0 - 65,535 stings) -> string (the only thing that could go wrong is the length of your string exceeds field width.
+  VARCHAR (variable length 0 - 65,535 stings) -> string (the only thing that could
+    go wrong is the length of your string exceeds field width.
  | BLOB -> string
 
    CHAR[M] where 0<=M<=255 -> unsupported
@@ -119,10 +122,15 @@ YEAR -> UNSUPPORTED
  | TINYTEXT
  | MEDIUM BLOB -> unsupported
 
-ENUM -> unsupported? We can get the permitted values and create a type that can be serialized to appropriate values? But it is bad practice to use enums with mysql, so I have heard anyway.
+ENUM -> unsupported? We can get the permitted values and create a type that can be
+  serialized to appropriate values? But it is bad practice to use enums with
+  mysql, so I have heard anyway.
 
-So far that's 12 ocaml data types from >12 mysql data types, and several more mysql data types unsupported in the name of type safety.
-If we create a type that lists all the combinations ... we get 12 * 2 (if field is nullable) * 2 (default values) = 48 possible combinations...to many to comfortable type. Just use a struct.
+So far that's 12 ocaml data types from >12 mysql data types, and several more
+mysql data types unsupported in the name of type safety.
+If we create a type that lists all the combinations ... we get 12 * 2 (if field
+is nullable) * 2 (default values) = 48 possible combinations...to many to
+comfortable type. Just use a struct.
 
 This is the map ocaml-mysq uses to map mysql types to ocaml-mysql types:
 static value
