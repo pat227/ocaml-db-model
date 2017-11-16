@@ -42,7 +42,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Float -> "Core.Std.Float.t option"
       | Date -> "Core.Std.Date.t option"
       | Time -> "Core.Std.Time.t option"
-      | String -> "string option"
+      | String -> "Core.Std.String.t option"
       | Bool -> "bool option"
     else 
       match t with
@@ -58,7 +58,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Float -> "Core.Std.Float.t"
       | Date -> "Core.Std.Date.t"
       | Time -> "Core.Std.Time.t"
-      | String -> "string"
+      | String -> "Core.Std.String.t"
       | Bool -> "bool";;
 		
   (**

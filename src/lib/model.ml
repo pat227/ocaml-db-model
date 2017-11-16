@@ -19,8 +19,9 @@ module Model = struct
     (*Only column_type gives us the acceptable values of an enum type if present, 
       unsigned; use the column_comment to input per field directives for ppx 
       extensions...way down the road, such as key or default for json ppx extension. 
-      For comapre ppx extension, set all fields to return zero EXCEPT for the 
-      primary key of table. This is also useful for Core Comparable interface.*)
+      In future for compare ppx extension, perhaps set all fields to return zero 
+      EXCEPT for the primary key of table? This is also useful for Core Comparable 
+      interface.*)
     let fields_query = "SELECT column_name, is_nullable, column_comment,
 			column_type, data_type, column_key, extra, column_comment FROM 
 			information_schema.columns 

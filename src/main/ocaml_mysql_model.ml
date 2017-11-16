@@ -16,7 +16,7 @@ module Command = struct
 	match klist with
 	| [] -> ()
 	| h::t ->
-	   let ppx_decorators = ["fields";"show";"sexp";"eq";"ord"] in 
+	   let ppx_decorators = ["fields";"show";"sexp";"eq";"ord";"yojson"] in 
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
 	   let () = Model.write_module ~fname:("src/lib/" ^ h ^ ".ml") ~body in

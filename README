@@ -5,20 +5,59 @@ fast way to generate modules and types that match the tables and fields; thus
 sparing us from having to manually create modules and fields and assigning
 the correct types manually, which is more error-prone too.
 
+By way of example:
+Let us presume we have a table Foo with the following fields and types:
+ A integer (signed 32 bit)
+ B bigint unsigned (unsigned 64-bit)
+ C varchar(of any length),
+ D timestamp
+ E date
+This project would output a module described in foo.ml and foo.mli like so (most of
+the data types are from Jane Street Core, some are customized):
+module Foo = struct
+  type t = {
+    A : Int32.t;
+    B : UInt64_w_sexp.t 
+    C : String.t;
+    D : Time.t;
+    E : Date.t
+  } [@@deriving fields,show,sexp,eq,ord,yojson]
+  ...
+end
+module Foo : sig
+  type t = {
+    A : Int32.t;
+    B : UInt64_w_sexp.t 
+    C : String.t;
+    D : Time.t;
+    E : Date.t
+  } [@@deriving fields,show,sexp,eq,ord,yojson]
+  ...
+end
+
+The output modules should be correct and ready to server as inputs to the ocaml compiler.
+If used with many tables or tables with many fields, this project should hopefully save
+somebody a lot of time. At present almost all the types are take from Jane Street's Core
+libraries and this project supports Mysql databases. Future support for Postgres and
+native ocaml types are contemplated.
+
+
 This project does not use the conversion functions provided by ocaml-mysql, but
 instead does its own string parsing. Unlike ocaml-mysql, this project also rejects
 possible combinations of mysql data types and ocaml data types where clipping
 or overflow might be possible. Library support for signed and unsigned 8,16,32,
 and 64 bit data types is almost total. The only mysql numeric data type so far this
 project will reject is the 24-bit data type. Needless to say varchar
-clipping is unavoidable given a sufficiently large input string; perhaps we can
-come up with a string type in future that is aware of the field's max size. (You may in
+clipping is unavoidable given a sufficiently large input string unless we perhaps
+come up with our own length-aware data type as a drop-in replacement. (You may in
 general wish to set your Mysql schema to strict mode to reject all out-of-range
 values on insert instead of clipping values to the max or min permissible
-endpoint value of the column's data type.)
+endpoint value of the column's data type.) While on the subject of clipping and
+datatypes, perhaps in future we can also create overflow-aware datatypes for
+additional safety when interoperating with a db.
 
 At present this project will output modules with some ppx extensions by default:
-fields, show, sexp, eq, and ord.
+fields, show, sexp, eq, ord, and yojson.
 
 ----TODO----Command line options------
  -> Provide a version without Core?
@@ -233,6 +272,4 @@ let ml2renum x  = real_escape x
 #define FIELD_TYPE_INTERVAL    MYSQL_TYPE_ENUM
 #define FIELD_TYPE_GEOMETRY    MYSQL_TYPE_GEOMETRY
 #define FIELD_TYPE_BIT         MYSQL_TYPE_BIT
-
-POSTGRES:
 
