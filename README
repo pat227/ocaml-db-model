@@ -1,9 +1,8 @@
 The purpose of this project is to provide a convenient manner to
-"model" an existing database. This would be especially usefull if a database
+"model" an existing database. This would be especially useful if a database
 has a large number of tables and fields. This project seeks to provide a
-fast way to generate modules and types that match the tables and fields; thus
-sparing us from having to manually create modules and fields and assigning
-the correct types manually, which is more error-prone too.
+fast way to generate modules and correct types that match the tables and fields,
+thus sparing us from having to manually create each and assign correct types.
 
 By way of example:
 Let us presume we have a table Foo with the following fields and types:
@@ -35,16 +34,17 @@ module Foo : sig
   ...
 end
 
-The output modules should be correct and ready to server as inputs to the ocaml compiler.
-If used with many tables or tables with many fields, this project should hopefully save
-somebody a lot of time. At present almost all the types are take from Jane Street's Core
-libraries and this project supports Mysql databases. Future support for Postgres and
-native ocaml types are contemplated.
-
+The modules created by this project as output should be correct and ready to serve
+as inputs to the Ocaml compiler. If used with many tables or tables with many
+fields, this project should hopefully save somebody a lot of time. At present
+almost all the types are take from Jane Street's Core libraries and this project
+supports Mysql databases. Future support for Postgres and native Ocaml types are
+contemplated. Each module would also include some support functions for queries
+and creating instances of type t from results of those queries from the same tables.
 
 This project does not use the conversion functions provided by ocaml-mysql, but
 instead does its own string parsing. Unlike ocaml-mysql, this project also rejects
-possible combinations of mysql data types and ocaml data types where clipping
+possible combinations of mysql data types and Ocaml data types where clipping
 or overflow might be possible. Library support for signed and unsigned 8,16,32,
 and 64 bit data types is almost total. The only mysql numeric data type so far this
 project will reject is the 24-bit data type. Needless to say varchar
@@ -53,8 +53,8 @@ come up with our own length-aware data type as a drop-in replacement. (You may i
 general wish to set your Mysql schema to strict mode to reject all out-of-range
 values on insert instead of clipping values to the max or min permissible
 endpoint value of the column's data type.) While on the subject of clipping and
-datatypes, perhaps in future we can also create overflow-aware datatypes for
-additional safety when interoperating with a db.
+data-types, perhaps in future we can also create overflow-aware data-types for
+additional safety when inter-operating with a db.
 
 At present this project will output modules with some ppx extensions by default:
 fields, show, sexp, eq, ord, and yojson.
@@ -66,10 +66,10 @@ fields, show, sexp, eq, ord, and yojson.
  a table in the schema and with a type t that is a record (a product type).
  Each component of each type t record bears the name of a field in the table
  for which the module is named. The type of each component matches that of
- it's corresponding field as closely as possible. Nullable fields must be
+ it's corresponding field as closely as possible. Null-able fields must be
  optional. An mli is also created. No functions are defined. Types that are
  not supported are prohibited, such as 24-bit integer types for which
- we have no matching type in Ocaml. Some unsigned types ar supported. See below
+ we have no matching type in Ocaml. Some unsigned types are supported. See below
  for full details on which types are supported. 
 
  -> with ppx decoration - modules are written with ppx extensions. Supported
@@ -80,7 +80,7 @@ fields, show, sexp, eq, ord, and yojson.
  conn:Mysql.dbd -> query:string -> (t list, string) Core.Std.Result.t
  This function is named get_from_db and requires that any field not of type
  string be parsed in an appropriate manner, such as for integers of several
- supported types, dates, timestamps, etc. Errors must be caught. No other
+ supported types, dates, time-stamps, etc. Errors must be caught. No other
  types are supported--yet--such as a field whose type is defined as another
  module.
 
@@ -89,7 +89,7 @@ fields, show, sexp, eq, ord, and yojson.
    are always optional. Mysql permits null as a value on insert for fields of
    type Serial and by default will use an auto-incremented next sequence value.
    Instances of any type that includes a field that is of type Serial in the
-   db can enjoy a None value of this field if created at runtime and later
+   db can enjoy a None value of this field if created at run-time and later
    inserted into the db. Note that if the Serial field is NOT declared with
    NOT NULL, then inserts that include a null will actually insert a null,
    not an auto-incremented next in sequence value; so don't do that unless
@@ -101,7 +101,7 @@ fields, show, sexp, eq, ord, and yojson.
 MYSQL:
 
 NOTE: M is the max display width for int types and unrelated to the range of values a type can contain.
-For floating and fixed point types M is the maxnumber of digits that can be stored.
+For floating and fixed point types M is the max-number of digits that can be stored.
 
 We use the uint package in opam that provides Ocaml with unsigned integer types, specifically
 8, 16, 32, and 64 bit unsigned integers. We also extend these to play nicely with ppx
@@ -129,7 +129,7 @@ Actually the information schema table shows int!?!
 			   Even UNSIGNED the limit is 63 bits; Mysql converts values to
 			   DOUBLE for arithmetic above 63 bits. Exact values can be stored in BigInt column
 			   by using a string else Mysql does a conversion step using Double that can
-			   create rouding errors; a strint-to-number conversion involves no such intermediate
+			   create rouding errors; a string-to-number conversion involves no such intermediate
 			   step using the Double type.
    DECIMAL
    DEC
@@ -165,7 +165,7 @@ ENUM -> unsupported? We can get the permitted values and create a type that can 
   serialized to appropriate values? But it is bad practice to use enums with
   mysql, so I have heard anyway.
 
-So far that's 12 ocaml data types from >12 mysql data types, and several more
+So far that's 12 Ocaml data types from >12 mysql data types, and several more
 mysql data types unsupported in the name of type safety.
 If we create a type that lists all the combinations ... we get 12 * 2 (if field
 is nullable) * 2 (default values) = 48 possible combinations...to many to
