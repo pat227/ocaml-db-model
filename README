@@ -8,28 +8,31 @@ By way of example:
 Let us presume we have a table Foo with the following fields and types:
  A integer (signed 32 bit)
  B bigint unsigned (unsigned 64-bit)
- C varchar(of any length),
+ C varchar(of any length)
  D timestamp
  E date
+ F nullable int
 This project would output a module described in foo.ml and foo.mli like so (most of
 the data types are from Jane Street Core, some are customized):
 module Foo = struct
   type t = {
     A : Int32.t;
-    B : UInt64_w_sexp.t 
+    B : UInt64_w_sexp.t;
     C : String.t;
     D : Time.t;
-    E : Date.t
+    E : Date.t;
+    F : Int64.t option
   } [@@deriving fields,show,sexp,eq,ord,yojson]
   ...
 end
 module Foo : sig
   type t = {
     A : Int32.t;
-    B : UInt64_w_sexp.t 
+    B : UInt64_w_sexp.t;
     C : String.t;
     D : Time.t;
-    E : Date.t
+    E : Date.t;
+    F : Int64.t option
   } [@@deriving fields,show,sexp,eq,ord,yojson]
   ...
 end
