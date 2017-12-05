@@ -9,8 +9,8 @@ module Table = struct
    
   let get_tables ?conn ~schema =
     let open Mysql in
-    let open Core.Std in
-    let open Core.Std.Result in 
+    let open Core in
+    let open Core.Result in 
     let table_query ~schema =
       "SELECT table_name, table_schema, table_type, engine FROM 
        information_schema.tables WHERE table_schema='" ^ schema ^ "';" in

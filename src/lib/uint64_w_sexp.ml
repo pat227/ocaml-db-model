@@ -9,7 +9,7 @@ module Uint64_w_sexp = struct
   let sexp_of_t t =
     let a x = Sexp.Atom x and
 	l x = Sexp.List x in
-    l [ a "uint64.t"; (Core.Std.String.sexp_of_t (Uint64.to_string t))];;
+    l [ a "uint64.t"; (Core.String.sexp_of_t (Uint64.to_string t))];;
       
   let t_of_sexp se =
     let s = Sexp.to_string se in
@@ -20,7 +20,7 @@ module Uint64_w_sexp = struct
       | _ -> parse_list s (i+1)
     and parse_list s i =
       let eoft = findend s (i+1) in
-      let stype = Core.Std.String.sub s ~pos:i ~len:8 in
+      let stype = Core.String.sub s ~pos:i ~len:8 in
       match stype with
       | "uint64.t" -> parse_uint64t s (i+9) eoft
       | _ -> failwith ("Unexpected type (expecting uint64.t; found " ^ s ^ ")")
@@ -30,11 +30,11 @@ module Uint64_w_sexp = struct
       | _ -> findend s (i+1)
     and parse_uint64t s i j =
       try
-	let s = Core.Std.String.sub s ~pos:i ~len:(j-i) in
+	let s = Core.String.sub s ~pos:i ~len:(j-i) in
 	Uint64.of_string s
       with _ -> failwith ("Failed to parse:" ^ s ^"; pos:" ^
-			    (Core.Std.Int.to_string i) ^ "len:" ^
-			      (Core.Std.Int.to_string j))
+			    (Core.Int.to_string i) ^ "len:" ^
+			      (Core.Int.to_string j))
     in
     parse s 0;;
 

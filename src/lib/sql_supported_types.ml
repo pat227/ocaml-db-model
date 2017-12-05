@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
@@ -61,7 +61,7 @@ module Sql_supported_types = struct
     combination with a numeric type in mysql, so we'll never see it here except with a 
     numeric type. *)
   let of_col_type_and_flags ~data_type ~col_type ~col_name =
-    let open Core.Std in 
+    let open Core in 
     let is_unsigned = String.is_substring col_type ~substring:"unsigned" in
     let the_col_type ~is_unsigned ~data_type =
       match is_unsigned, data_type with

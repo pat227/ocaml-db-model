@@ -6,12 +6,12 @@ module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
 module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
 module Mysql = Mysql
-open Core.Std
+open Core
 module Utilities = struct
 
-  let oc = Core.Std.Out_channel.stdout;;    
+  let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
-    let open Core.Std in 
+    let open Core in 
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
 
@@ -26,10 +26,10 @@ module Utilities = struct
     
   let closecon c = Mysql.disconnect c;;
 
-  let oc = Core.Std.Out_channel.stdout;;    
+  let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
-    Core.Std.Out_channel.output_string oc s;
-    Core.Std.Out_channel.flush oc;;
+    Core.Out_channel.output_string oc s;
+    Core.Out_channel.flush oc;;
 
   let serialize_optional_field ~field ~conn =
     match field with
@@ -48,12 +48,12 @@ module Utilities = struct
     | None -> "NULL"
     | Some b -> if b then "TRUE" else "FALSE";;
   let serialize_optional_float_field_as_int ~field =
-    let open Core.Std in 
+    let open Core in 
     match field with
     | Some f -> Int.to_string (Float.to_int (f *. 100.0))
     | None -> "NULL";;
   let serialize_float_field_as_int ~field =
-    let open Core.Std in 
+    let open Core in 
     Int.to_string (Float.to_int (field *. 100.0));;
 
   (*===========parsers=============*)
@@ -123,7 +123,7 @@ module Utilities = struct
   let parse_int64_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core.Std.Int64.of_string s
+      Core.Int64.of_string s
     with err ->
 	 let () = print_n_flush "\nutilities::parse_int64_field_exn() failed" in
 	 raise err;;
@@ -131,7 +131,7 @@ module Utilities = struct
   let parse_int32_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core.Std.Int32.of_string s
+      Core.Int32.of_string s
     with err ->
       let () = print_n_flush "\nutilities::parse_int32_field_exn() failed" in
       raise err;;
@@ -207,32 +207,32 @@ module Utilities = struct
   (*----------------floats--------------*)
   let parse_float_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Core.Std.Float.of_string s;;
+    Core.Float.of_string s;;
 
   let parse_optional_float_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let f = Core.Std.Float.of_string s in Some f
+    | Some s -> let f = Core.Float.of_string s in Some f
     | None -> None;;
   (*----------------date and time--------------*)
   let parse_date_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core.Std.Date.of_string s;;
+    Core.Date.of_string s;;
 
   let parse_optional_date_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core.Std.Date.of_string s in Some dt
+    | Some s -> let dt = Core.Date.of_string s in Some dt
     | None -> None;;
 
   let parse_time_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core.Std.Time.of_string s;;
+    Core.Time.of_string s;;
 
   let parse_optional_time_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core.Std.Time.of_string s in Some dt
+    | Some s -> let dt = Core.Time.of_string s in Some dt
     | None -> None;;
 
 end
