@@ -320,11 +320,19 @@ module Model = struct
 	 "  val get_from_db : query:string -> (t list, string) Core.Std.Result.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
-    
-  let write_module ~fname ~body = 
+
+  (*Intention is for invokcation from root dir of a project from Make file. 
+    In which case current directory sits atop src and build subdirs.*)
+  let write_module ~outputdir ~fname ~body = 
     let open Core.Std.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
+    let check_or_create_dir ~dir =
+      try 
+	let _stats = stat dir in ()	
+      with _ ->
+	mkdir ~perm:0o644 dir in
     try
+      let () = check_of_create_dir ~dir:outputdir in 
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
