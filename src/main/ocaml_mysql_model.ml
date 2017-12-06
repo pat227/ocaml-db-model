@@ -4,7 +4,7 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core
 module Command = struct
 
-  let execute regexp_opt table_list_opt host user password database () =
+  let execute regexp_opt table_list_opt ppxlist_opt host user password database () =
     let open Core.Result in
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
@@ -16,12 +16,17 @@ module Command = struct
 	match klist with
 	| [] -> ()
 	| h::t ->
-	   let ppx_decorators = ["fields";"show";"sexp";"eq";"ord";"yojson"] in 
-	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
+	   let ppx_decorators = ppxlist_opt in 
+	   let body =
+	     Model.construct_body
+	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
-	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:mli in
+	   let () = Model.write_module
+		      ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
+	   let () = Model.write_module
+		      ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:mli in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
+	   let () = Model.copy_utilities ~destinationdir:"src/tables" in 
 	   helper t map in
       helper keys fields_map
       (*--copy the utilities.ml(i) files into the project; do not depend on this 
@@ -33,22 +38,26 @@ module Command = struct
   let main_command =
     let open Core.Command in
     Core.Command.basic
-      ~summary:"Connect to a mysql db, get schema, write modules and (primitive) types \
-		out of thin air with ppx extensions and a utility module for parsing \
-		mysql strings into present directory. Use basic regexp, or a list, to filter table names."
+      ~summary:"Connect to a mysql db, get schema, write modules and (primitive) \
+		types out of thin air with ppx extensions and a utility module  \
+		for parsing mysql strings into present directory. Use basic \
+		regexp, or a list, to filter table names."
       ~readme: (fun () -> "README")
       (*add option for each ppx extension? Or just default all of them?*)
       Core.Command.Spec.(empty
-			     +> flag "-table_regexp" (optional string)
-				     ~doc:"Only model those tables that match a regexp."
-			     +> flag "-table_list" (optional string)
-				     ~doc:"Csv-with-no-spaces table-name list"
-			     +> flag "-host" (required string) ~doc:"ip of the db host."
-			     +> flag "-user" (required string) ~doc:"db user."
-			     +> flag "-password" (required string) ~doc:"db password."
-			     +> flag "-db" (required string) ~doc:"db name."
-			    ) execute;;
-
+			 +> flag "-table_regexp" (optional string)
+				 ~doc:"Only model those tables that match a regexp."
+			 +> flag "-table_list" (optional string)
+				 ~doc:"Csv-with-no-spaces table-name list"
+			 +> flag "-ppx_extensions" (optional string) 
+				 ~doc:"Comma seperated list of ppx extensions, such as yojson, show,\
+				       eq, ord, etc." 
+			 +> flag "-host" (required string) ~doc:"ip of the db host."
+			 +> flag "-user" (required string) ~doc:"db user."
+			 +> flag "-password" (required string) ~doc:"db password."
+			 +> flag "-db" (required string) ~doc:"db name."
+			) execute;;
+    
   let () =
     let open Core.Command in
     run ~version:"0.1" main_command;;

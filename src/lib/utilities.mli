@@ -8,6 +8,8 @@ module Utilities : sig
   val getcon_defaults : unit -> Mysql.dbd
   val closecon : Mysql.dbd ->  unit
   val print_n_flush : string -> unit
+  val parse_list : string option -> string list option
+
   val serialize_optional_field : field:string option -> conn:Mysql.dbd -> string
   val serialize_optional_field_with_default :
     field:string option -> conn:Mysql.dbd -> default:string -> string

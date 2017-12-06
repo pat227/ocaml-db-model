@@ -20,10 +20,10 @@ module Model : sig
     table_name:Core.String.Map.Key.t ->
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t ->
-		       ppx_decorators:string list -> host:string -> user:string ->
+		       ppx_decorators:string option -> host:string -> user:string ->
 		       password:string -> database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
-		      ppx_decorators:string list -> string
+		      ppx_decorators:string option -> string
   val write_module : outputdir:string -> fname:string -> body:string -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
   val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)

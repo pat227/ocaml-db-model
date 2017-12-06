@@ -97,33 +97,13 @@ module Model = struct
        )
     | None -> None;;
     
-  let parse_list s =
-    let open Core in 
-    try
-      match s with
-      | Some sl ->
-	 (try
-	     let () = Utilities.print_n_flush ("parse_list() from " ^ sl) in
-	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.count l ~f:(fun x -> true) in
-	     if len > 1 then Some l else None
-	   with
-	   | err ->
-	      let () = Utilities.print_n_flush
-			 "\nFailed parsing table name list..." in
-	      raise err
-	 )
-      | None -> None
-    with
-    | _ -> None;;
-    
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
     let open Core.Result in 
     let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
       let regexp_opt = make_regexp regexp_opt in
-      let table_list_opt = parse_list table_list_opt in 
+      let table_list_opt = Utilities.parse_list table_list_opt in 
       let rec helper ltables map =
 	let update_map ~table_name =
 	  let fs_result = get_fields_for_given_table ~conn ~table_name in
@@ -232,6 +212,11 @@ module Model = struct
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
+    let ppx_decorators_list =
+      if Option.is_some ppx_decorators then 
+	Option.value_exn (Utilities.parse_list ppx_decorators)
+      else
+	[] in 
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
@@ -263,10 +248,10 @@ module Model = struct
       Core.String.concat [other_modules;start_module;start_type_t;
 			      tbody;"\n";end_type_t] in
     let finished_type_t =
-      match ppx_decorators with
+      match ppx_decorators_list with
       | [] -> almost_done ^ "end"
       | h :: t ->
-	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
 	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
@@ -284,6 +269,15 @@ module Model = struct
     let open Core in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
+    (*at very least, fail if supplied csv list of ppx decorators is gibberish and 
+      not a csv list  ===TODO===check that each is a true ppx extension, emit 
+      warning if not. Still better than optional flags at command line, one for
+      every possible ppx extension known and unknown in the future. *)
+    let ppx_decorators_list =
+      if Option.is_some ppx_decorators then 
+	Option.value_exn (Utilities.parse_list ppx_decorators)
+      else
+	[] in 
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " : sig \n" in 
@@ -305,11 +299,11 @@ module Model = struct
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
-    let with_ppx_decorators = 
-      match ppx_decorators with
+    let with_ppx_decorators =
+      match ppx_decorators_list with
       | [] -> almost_done ^ "end"
       | h :: t ->
-	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
+	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
       String.concat
@@ -341,7 +335,8 @@ module Model = struct
     let open Core in 
     let open Core.Unix in
     (*--how to specify the (opam install) path to utilities.ml?---*)
-    let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in
+    (*let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in*)
+    let r = system "pwd" in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush result in 
     match r with

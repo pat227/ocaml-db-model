@@ -31,6 +31,28 @@ module Utilities = struct
     Core.Out_channel.output_string oc s;
     Core.Out_channel.flush oc;;
 
+  let parse_list s =
+    let open Core in 
+    try
+      match s with
+      | Some sl ->
+	 (try
+	     let () = print_n_flush ("parse_list() from " ^ sl) in
+	     let l = Core.String.split sl ~on:',' in
+	     let len = Core.List.count l ~f:(fun x -> true) in
+	     if len > 1 then Some l else None
+	   with
+	   | err ->
+	      let () = print_n_flush
+			 "\nFailed parsing table name list..." in
+	      raise err
+	 )
+      | None -> None
+    with
+    | _ -> None;;
+
+
+    
   let serialize_optional_field ~field ~conn =
     match field with
     | None -> "NULL"
