@@ -104,4 +104,38 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Time -> String.concat ["Utilities.parse_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Time -> String.concat ["Utilities.parse_optional_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+
+  let to_string_for_sequoia ~t ~is_nullable =
+    if is_nullable then
+      match t with
+      (*  Int -> "int"
+      | Int64 -> "int64"
+      | Int32 -> "int32"*)
+      | CoreInt64  
+      | CoreInt32 -> "Null.int"
+      | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
+      | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
+      | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
+      | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
+      | Float -> "Core.Float.t option"
+      | Date -> "Core.Date.t option"
+      | Time -> "Core.Time.t option"
+      | String -> "Core.String.t option"
+      | Bool -> "bool option"
+    else 
+      match t with
+      (*  Int -> "int"
+      | Int64 -> "int64"
+      | Int32 -> "int32"*)
+      | CoreInt64 
+      | CoreInt32 -> "Field.int"
+      | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
+      | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
+      | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
+      | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
+      | Float -> "Core.Float.t"
+      | Date -> "Core.Date.t"
+      | Time -> "Core.Time.t"
+      | String -> "Core.String.t"
+      | Bool -> "bool";;
 end 

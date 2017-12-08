@@ -4,7 +4,7 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core
 module Command = struct
 
-  let execute regexp_opt table_list_opt ppxlist_opt host user password database () =
+  let execute regexp_opt table_list_opt ppxlist_opt sequoia host user password database () =
     let open Core.Result in
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
@@ -21,6 +21,8 @@ module Command = struct
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
+	   (*let seq_module = if sequoia then
+			      Model.construct_sequoia_module ~table_name:h ~map*)
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
 	   let () = Model.write_module
@@ -50,9 +52,13 @@ module Command = struct
 			 +> flag "-table_list" (optional string)
 				 ~doc:"Csv-with-no-spaces table-name list"
 			 +> flag "-ppx_extensions" (optional string) 
-				 ~doc:"Comma seperated list of ppx extensions, such as yojson, show,\
-				       eq, ord, etc." 
-			 +> flag "-host" (required string) ~doc:"ip of the db host."
+				 ~doc:"Comma seperated list of ppx extensions, \
+				       such as yojson, show, eq, ord, etc."
+			 +> flag "-sequoia" (optional flag)
+				 ~doc:"Support for sequoia: optionally output \
+				       modules suitable for use with the Sequoia\
+				       library."
+			 +> flag "-host" (required string) ~doc:"ipv4 of the db host."
 			 +> flag "-user" (required string) ~doc:"db user."
 			 +> flag "-password" (required string) ~doc:"db password."
 			 +> flag "-db" (required string) ~doc:"db name."

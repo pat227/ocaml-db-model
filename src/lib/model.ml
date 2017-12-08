@@ -342,5 +342,33 @@ module Model = struct
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
+
+  let construct_one_sequoia_struct ~table_name ~map ~host ~user ~password ~database =
+    let open Core in 
+    let module_first_char = String.get table_name 0 in
+    let uppercased_first_char = Char.uppercase module_first_char in
+    let module_name = String.copy table_name in
+    let () = String.set module_name 0 uppercased_first_char in 
+    let start_module = "module " ^ module_name ^ " = struct\n" in
+    let include_line = String.concat ["include (val Mysql.table \"";table_name;"\")"] in 
+    (*Supply only keys that exist else find_exn will fail.*)
+    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list = List.rev tfields_list_reversed in 
+    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
+					(Int.to_string (List.length tfields_list))) in
+    (*create list of lines, each is a let statement per field, with a type found in Sequoia's field.mli*)
+    let rec helper l tbody =
+      match l with
+      | [] -> tbody
+      | h :: t ->
+	 (*==TODO==support foreign keys===right here in concat somehow*)
+	 let string_of_data_type =
+	   Types_we_emit.to_string h.data_type h.is_nullable in 
+	 let tbody_new =
+	   Core.String.concat [tbody;"\n    let ";h.col_name;" = ";
+				   string_of_data_type;" ";h.col_name] in
+	 helper t tbody_new in 
+    let tbody = helper tfields_list "" in
+    Core.String.concat [start_module;tbody;"\n";"end"];;        
        
 end
