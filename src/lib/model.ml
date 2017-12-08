@@ -19,8 +19,9 @@ module Model = struct
     (*Only column_type gives us the acceptable values of an enum type if present, 
       unsigned; use the column_comment to input per field directives for ppx 
       extensions...way down the road, such as key or default for json ppx extension. 
-      For comapre ppx extension, set all fields to return zero EXCEPT for the 
-      primary key of table. This is also useful for Core Comparable interface.*)
+      In future for compare ppx extension, perhaps set all fields to return zero 
+      EXCEPT for the primary key of table? This is also useful for Core Comparable 
+      interface.*)
     let fields_query = "SELECT column_name, is_nullable, column_comment,
 			column_type, data_type, column_key, extra, column_comment FROM 
 			information_schema.columns 
@@ -319,11 +320,19 @@ module Model = struct
 	 "  val get_from_db : query:string -> (t list, string) Core.Std.Result.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
-    
-  let write_module ~fname ~body = 
+
+  (*Intention is for invokcation from root dir of a project from Make file. 
+    In which case current directory sits atop src and build subdirs.*)
+  let write_module ~outputdir ~fname ~body = 
     let open Core.Std.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
+    let check_or_create_dir ~dir =
+      try 
+	let _stats = stat dir in ()	
+      with _ ->
+	mkdir ~perm:0o644 dir in
     try
+      let () = check_of_create_dir ~dir:outputdir in 
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
