@@ -14,15 +14,18 @@ module Command = struct
       let keys = Map.keys fields_map in 
       let rec helper klist map =
 	match klist with
-	| [] -> ()
+	| [] -> Utilities.closecon conn
 	| h::t ->
 	   let ppx_decorators = ppxlist_opt in 
 	   let body =
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	   (*let seq_module = if sequoia then
-			      Model.construct_sequoia_module ~table_name:h ~map*)
+	   let seq_module = if sequoia then
+			      Some (Model.construct_one_sequoia_struct ~conn ~table_name:h ~map)
+			    else
+			      None 
+	   in 
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
 	   let () = Model.write_module
@@ -54,7 +57,7 @@ module Command = struct
 			 +> flag "-ppx_extensions" (optional string) 
 				 ~doc:"Comma seperated list of ppx extensions, \
 				       such as yojson, show, eq, ord, etc."
-			 +> flag "-sequoia" (optional flag)
+			 +> flag "-sequoia" (no_arg)
 				 ~doc:"Support for sequoia: optionally output \
 				       modules suitable for use with the Sequoia\
 				       library."

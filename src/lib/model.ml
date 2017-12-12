@@ -4,6 +4,9 @@ module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Mysql = Mysql
+(*module String_set = Core.Set.Make(Core.String)*)
+open Sexplib.Std
+open Sexplib
 module Model = struct
   type t = {
     col_name : string; 
@@ -12,6 +15,73 @@ module Model = struct
     is_nullable : bool;
     is_primary_key : bool;
   } [@@deriving show, fields]
+    
+  (*we only need this submodule to get foreign keys*)
+  module Sequoia_support = struct
+    module T = struct  
+      type t = {
+	col : string;
+	table : string;
+	referenced_table : string;
+	referenced_field : string;
+      } [@@deriving eq, ord, show, fields, sexp]
+    end
+    include T
+    module Tset = Core.Set.Make(T)
+    let get_any_foreign_key_references ?conn ~table_name = 
+      (*work this into sequoia support...only way to discover foreign keys on a table*)
+      let query_foreign_keys ~table_name =
+	"SELECT CONSTRAINT_CATALOG, CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_CATALOG,
+	 TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, POSITION_IN_UNIQUE_CONSTRAINT,
+	 REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM 
+	 information_schema.key_column_usage WHERE table_name ='" ^
+	  table_name ^
+	    "' WHERE REFERENCED_TABLE_SCHEMA IS NOT NULL AND REFERENCED_TABLE_NAME 
+	     IS NOT NULL AND REFERENCED_COLUMN_NAME IS NOT NULL;" in
+      let query = query_foreign_keys ~table_name in  
+      let rec helper accum results nextrow =
+	(match nextrow with
+	 | None -> Ok accum
+	 | Some arrayofstring ->
+	    try
+	      (let col_name =
+		 Utilities.extract_field_as_string_exn
+		   ~fieldname:"column_name" ~results ~arrayofstring in	       
+	       let referenced_table =
+		 Utilities.extract_field_as_string_exn
+		   ~fieldname:"referenced_table_name" ~results ~arrayofstring in 
+	       let referenced_field =
+		 Utilities.extract_field_as_string_exn
+		   ~fieldname:"referenced_column_name" ~results ~arrayofstring in 
+	       let new_fkey_record =
+		 Fields.create
+		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
+	       let newset = Tset.add accum new_fkey_record in 
+	       helper newset results (Mysql.fetch results)
+	      )
+	    with err ->
+	      let () = Utilities.print_n_flush ("\nError " ^ (Core.Exn.to_string err) ^
+						  " getting foreign key info from db.") in
+	      Error "Failed to get foreign key info from db."
+	) in
+      let conn = (fun c -> if Core.Option.is_none c then
+			     Utilities.getcon_defaults ()
+			   else
+			     Core.Option.value_exn c) conn in 
+      let queryresult = Mysql.exec conn query in
+      let isSuccess = Mysql.status conn in
+      match isSuccess with
+      | Mysql.StatusEmpty ->  Ok Tset.empty
+      | Mysql.StatusError _ -> 
+	 let () = Utilities.print_n_flush
+		    ("Query for foreign keys returned nothing.  ... \n") in
+	 let () = Utilities.closecon conn in
+	 Error "model.ml::get_any_foreign_key_references() Error in sql"
+      | Mysql.StatusOK -> let () = Utilities.print_n_flush "\nGot foreign key info for table." in
+			  let empty = Tset.empty in 
+			  helper empty queryresult (Mysql.fetch queryresult);;
+      
+  end 
 
   let get_fields_for_given_table ?conn ~table_name =
     let open Mysql in
@@ -23,10 +93,11 @@ module Model = struct
       EXCEPT for the primary key of table? This is also useful for Core Comparable 
       interface.*)
     let fields_query = "SELECT column_name, is_nullable, column_comment,
-			column_type, data_type, column_key, extra, column_comment FROM 
+			column_type, data_type, column_key, extra, column_comment
+			FROM 
 			information_schema.columns 
 			WHERE table_name='" ^ table_name ^ "';" in
-(* numeric_scale, column_default, character_maximum_length, 
+    (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
     let rec helper accum results nextrow =
       (match nextrow with
@@ -343,7 +414,7 @@ module Model = struct
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
 
-  let construct_one_sequoia_struct ~table_name ~map ~host ~user ~password ~database =
+  let construct_one_sequoia_struct ~conn ~table_name ~map =
     let open Core in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
@@ -356,6 +427,7 @@ module Model = struct
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in
+    let fkey_set = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in 
     (*create list of lines, each is a let statement per field, with a type found in Sequoia's field.mli*)
     let rec helper l tbody =
       match l with

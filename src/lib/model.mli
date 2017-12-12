@@ -28,7 +28,5 @@ module Model : sig
   (*For each key in the multi-map, construct the body of an Ocaml module
   val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)
   val copy_utilities : destinationdir:string -> unit
-  val construct_one_sequoia_module : table_name:string -> map:t list Core.String.Map.t ->
-			  host:string -> user:string ->
-			  password:string -> database:string -> string
+  val construct_one_sequoia_struct : conn:Mysql.dbd -> table_name:string -> map:t list Core.String.Map.t -> string
 end 
