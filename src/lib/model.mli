@@ -11,7 +11,19 @@ module Model : sig
     is_nullable : bool;
     is_primary_key: bool;
   } [@@deriving show, fields]
-
+  module Sequoia_support : sig
+    type t = {
+      col : string;
+      table : string;
+      referenced_table : string;
+      referenced_field : string;
+    } [@@deriving eq, ord, show, fields, sexp]
+    
+    module TSet : sig
+      include Core.Comparable.S with type t := t
+    end
+  end
+			     
   val get_fields_map_for_all_tables :
     regexp_opt:string option -> table_list_opt:string option ->
     conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 

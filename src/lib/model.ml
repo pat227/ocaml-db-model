@@ -27,7 +27,8 @@ module Model = struct
       } [@@deriving eq, ord, show, fields, sexp]
     end
     include T
-    module Tset = Core.Set.Make(T)
+    module TSet = Core.Comparable.Make(T)
+    
     let get_any_foreign_key_references ?conn ~table_name = 
       (*work this into sequoia support...only way to discover foreign keys on a table*)
       let query_foreign_keys ~table_name =
@@ -56,7 +57,7 @@ module Model = struct
 	       let new_fkey_record =
 		 Fields.create
 		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
-	       let newset = Tset.add accum new_fkey_record in 
+	       let newset = TSet.Set.add accum new_fkey_record in 
 	       helper newset results (Mysql.fetch results)
 	      )
 	    with err ->
@@ -71,14 +72,14 @@ module Model = struct
       let queryresult = Mysql.exec conn query in
       let isSuccess = Mysql.status conn in
       match isSuccess with
-      | Mysql.StatusEmpty ->  Ok Tset.empty
+      | Mysql.StatusEmpty ->  Ok TSet.Set.empty
       | Mysql.StatusError _ -> 
 	 let () = Utilities.print_n_flush
 		    ("Query for foreign keys returned nothing.  ... \n") in
 	 let () = Utilities.closecon conn in
 	 Error "model.ml::get_any_foreign_key_references() Error in sql"
       | Mysql.StatusOK -> let () = Utilities.print_n_flush "\nGot foreign key info for table." in
-			  let empty = Tset.empty in 
+			  let empty = TSet.Set.empty in 
 			  helper empty queryresult (Mysql.fetch queryresult);;
       
   end 
@@ -421,13 +422,13 @@ module Model = struct
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
-    let include_line = String.concat ["include (val Mysql.table \"";table_name;"\")"] in 
+    let include_line = String.concat ["  include (val Mysql.table \"";table_name;"\")"] in 
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in
-    let fkey_set = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in 
+    let fkeyset = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in 
     (*create list of lines, each is a let statement per field, with a type found in Sequoia's field.mli*)
     let rec helper l tbody =
       match l with
@@ -435,12 +436,12 @@ module Model = struct
       | h :: t ->
 	 (*==TODO==support foreign keys===right here in concat somehow*)
 	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in 
+	   Types_we_emit.to_string h.data_type h.is_nullable in
 	 let tbody_new =
-	   Core.String.concat [tbody;"\n    let ";h.col_name;" = ";
+	   Core.String.concat [tbody;"\n  let ";h.col_name;" = ";
 				   string_of_data_type;" ";h.col_name] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    Core.String.concat [start_module;tbody;"\n";"end"];;        
+    Core.String.concat [start_module;include_line;tbody;"\n";"end"];;        
        
 end
