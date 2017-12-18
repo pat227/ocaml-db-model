@@ -27,7 +27,7 @@ module Model = struct
       } [@@deriving eq, ord, show, fields, sexp]
     end
     include T
-    module TSet = Core.Comparable.Make(T)
+    (*module TComp = Core.Comparable.Make(T)*)
     
     let get_any_foreign_key_references ?conn ~table_name = 
       (*work this into sequoia support...only way to discover foreign keys on a table*)
@@ -57,7 +57,7 @@ module Model = struct
 	       let new_fkey_record =
 		 Fields.create
 		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
-	       let newset = TSet.Set.add accum new_fkey_record in 
+	       let newset = Core.String.Map.add accum ~key:col_name ~data:new_fkey_record in 
 	       helper newset results (Mysql.fetch results)
 	      )
 	    with err ->
@@ -72,16 +72,15 @@ module Model = struct
       let queryresult = Mysql.exec conn query in
       let isSuccess = Mysql.status conn in
       match isSuccess with
-      | Mysql.StatusEmpty ->  Ok TSet.Set.empty
+      | Mysql.StatusEmpty ->  Ok Core.String.Map.empty
       | Mysql.StatusError _ -> 
 	 let () = Utilities.print_n_flush
 		    ("Query for foreign keys returned nothing.  ... \n") in
 	 let () = Utilities.closecon conn in
 	 Error "model.ml::get_any_foreign_key_references() Error in sql"
       | Mysql.StatusOK -> let () = Utilities.print_n_flush "\nGot foreign key info for table." in
-			  let empty = TSet.Set.empty in 
+			  let empty = Core.String.Map.empty in 
 			  helper empty queryresult (Mysql.fetch queryresult);;
-      
   end 
 
   let get_fields_for_given_table ?conn ~table_name =
@@ -416,7 +415,7 @@ module Model = struct
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =
-    let open Core in 
+    let open Core in
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = String.copy table_name in
@@ -428,7 +427,13 @@ module Model = struct
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
 					(Int.to_string (List.length tfields_list))) in
-    let fkeyset = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in 
+    let fkeys_map_result = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in
+    let fkeys_map = 
+      if Core.Result.is_ok fkeys_map_result then
+	Core.Result.ok_or_failwith fkeys_map_result
+      else
+	let () = Utilities.print_n_flush "\nFailed to get references tables and fields for sequoia support...\n" in
+	raise (Failure "Could not get referenced tables and fields for sequoia support.") in 
     (*create list of lines, each is a let statement per field, with a type found in Sequoia's field.mli*)
     let rec helper l tbody =
       match l with
@@ -438,8 +443,15 @@ module Model = struct
 	 let string_of_data_type =
 	   Types_we_emit.to_string h.data_type h.is_nullable in
 	 let tbody_new =
-	   Core.String.concat [tbody;"\n  let ";h.col_name;" = ";
-				   string_of_data_type;" ";h.col_name] in
+	   if Core.String.Map.mem fkeys_map h.col_name then
+	     let reference_record = Core.String.Map.find_exn fkeys_map h.col_name in
+	     let referenced_table = reference_record.Sequoia_support.table in	     
+	     Core.String.concat [tbody;"\n  let ";h.col_name;" = Field.foreign_key ";
+				 h.col_name;" ~references:";reference_record.Sequoia_support.table;".";
+				 reference_record.Sequoia_support.referenced_field]
+	   else 
+	     Core.String.concat [tbody;"\n  let ";h.col_name;" = ";
+				 string_of_data_type;" ";h.col_name] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     Core.String.concat [start_module;include_line;tbody;"\n";"end"];;        

@@ -19,9 +19,9 @@ module Model : sig
       referenced_field : string;
     } [@@deriving eq, ord, show, fields, sexp]
     
-    module TSet : sig
+    (*module TSet : sig
       include Core.Comparable.S with type t := t
-    end
+    end*)
   end
 			     
   val get_fields_map_for_all_tables :
