@@ -400,7 +400,22 @@ module Model = struct
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
-    with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
+    with _ -> Utilities.print_n_flush ("\nFailed to write to file:" ^ fname)
+
+  let write_appending_module ~outputdir ~fname ~body = 
+    let open Core.Unix in
+    let myf sbuf fd = single_write fd ~buf:sbuf in
+    let check_or_create_dir ~dir =
+      try 
+	let _stats = stat dir in ()	
+      with _ ->
+	mkdir ~perm:0o644 dir in
+    try
+      let () = check_or_create_dir ~dir:outputdir in 
+      let _bytes_written =
+	with_file fname ~mode:[O_RDWR;O_CREAT;O_APPEND]
+		  ~perm:0o644 ~f:(myf body) in ()
+    with _ -> Utilities.print_n_flush ("\nFailed to write (appending) to file:" ^ fname)
 
   let copy_utilities ~destinationdir =
     let open Core in 

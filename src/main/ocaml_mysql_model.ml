@@ -21,10 +21,13 @@ module Command = struct
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	   let seq_module = if sequoia then
-			      Some (Model.construct_one_sequoia_struct ~conn ~table_name:h ~map)
-			    else
-			      None 
+	   let () = if sequoia then
+		      let seq_module = Model.construct_one_sequoia_struct
+					 ~conn ~table_name:h ~map in
+		      Model.write_appending_module
+			~outputdir:"src/tables/" ~fname:(".ml") ~body in
+		    else
+		      () 
 	   in 
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
