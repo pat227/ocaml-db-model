@@ -25,7 +25,7 @@ module Command = struct
 		      let seq_module = Model.construct_one_sequoia_struct
 					 ~conn ~table_name:h ~map in
 		      Model.write_appending_module
-			~outputdir:"src/tables/" ~fname:(".ml") ~body in
+			~outputdir:"src/tables/" ~fname:(".ml") ~body:seq_module
 		    else
 		      () 
 	   in 
@@ -53,11 +53,11 @@ module Command = struct
       ~readme: (fun () -> "README")
       (*add option for each ppx extension? Or just default all of them?*)
       Core.Command.Spec.(empty
-			 +> flag "-table_regexp" (optional string)
+			 +> flag "-table-regexp" (optional string)
 				 ~doc:"Only model those tables that match a regexp."
-			 +> flag "-table_list" (optional string)
+			 +> flag "-table-list" (optional string)
 				 ~doc:"Csv-with-no-spaces table-name list"
-			 +> flag "-ppx_extensions" (optional string) 
+			 +> flag "-ppx-extensions" (optional string) 
 				 ~doc:"Comma seperated list of ppx extensions, \
 				       such as yojson, show, eq, ord, etc."
 			 +> flag "-sequoia" (no_arg)

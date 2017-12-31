@@ -394,7 +394,7 @@ module Model = struct
       try 
 	let _stats = stat dir in ()	
       with _ ->
-	mkdir ~perm:0o644 dir in
+	mkdir ~perm:0o770 dir in
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
@@ -409,7 +409,7 @@ module Model = struct
       try 
 	let _stats = stat dir in ()	
       with _ ->
-	mkdir ~perm:0o644 dir in
+	mkdir ~perm:0o770 dir in
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
