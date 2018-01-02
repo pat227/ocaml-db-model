@@ -398,7 +398,7 @@ module Model = struct
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
-	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
+	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush ("\nFailed to write to file:" ^ fname)
 
@@ -413,20 +413,23 @@ module Model = struct
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
-	with_file fname ~mode:[O_RDWR;O_CREAT;O_APPEND]
+	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_APPEND]
 		  ~perm:0o644 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush ("\nFailed to write (appending) to file:" ^ fname)
-
+  (*==UNTIL actually install package, nothing to do here.*)
   let copy_utilities ~destinationdir =
     let open Core in 
     let open Core.Unix in
-    (*--how to specify the (opam install) path to utilities.ml?---*)
+    (*--how to specify the (opam install) path to utilities.ml?---
+      Use ocamlfind query <packagename> after installing as a package via opam, then we'll
+      have the path to directory in which to look.
+    *)
     (*let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in*)
     let r = system "pwd" in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
-    let () = Utilities.print_n_flush result in 
+    let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
     match r with
-    | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
+    | Result.Ok () -> Utilities.print_n_flush "\nWould've copied the utilities file."
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =

@@ -34,7 +34,7 @@ module Command = struct
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:mli in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
-	   let () = Model.copy_utilities ~destinationdir:"src/tables" in 
+	   let () = Model.copy_utilities ~destinationdir:"src/tables" in
 	   helper t map in
       helper keys fields_map
       (*--copy the utilities.ml(i) files into the project; do not depend on this 
