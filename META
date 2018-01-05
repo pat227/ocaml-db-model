@@ -2,6 +2,6 @@ name = "ocaml-db-model"
 version = "0.1"
 description = "Creation of ocaml modules that model a set of db (mysql) tables (so far)."
 requires = "mysql"
-archive(byte) = "ocaml_mysql_model.byte"
-archive(native) = "ocaml_mysql_model.native"
+#archive(byte) = "ocaml_mysql_model.byte"
+#archive(native) = "ocaml_mysql_model.native"
 
