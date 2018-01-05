@@ -6,3 +6,4 @@ module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
+module Model = Model.Model

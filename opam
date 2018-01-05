@@ -7,7 +7,7 @@ license: "GPLv3"
 homepage: "None"
 doc: "None"
 bug-reports: "papatangonyc@gmail.com"
-dev-repo: "None"
+dev-repo: "~/libraries/ocaml_libs/ocaml-db-model/.git"
 build: [
        [make]
 ]
@@ -18,16 +18,16 @@ remove: [make "uninstall"]
 #  make "doc"
 #]
 depends: [
-  "core >= 0.9.1"
-  "uint >= 1.2.0"
-  "mysql >= 1.2"
-  "pcre >= 7.2.3"
-  "ppx_deriving >= 4.1"
-  "ppx_deriving_yojson >= 3.0"
-  "ppx_sexp_conv >= 0.9.0"
-  "ppx_compare >= 0.9.0"
-  "fieldslib >= 0.9.0"
-  "ppx_fields_conv >= 0.9.0"
-  "ocamlfind >= 1.6.2"
+  "core" {>= "v0.9.1"}
+  "uint" {>= "1.2.0"}
+  "mysql" {>= "1.2"}
+  "pcre" {>= "7.2.3"}
+  "ppx_deriving" {>= "4.1"}
+  "ppx_deriving_yojson" {>= "3.0"}
+  "ppx_sexp_conv" {>= "0.9.0"}
+  "ppx_compare" {>= "0.9.0"}
+  "fieldslib" {>= "0.9.0"}
+  "ppx_fields_conv" {>= "0.9.0"}
+  "ocamlfind" {>= "1.6.2"}
 ]
 available: [ ocaml-version >= "4.04.1" & opam-version >= "1.2" ]
