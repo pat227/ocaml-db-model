@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "ocaml_db_model"
+name: "ocaml-db-model"
 version: "0.1"
 maintainer: "papatangonyc@gmail.com"
 authors: [ "papatangonyc@gmail.com" ]
