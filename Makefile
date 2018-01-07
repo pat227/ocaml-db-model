@@ -1,4 +1,4 @@
-PROJECT=ocaml_db_model
+PROJECT=ocaml-db-model
 libdir=src/lib/
 maindir=src/main/
 builddir=build/
