@@ -1,0 +1,4 @@
+name="ocaml-db-model"
+version="0.1"
+description="Creation of ocaml modules that model a set of db (mysql) tables (so far)."
+requires=""

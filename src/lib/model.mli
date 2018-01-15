@@ -11,7 +11,19 @@ module Model : sig
     is_nullable : bool;
     is_primary_key: bool;
   } [@@deriving show, fields]
-
+  module Sequoia_support : sig
+    type t = {
+      col : string;
+      table : string;
+      referenced_table : string;
+      referenced_field : string;
+    } [@@deriving eq, ord, show, fields, sexp]
+    
+    (*module TSet : sig
+      include Core.Comparable.S with type t := t
+    end*)
+  end
+			     
   val get_fields_map_for_all_tables :
     regexp_opt:string option -> table_list_opt:string option ->
     conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 
@@ -25,7 +37,9 @@ module Model : sig
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string option -> string
   val write_module : outputdir:string -> fname:string -> body:string -> unit
+  val write_appending_module : outputdir:string -> fname:string -> body:string -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
   val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)
   val copy_utilities : destinationdir:string -> unit
+  val construct_one_sequoia_struct : conn:Mysql.dbd -> table_name:string -> map:t list Core.String.Map.t -> string
 end 
