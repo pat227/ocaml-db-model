@@ -149,10 +149,10 @@ module Model = struct
     | StatusEmpty ->  Ok String.Map.empty
     | StatusError _ -> 
        let () = Utilities.print_n_flush
-		  ("Query for table names returned nothing.  ... \n") in
+		  ("Query for columns in " ^ table_name  ^  "returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
        Error "model.ml::get_fields_for_given_table() Error in sql"
-    | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
+    | StatusOK -> let () = Utilities.print_n_flush ("\nGot fields for table " ^ table_name) in 
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
   let make_regexp s =
@@ -238,7 +238,8 @@ module Model = struct
      create a new record, add it to an accumulator, and finally return that 
      accumulator after we have exhausted all the records returned by the query. 
      Cannot use long line continuation backslashes here; screws up the formatting 
-     in the output.*)
+     in the output. If SEQUOIA allows us to generate legal SQL queries we can
+     pass to such a function...that would be very good. *)
   let construct_sql_query_function ~table_name ~map ~host
 				   ~user ~password ~database =
     let open Core in 
@@ -320,7 +321,7 @@ module Model = struct
 			      tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators_list with
-      | [] -> almost_done ^ "end"
+      | [] -> almost_done ^ "\n"
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
 	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
@@ -372,7 +373,7 @@ module Model = struct
     let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =
       match ppx_decorators_list with
-      | [] -> almost_done ^ "end"
+      | [] -> almost_done
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in

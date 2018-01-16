@@ -1,7 +1,20 @@
-PROJECT=ocaml-db-model
+PROJECT=ocaml_db_model
 libdir=src/lib/
 maindir=src/main/
 builddir=build/
+
+ifndef PREFIX
+  PREFIX = $(shell dirname $$(dirname $$(which ocamlfind)))
+  export PREFIX
+endif
+
+ifndef BINDIR
+  BINDIR = $(PREFIX)/bin
+  export BINDIR
+endif
+
+.PHONY: all clean lib ocaml_mysql_model install uninstall
+
 #LIBINSTALL_FILES=$(wildcard *.ml *.mli *.cmi *.cmx *.cma *.cmo *.cmx *.cmxa *.a *.so *.o)
 all: ocaml_mysql_model
 clean:
@@ -18,6 +31,9 @@ ocaml_mysql_model: lib $(maindir)ocaml_mysql_model.ml
 
 install: ocaml_mysql_model
 	ocamlfind install $(PROJECT) ./$(builddir)$(libdir)* ./$(builddir)$(maindir)* META
+	cp $(builddir)$(maindir)ocaml_mysql_model.native $(BINDIR)/
+	cp $(builddir)$(maindir)ocaml_mysql_model.byte $(BINDIR)/
+
 uninstall:
 	ocamlfind remove $(PROJECT)
 #only makes sense to run this after copying output file into the src/lib dir

@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "ocaml-db-model"
+name: "ocaml_db_model"
 version: "0.1"
 maintainer: "papatangonyc@gmail.com"
 authors: [ "papatangonyc@gmail.com" ]
@@ -12,7 +12,10 @@ build: [
        [make]
 ]
 install: [make "install"]
-remove: [make "uninstall"]
+remove: [[make "uninstall"]
+	 ["rm" "-f" "%{bin}%/ocaml_mysql_model.native"]
+	 ["rm" "-f" "%{bin}%/ocaml_mysql_model.byte"]
+	]
 #build-test: []]
 #build-doc: [
 #  make "doc"
