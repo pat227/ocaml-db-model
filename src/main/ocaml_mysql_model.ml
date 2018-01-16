@@ -6,6 +6,7 @@ module Command = struct
 
   let execute regexp_opt table_list_opt ppxlist_opt sequoia host user password database () =
     let open Core.Result in
+    (*==todo==refactor the below into a functon in model.ml*)
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
@@ -28,11 +29,15 @@ module Command = struct
 			~outputdir:"src/tables/" ~fname:(".ml") ~body:seq_module
 		    else
 		      () 
-	   in 
+	   in
+	   let mlfile = String.concat [h;".ml"] in
+	   let mlifile = String.concat [h;".mli"] in 
 	   let () = Model.write_module
-		      ~outputdir:"src/tables/" ~fname:(h ^ ".ml") ~body in
+		      ~outputdir:"src/tables/" ~fname:mlfile ~body in
 	   let () = Model.write_module
-		      ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:mli in
+		      ~outputdir:"src/tables/" ~fname:mlifile ~body:mli in
+	   let () = Model.write_appending_module
+		      ~outputdir:"src/tables/" ~fname:"tables.ml" ~body:(String.concat [h;".";h;"\n"])
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   let () = Model.copy_utilities ~destinationdir:"src/tables" in
 	   helper t map in

@@ -293,10 +293,10 @@ module Model = struct
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
-			       "module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp";
+			       "module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Lib..Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Lib..Uint16_w_sexp";
+			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
@@ -327,8 +327,8 @@ module Model = struct
 	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
-      "  let tablename=\"" ^ table_name ^
-	"\" \n\n  let get_tablename () = tablename;;\n" in
+      String.concat ["  let tablename=\"";table_name;
+	"\" \n\n  let get_tablename () = tablename;;\n"] in
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
@@ -352,7 +352,7 @@ module Model = struct
 	[] in 
     let module_name = String.copy table_name in
     let () = String.set module_name 0 uppercased_first_char in 
-    let start_module = "module " ^ module_name ^ " : sig \n" in 
+    let start_module = String.concat ["module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -386,7 +386,7 @@ module Model = struct
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
-  (*Intention is for invokcation from root dir of a project from Make file. 
+  (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
     let open Core.Unix in
