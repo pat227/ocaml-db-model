@@ -466,7 +466,7 @@ module Model = struct
 	     let reference_record = Core.String.Map.find_exn fkeys_map h.col_name in
 	     let referenced_table = reference_record.Sequoia_support.table in	     
 	     Core.String.concat [tbody;"\n  let ";h.col_name;" = Field.foreign_key ";
-				 h.col_name;" ~references:";reference_record.Sequoia_support.table;".";
+				 h.col_name;" ~references:";referenced_table;".";
 				 reference_record.Sequoia_support.referenced_field]
 	   else 
 	     Core.String.concat [tbody;"\n  let ";h.col_name;" = ";
