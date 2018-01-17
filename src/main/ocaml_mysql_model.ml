@@ -37,7 +37,7 @@ module Command = struct
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlifile ~body:mli in
 	   let () = Model.write_appending_module
-		      ~outputdir:"src/tables/" ~fname:"tables.ml" ~body:(String.concat [h;".";h;"\n"])
+		      ~outputdir:"src/tables/" ~fname:"tables.ml" ~body:(String.concat [h;".";h;"\n"]) in 
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   let () = Model.copy_utilities ~destinationdir:"src/tables" in
 	   helper t map in
