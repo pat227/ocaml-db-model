@@ -244,8 +244,8 @@ module Model = struct
 				   ~user ~password ~database =
     let open Core in 
     let preamble =
-      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon ";
-		     "~host:\"";host;"\" ~user:\"";user;"\" \n                               ~password:\"";password;"\" ~database:\"";database;"\" in \n"] in
+      (*--do not place db creds into each file; one connection function with creds in utilities file; copied into the project.*)
+      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon () in \n";] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
     let suffix =
@@ -349,10 +349,17 @@ module Model = struct
       if Option.is_some ppx_decorators then 
 	Option.value_exn (Utilities.parse_list ppx_decorators)
       else
-	[] in 
+	(*defaults*)
+	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let module_name = String.copy table_name in
-    let () = String.set module_name 0 uppercased_first_char in 
-    let start_module = String.concat ["module ";module_name;" : sig \n"] in 
+    let () = String.set module_name 0 uppercased_first_char in
+    let other_modules =
+      String.concat ~sep:"\n" ["module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Lib..Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Lib..Uint16_w_sexp";
+			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
+			       "open Sexplib.Std\n"] in
+    let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)

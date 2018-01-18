@@ -63,8 +63,8 @@ module Command = struct
 			 +> flag "-table-list" (optional string)
 				 ~doc:"Csv-with-no-spaces table-name list"
 			 +> flag "-ppx-extensions" (optional string) 
-				 ~doc:"Comma seperated list of ppx extensions, \
-				       such as yojson, show, eq, ord, etc."
+				 ~doc:"Comma seperated list of ppx extensions; \
+				       defaults are fields, show, sexp, ord, eq, yojson"
 			 +> flag "-sequoia" (no_arg)
 				 ~doc:"Support for sequoia: optionally output \
 				       modules suitable for use with the Sequoia\

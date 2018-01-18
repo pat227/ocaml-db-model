@@ -1,6 +1,7 @@
 (*Note:Any project that uses this one to generate modules will need to reference 
-this file. OR we need to copy this file into the projects src/lib directory, 
-which has the advantage of allowing user to tinker with it.*)
+this file. We need to copy this file into the project's src/lib directory,
+and to place credentials into a modified customized copy of this file.
+Which has the advantage of allowing user to tinker with it.*)
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
@@ -14,7 +15,17 @@ module Utilities = struct
     let open Core in 
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
+(* NEED TO POPULATE AND USE AND COPY THE BELOW INTO CLIENT PROJECT
+   THAT NEEDS TO MODEL A DB
+  let getcon () =
+    Mysql.quick_connect ~host:"xxx.xxx.xxx.xxx"
+			~database:"xxx"
+			~password:"xxx"
+			~user:"xxx" ();;
+  let closecon c = Mysql.disconnect c;;
+    *)  
 
+    
   let getcon ?(host="127.0.0.1") ~database ~password ~user =
     let open Mysql in 
     quick_connect
@@ -40,7 +51,7 @@ module Utilities = struct
 	     let () = print_n_flush ("parse_list() from " ^ sl) in
 	     let l = Core.String.split sl ~on:',' in
 	     let len = Core.List.count l ~f:(fun x -> true) in
-	     if len > 1 then Some l else None
+	     if len > 0 then Some l else None
 	   with
 	   | err ->
 	      let () = print_n_flush
