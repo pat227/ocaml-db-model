@@ -1,4 +1,5 @@
 module Pcre = Pcre
+module Credentials = Credentials.Credentials
 module Utilities = Utilities.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
@@ -29,7 +30,7 @@ module Model = struct
     include T
     (*module TComp = Core.Comparable.Make(T)*)
     
-    let get_any_foreign_key_references ?conn ~table_name = 
+    let get_any_foreign_key_references ~conn ~table_name = 
       (*work this into sequoia support...only way to discover foreign keys on a table*)
       let query_foreign_keys ~table_name =
 	"SELECT CONSTRAINT_CATALOG, CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_CATALOG,
@@ -65,10 +66,10 @@ module Model = struct
 						  " getting foreign key info from db.") in
 	      Error "Failed to get foreign key info from db."
 	) in
-      let conn = (fun c -> if Core.Option.is_none c then
+      (*let conn = (fun c -> if Core.Option.is_none c then
 			     Utilities.getcon_defaults ()
 			   else
-			     Core.Option.value_exn c) conn in 
+			     Core.Option.value_exn c) conn in *)
       let queryresult = Mysql.exec conn query in
       let isSuccess = Mysql.status conn in
       match isSuccess with
@@ -83,7 +84,7 @@ module Model = struct
 			  helper empty queryresult (Mysql.fetch queryresult);;
   end 
 
-  let get_fields_for_given_table ?conn ~table_name =
+  let get_fields_for_given_table ~conn ~table_name =
     let open Mysql in
     let open Core in 
     (*Only column_type gives us the acceptable values of an enum type if present, 
@@ -139,10 +140,10 @@ module Model = struct
 				      " getting tables from db.") in
 	    Error "Failed to get tables from db."
       ) in
-    let conn = (fun c -> if is_none c then
+    (*let conn = (fun c -> if is_none c then
 			   Utilities.getcon_defaults ()
 			 else
-			   Option.value_exn c) conn in 
+			   Option.value_exn c) conn in *)
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
@@ -393,6 +394,16 @@ module Model = struct
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
+  (*NOTE: unlike credentials in this project; the written module includes a set of credentials
+    with user supplied values.*)
+  let construct_db_credentials_mli () =
+    "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
+
+  let construct_db_credentials ~credentials =
+    let open Core in 
+    let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in
+    String.concat [body_start;(Credentials.getuname credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"];;
+
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
@@ -438,8 +449,8 @@ module Model = struct
     let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nWould've copied the utilities file."
-    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
-
+    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."    
+					 
   let construct_one_sequoia_struct ~conn ~table_name ~map =
     let open Core in
     let module_first_char = String.get table_name 0 in

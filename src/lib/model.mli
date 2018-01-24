@@ -1,4 +1,5 @@
 module Pcre = Pcre
+module Credentials = Credentials.Credentials
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Model : sig
@@ -28,7 +29,7 @@ module Model : sig
     regexp_opt:string option -> table_list_opt:string option ->
     conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 
   val get_fields_for_given_table :
-    ?conn:Mysql.dbd ->
+    conn:Mysql.dbd ->
     table_name:Core.String.Map.Key.t ->
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t ->
@@ -36,6 +37,8 @@ module Model : sig
 		       password:string -> database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string option -> string
+  val construct_db_credentials_mli : unit -> string
+  val construct_db_credentials : credentials:Credentials.t -> string
   val write_module : outputdir:string -> fname:string -> body:string -> unit
   val write_appending_module : outputdir:string -> fname:string -> body:string -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module

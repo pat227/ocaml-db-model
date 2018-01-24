@@ -7,7 +7,7 @@ module Table = struct
     engine : string;
   } [@@deriving fields]
    
-  let get_tables ?conn ~schema =
+  let get_tables ~conn ~schema =
     let open Mysql in
     let open Core in
     let open Core.Result in 
@@ -49,7 +49,7 @@ module Table = struct
 				      " getting tables from db.") in
 	    Error "table.ml::get_tables() line 46"
       ) in
-    let conn = (fun c -> if is_none c then Utilities.getcon_defaults () else Option.value_exn c) conn in 
+    (*let conn = (fun c -> if is_none c then Utilities.getcon else Option.value_exn c) conn in *)
     let queryresult = exec conn (table_query ~schema) in
     let isSuccess = status conn in
     match isSuccess with

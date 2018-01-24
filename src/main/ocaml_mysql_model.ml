@@ -1,3 +1,4 @@
+module Credentials = Credentials.Credentials
 module Utilities = Utilities.Utilities
 module Model = Model.Model
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
@@ -8,6 +9,7 @@ module Command = struct
     let open Core.Result in
     (*==todo==refactor the below into a functon in model.ml*)
     try
+      let credentials = Credentials.of_username_pw ~username:user ~pw:password ~db:database in
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
 	Model.get_fields_map_for_all_tables
@@ -37,14 +39,18 @@ module Command = struct
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlifile ~body:mli in
 	   let () = Model.write_appending_module
-		      ~outputdir:"src/tables/" ~fname:"tables.ml" ~body:(String.concat [h;".";h;"\n"]) in 
+		      ~outputdir:"src/tables/" ~fname:"tables.ml"
+		      ~body:(String.concat [h;".";h;"\n"]) in
+	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.mli"
+				       ~body:(Model.construct_db_credentials_mli ()) in
+	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.ml"
+				       ~body:(Model.construct_db_credentials ~credentials) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   let () = Model.copy_utilities ~destinationdir:"src/tables" in
 	   helper t map in
       helper keys fields_map
       (*--copy the utilities.ml(i) files into the project; do not depend on this 
           project for building, and allow user to tweak the utilities file.--*)
-      
     with
     | Failure s -> Utilities.print_n_flush s
 

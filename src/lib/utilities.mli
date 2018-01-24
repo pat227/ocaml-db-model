@@ -5,7 +5,6 @@ module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
 module Utilities : sig
   val print_n_flush : string -> unit 
   val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
-  val getcon_defaults : unit -> Mysql.dbd
   val closecon : Mysql.dbd ->  unit
   val print_n_flush : string -> unit
   val parse_list : string option -> string list option

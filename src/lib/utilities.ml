@@ -15,26 +15,14 @@ module Utilities = struct
     let open Core in 
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
-(* NEED TO POPULATE AND USE AND COPY THE BELOW INTO CLIENT PROJECT
-   THAT NEEDS TO MODEL A DB
-  let getcon () =
-    Mysql.quick_connect ~host:"xxx.xxx.xxx.xxx"
-			~database:"xxx"
-			~password:"xxx"
-			~user:"xxx" ();;
-  let closecon c = Mysql.disconnect c;;
-    *)  
 
-    
+  (*Client code should supply credentials and use this function; credentials in client
+   projects should be stored in credentials.*)
   let getcon ?(host="127.0.0.1") ~database ~password ~user =
     let open Mysql in 
     quick_connect
       ~host ~database ~password ~user ();;
-    
-  let getcon_defaults () =
-    raise (Failure "Parameterless db connections no longer supported") 
-    (*getcon ~host:"127.0.0.1" ~database:"test_model" ~password:"root" ~user:"root";;*)
-    
+
   let closecon c = Mysql.disconnect c;;
 
   let oc = Core.Out_channel.stdout;;    
