@@ -443,14 +443,13 @@ module Model = struct
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
     *)
-    (*let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in*)
-    let r = system "pwd" in
+    let r = system ("cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities.ml " ^ destinationdir) in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
     match r with
-    | Result.Ok () -> Utilities.print_n_flush "\nWould've copied the utilities file."
+    | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."    
-					 
+
   let construct_one_sequoia_struct ~conn ~table_name ~map =
     let open Core in
     let module_first_char = String.get table_name 0 in
