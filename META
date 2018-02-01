@@ -4,3 +4,5 @@ description="Creation of ocaml modules that model a set of db (mysql) tables (so
 requires="core uint mysql ppx_deriving ppx_deriving.eq ppx_deriving.ord ppx_deriving.show fieldslib ppx_fields_conv pcre ppx_sexp_conv ppx_compare"
 archive(byte)="lib.cma"
 archive(native)="lib.cmxa"
+plugin(byte)="lib.cma"
+plugin(archive)="lib.cmxa"
