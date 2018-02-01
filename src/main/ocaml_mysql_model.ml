@@ -34,8 +34,8 @@ module Command = struct
 		    else
 		      () 
 	   in
-	   let mlfile = String.concat [title_cased_h;".ml"] in
-	   let mlifile = String.concat [title_cased_h;".mli"] in 
+	   let mlfile = String.concat [h;".ml"] in
+	   let mlifile = String.concat [h;".mli"] in 
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlfile ~body in
 	   let () = Model.write_module

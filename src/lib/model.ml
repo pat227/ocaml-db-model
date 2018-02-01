@@ -106,8 +106,25 @@ module Model = struct
        | Some arrayofstring ->
 	  try
 	    (let col_name =
-	       Utilities.extract_field_as_string_exn
-		 ~fieldname:"column_name" ~results ~arrayofstring in 
+	       let temp = Utilities.extract_field_as_string_exn
+			    ~fieldname:"column_name" ~results ~arrayofstring in
+	       let temp = String.lowercase temp in 
+	       (*--cannot permit invalid literals or reserved keywords--must start
+                with lowercase char or underscore and field names should not be
+                case sensitive anyway. TODO: check for special chars and other
+                reserved keywords.
+		*)
+	       let first_char = String.nget temp 0 in
+	       if Char.is_digit first_char ||
+		    String.equal "type" temp ||
+		      String.equal "module" temp ||
+			String.equal "end" temp ||
+			  String.equal "sig" temp 
+	       then
+		 (*--we have to do some name mangling or do not support such field names?--*)
+		 String.concat ["x_";temp]
+	       else 
+		 temp in 
 	     let data_type =
 	       Utilities.extract_field_as_string_exn
 		 ~fieldname:"data_type" ~results ~arrayofstring in 
