@@ -282,21 +282,18 @@ module Model = struct
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database =
     let open Core in 
-    let module_first_char = String.get table_name 0 in
-    let uppercased_first_char = Char.uppercase module_first_char in
-    let module_name = String.copy table_name in
+    let module_name = String.capitalize table_name in
     let ppx_decorators_list =
       if Option.is_some ppx_decorators then 
 	Option.value_exn (Utilities.parse_list ppx_decorators)
       else
 	[] in 
-    let () = String.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 			       "module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Lib..Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Lib..Uint16_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Lib.Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Lib.Uint16_w_sexp";
 			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
@@ -340,8 +337,6 @@ module Model = struct
 
   let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core in 
-    let module_first_char = String.get table_name 0 in
-    let uppercased_first_char = Char.uppercase module_first_char in
     (*at very least, fail if supplied csv list of ppx decorators is gibberish and 
       not a csv list  ===TODO===check that each is a true ppx extension, emit 
       warning if not. Still better than optional flags at command line, one for
@@ -352,12 +347,11 @@ module Model = struct
       else
 	(*defaults*)
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
-    let module_name = String.copy table_name in
-    let () = String.set module_name 0 uppercased_first_char in
+    let module_name = String.capitalize table_name in
     let other_modules =
       String.concat ~sep:"\n" ["module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Lib..Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Lib..Uint16_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Lib.Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Lib.Uint16_w_sexp";
 			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
 			       "open Sexplib.Std\n"] in
     let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 

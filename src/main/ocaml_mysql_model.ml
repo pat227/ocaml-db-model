@@ -17,8 +17,10 @@ module Command = struct
       let keys = Map.keys fields_map in 
       let rec helper klist map =
 	match klist with
-	| [] -> Utilities.closecon conn
+	| [] -> let () = Model.copy_utilities ~destinationdir:"src/tables" in
+		Utilities.closecon conn
 	| h::t ->
+	   let title_cased_h = String.capitalize h in 
 	   let ppx_decorators = ppxlist_opt in 
 	   let body =
 	     Model.construct_body
@@ -32,21 +34,20 @@ module Command = struct
 		    else
 		      () 
 	   in
-	   let mlfile = String.concat [h;".ml"] in
-	   let mlifile = String.concat [h;".mli"] in 
+	   let mlfile = String.concat [title_cased_h;".ml"] in
+	   let mlifile = String.concat [title_cased_h;".mli"] in 
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlfile ~body in
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlifile ~body:mli in
 	   let () = Model.write_appending_module
 		      ~outputdir:"src/tables/" ~fname:"tables.ml"
-		      ~body:(String.concat [h;".";h;"\n"]) in
+		      ~body:(String.concat ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
 	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.mli"
 				       ~body:(Model.construct_db_credentials_mli ()) in
 	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.ml"
 				       ~body:(Model.construct_db_credentials ~credentials) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
-	   let () = Model.copy_utilities ~destinationdir:"src/tables" in
 	   helper t map in
       helper keys fields_map
       (*--copy the utilities.ml(i) files into the project; do not depend on this 
