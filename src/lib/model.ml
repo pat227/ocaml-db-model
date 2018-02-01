@@ -308,10 +308,10 @@ module Model = struct
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
-			       "module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Lib.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Lib.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
+			       "module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
+			       "module Uint8_w_sexp = Ocaml_db_model.Uint8_w_sexp";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
@@ -366,10 +366,10 @@ module Model = struct
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let module_name = String.capitalize table_name in
     let other_modules =
-      String.concat ~sep:"\n" ["module Uint64_w_sexp = Ocaml_db_model.Lib.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Lib.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Lib.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Ocaml_db_model.Lib.Uint8_w_sexp";
+      String.concat ~sep:"\n" ["module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
+			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
+			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
+			       "module Uint8_w_sexp = Ocaml_db_model.Uint8_w_sexp";
 			       "open Sexplib.Std\n"] in
     let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
