@@ -5,7 +5,7 @@ module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 (*Types from mysql that are relatively more safely mapped to Ocaml*)
 module Types_we_emit = Types_we_emit.Types_we_emit
-module Utilities = Utilities.Utilities
+module Utilities = Utilities2copy.Utilities
 module Sql_supported_types = struct
   type t =
       TINYINT
