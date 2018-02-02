@@ -304,7 +304,7 @@ module Model = struct
       if Option.is_some ppx_decorators then 
 	Option.value_exn (Utilities.parse_list ppx_decorators)
       else
-	[] in 
+	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
@@ -454,8 +454,8 @@ module Model = struct
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
     *)
-    let r = system (String.concat ["cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml ";destinationdir;"utilities.ml"]) in
-    let r = system (String.concat ["cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli ";destinationdir;"utilities.mli"]) in
+    let r = system (String.concat ["cp -u /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml ";destinationdir;"utilities.ml"]) in
+    let r = system (String.concat ["cp -u /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli ";destinationdir;"utilities.mli"]) in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
     match r with
