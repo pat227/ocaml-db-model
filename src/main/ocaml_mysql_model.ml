@@ -17,7 +17,7 @@ module Command = struct
       let keys = Map.keys fields_map in 
       let rec helper klist map =
 	match klist with
-	| [] -> let () = Model.copy_utilities ~destinationdir:"src/tables" in
+	| [] -> let () = Model.copy_utilities ~destinationdir:"src/lib/" in
 		Utilities.closecon conn
 	| h::t ->
 	   let title_cased_h = String.capitalize h in 

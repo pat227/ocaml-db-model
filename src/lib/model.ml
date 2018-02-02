@@ -454,7 +454,8 @@ module Model = struct
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
     *)
-    let r = system ("cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities.ml " ^ destinationdir) in
+    let r = system (String.concat ["cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml ";destinationdir;"utilities.ml"]) in
+    let r = system (String.concat ["cp /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli ";destinationdir;"utilities.mli"]) in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
     match r with
