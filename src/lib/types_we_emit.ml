@@ -41,7 +41,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
       | Float -> "Core.Float.t option"
       | Date -> "Core.Date.t option"
-      | Time -> "Core.Time.t option"
+      | Time -> "Core_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
     else 
@@ -57,7 +57,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
       | Float -> "Core.Float.t"
       | Date -> "Core.Date.t"
-      | Time -> "Core.Time.t"
+      | Time -> "Core_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
 		
@@ -119,7 +119,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
       | Float -> "Core.Float.t option"
       | Date -> "Core.Date.t option"
-      | Time -> "Core.Time.t option"
+      | Time -> "Core_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
     else 
@@ -135,7 +135,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
       | Float -> "Core.Float.t"
       | Date -> "Core.Date.t"
-      | Time -> "Core.Time.t"
+      | Time -> "Core_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
 end 
