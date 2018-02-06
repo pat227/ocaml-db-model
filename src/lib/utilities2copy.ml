@@ -1,7 +1,3 @@
-(*Note:Any project that uses this one to generate modules will need to reference 
-this file. We need to copy this file into the project's src/lib directory,
-and to place credentials into a modified customized copy of this file.
-Which has the advantage of allowing user to tinker with it.*)
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
@@ -16,8 +12,9 @@ module Utilities = struct
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
 
-  (*Client code should supply credentials and use this function; credentials in client
-   projects should be stored in credentials.*)
+  (*Client code makefile supplies credentials and uses this function; credentials in client
+   projects are stored in credentials.ml; this file is copied with modifications
+   to make of type () -> Mysql.dbd with credentials optional with default values.*)
   let getcon ?(host="127.0.0.1") ~database ~password ~user =
     let open Mysql in 
     quick_connect

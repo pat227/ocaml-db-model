@@ -307,7 +307,8 @@ module Model = struct
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
-      String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
+      String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+			       "module Utilities = Utilities.Utilities";
 			       "module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
 			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
 			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
@@ -366,7 +367,8 @@ module Model = struct
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let module_name = String.capitalize table_name in
     let other_modules =
-      String.concat ~sep:"\n" ["module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
+      String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+			       "module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
 			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
 			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
 			       "module Uint8_w_sexp = Ocaml_db_model.Uint8_w_sexp";
@@ -446,21 +448,41 @@ module Model = struct
 	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_APPEND]
 		  ~perm:0o644 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush ("\nFailed to write (appending) to file:" ^ fname)
+
   (*==UNTIL actually install package, nothing to do here.*)
   let copy_utilities ~destinationdir =
     let open Core in 
-    let open Core.Unix in
-    (*--how to specify the (opam install) path to utilities.ml?---
+    (*
+    --how to specify the (opam install) path to utilities.ml?---
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
-    *)
-    let r = system (String.concat ["cp -u /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml ";destinationdir;"utilities.ml"]) in
-    let r = system (String.concat ["cp -u /home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli ";destinationdir;"utilities.mli"]) in
-    let result = Core.Unix.Exit_or_signal.to_string_hum r in 
-    let () = Utilities.print_n_flush (Core.String.concat ["pwd:";result]) in 
-    match r with
-    | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
-    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."    
+     *)    
+    let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml" in
+    let utilities_file_contents =
+      Core.Std.really_input_string inchan (Core.Std.in_channel_length) in
+    let lines = String.split_lines utilities_file_contents in
+    (*replace lines 15 through 21 and then write to location*)
+    let first15lines = List.filteri lines (fun i _l -> i < 14) in
+    let lines22_toend = List.filteri lines (fun i _l -> i > 20) in
+    let replacement_lines = ["  let getcon ?(host=\"127.0.0.1\")";
+			     "	     ?database=(Credentials.credentials.db)";
+			     "	     ?password=(Credentials.credentials.pw)";
+			     "	     ?user=(Credentials.credentials.username) () =";
+			     "    let open Mysql in ";
+			     "    quick_connect";
+			     "      ~host ~database ~password ~user ();;";] in
+    let modified_utils = String.concat ~sep:"\n" [first15lines;replacement_lines;lines22_toend] in
+    let () = write_module ~outputdir:desinationdir ~fname:"utilities.ml" ~body:modified_utils in
+    let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli" in
+    let utilities_mli_file_contents =
+      Core.Std.really_input_string inchan_mli (Core.Std.in_channel_length) in
+    let lines_mli = String.split_lines utilities_file_mli_contents in
+    (*replace line 7 and then write to location*)
+    let first6lines = List.filteri lines (fun i _l -> i < 6) in
+    let lines8_toend = List.filteri lines (fun i _l -> i > 6) in
+    let replacement_line = ["  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd";] in
+    let modified_utils_mli = String.concat ~sep:"\n" [first6lines;replacement_line;line8_toend] in
+    write_module ~outputdir:desinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =
     let open Core in
