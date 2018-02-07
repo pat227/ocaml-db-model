@@ -2,7 +2,7 @@ open Core
 (*Need to support yojson if client project wants it*)
 module Core_time_extended = struct
   include Core.Time
-	    
+  type t = Core.Time.t
   let to_parts t =
     let s = Time.to_filename_string t ~zone:(Zone.of_utc_offset ~hours:0) in
     let halves = String.split ~on:'_' s in

@@ -414,7 +414,7 @@ module Model = struct
 
   let construct_db_credentials ~credentials =
     let open Core in 
-    let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in
+    let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in
     String.concat [body_start;(Credentials.getuname credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"];;
 
   (*Intention is for invokation from root dir of a project from Make file. 
