@@ -145,7 +145,7 @@ module Core_time_extended :
     module Stable = Core__Core_time_float.Stable
     module Exposed_for_tests = Core__Core_time_float.Exposed_for_tests
     val to_parts : Core.Time.t -> Core.Int.t array
-    (*===todo===forgot*)
+
     val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
     val show : t -> Ppx_deriving_runtime.string
     val t_of_sexp : Sexplib.Sexp.t -> t
@@ -153,5 +153,7 @@ module Core_time_extended :
     val compare : t -> t -> Ppx_deriving_runtime.int
     val equal : t -> t -> Ppx_deriving_runtime.bool
     val to_yojson : t -> Yojson.Safe.json
-    val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+    (*===todo===forgot*)
+    (*    val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or*)
+    val of_yojson : Yojson.Safe.json -> [ `Error of string | `Ok of t ]
   end
