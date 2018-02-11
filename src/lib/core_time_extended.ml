@@ -32,8 +32,8 @@ module Core_time_extended = struct
       let value_half = List.nth_exn splits 1 in
       let rbracket_i = Core.String.index_exn value_half '}' in 
       let value = Core.String.slice value_half 0 rbracket_i in 
-      `Ok (Core.Time.of_string value)
-    with err -> `Error "core_time_extended::of_yojson() failed.";;
+      Result.Ok (Core.Time.of_string value)
+    with err -> Error "core_time_extended::of_yojson() failed.";;
 
   let sexp_of_t t =
     let a x = Sexp.Atom x and

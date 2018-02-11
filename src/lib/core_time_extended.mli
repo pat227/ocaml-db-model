@@ -154,6 +154,6 @@ module Core_time_extended :
     val equal : t -> t -> Ppx_deriving_runtime.bool
     val to_yojson : t -> Yojson.Safe.json
     (*===todo===forgot*)
-    (*    val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or*)
-    val of_yojson : Yojson.Safe.json -> [ `Error of string | `Ok of t ]
+    val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+   (*NOT WHAT WE WANT: val of_yojson : Yojson.Safe.json -> [ `Error of string | `Ok of t ]*)
   end
