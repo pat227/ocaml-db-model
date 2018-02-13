@@ -1,3 +1,4 @@
+module Core_int64_extended = Core_int64_extended.Core_int64_extended
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
