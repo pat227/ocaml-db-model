@@ -1,4 +1,5 @@
 module Core_int64_extended = Core_int64_extended.Core_int64_extended
+module Core_int32_extended = Core_int32_extended.Core_int32_extended
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
@@ -124,7 +125,7 @@ module Utilities = struct
   let parse_int64_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core.Int64.of_string s
+      Core_int64_extended.of_string s
     with err ->
 	 let () = print_n_flush "\nutilities::parse_int64_field_exn() failed" in
 	 raise err;;
@@ -132,7 +133,7 @@ module Utilities = struct
   let parse_int32_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core.Int32.of_string s
+      Core_int32_extended.of_string s
     with err ->
       let () = print_n_flush "\nutilities::parse_int32_field_exn() failed" in
       raise err;;
