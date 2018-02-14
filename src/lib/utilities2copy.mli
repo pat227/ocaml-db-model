@@ -1,3 +1,5 @@
+module Core_int64_extended = Core_int64_extended.Core_int64_extended
+module Core_int32_extended = Core_int32_extended.Core_int32_extended
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
@@ -37,16 +39,16 @@ module Utilities : sig
     arrayofstring:string option array -> string option
   val parse_int64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Int64.t
+    arrayofstring:string option array -> Core_int64_extended.t
   val parse_optional_int64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Int64.t option
+    arrayofstring:string option array -> Core_int64_extended.t option
   val parse_int32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Int32.t
+    arrayofstring:string option array -> Core_int32_extended.t
   val parse_optional_int32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Int32.t option
+    arrayofstring:string option array -> Core_int32_extended.t option
   (*---uint 8,16,32,64----*)  
   val parse_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->

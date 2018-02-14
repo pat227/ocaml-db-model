@@ -1,4 +1,5 @@
 module Core_int64_extended = Core_int64_extended.Core_int64_extended
+module Core_int32_extended = Core_int32_extended.Core_int32_extended
 module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
 module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
@@ -35,7 +36,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | CoreInt64 -> "Core_int64_extended.t option"
-      | CoreInt32 -> "Core.Int32.t option"
+      | CoreInt32 -> "Core_int32_extended.t option"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
       | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
       | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
@@ -51,7 +52,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | CoreInt64 -> "Core_int64_extended.t"
-      | CoreInt32 -> "Core.Int32.t"
+      | CoreInt32 -> "Core_int32_extended.t"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
       | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
       | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
