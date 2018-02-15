@@ -1,9 +1,9 @@
-module Core_int64_extended = Core_int64_extended.Core_int64_extended
+(*module Core_int64_extended = Core_int64_extended.Core_int64_extended
 module Core_int32_extended = Core_int32_extended.Core_int32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
-module Uint8_extended = Uint8_extended.Uint8_extended
+module Uint8_extended = Uint8_extended.Uint8_extended*)
 (*Upon further reflection--use specific int types, as specific as possible, such as 
   Int64 from Core or Int32 over plain ints. In future we might write a version that
   is sans Core in case anyone cares.*)
@@ -42,7 +42,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint32_extended_t -> "Uint32_extended.t option"
       | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
-      | Date -> "Core.Date.t option"
+      | Date -> "Core_date_extended.t option"
       | Time -> "Core_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
@@ -58,7 +58,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
-      | Date -> "Core.Date.t"
+      | Date -> "Core_date_extended.t"
       | Time -> "Core_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
@@ -120,7 +120,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint32_extended_t -> "Uint32_extended.t option"
       | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
-      | Date -> "Core.Date.t option"
+      | Date -> "Core_date_extended.t option"
       | Time -> "Core_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
@@ -136,7 +136,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
-      | Date -> "Core.Date.t"
+      | Date -> "Core_date_extended.t"
       | Time -> "Core_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
