@@ -1,9 +1,9 @@
 module Core_int64_extended = Core_int64_extended.Core_int64_extended
 module Core_int32_extended = Core_int32_extended.Core_int32_extended
-module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
-module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
-module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
-module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
+module Uint64_extended = Uint64_extended.Uint64_extended
+module Uint32_extended = Uint32_extended.Uint32_extended
+module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint8_extended = Uint8_extended.Uint8_extended
 (*Upon further reflection--use specific int types, as specific as possible, such as 
   Int64 from Core or Int32 over plain ints. In future we might write a version that
   is sans Core in case anyone cares.*)
@@ -15,10 +15,10 @@ module Types_we_emit = struct
     | CoreInt64
     | CoreInt32
     (*| Int8 ===TODO===support this type *)
-    | Uint8_w_sexp_t
-    | Uint16_w_sexp_t
-    | Uint32_w_sexp_t
-    | Uint64_w_sexp_t
+    | Uint8_extended_t
+    | Uint16_extended_t
+    | Uint32_extended_t
+    | Uint64_extended_t
     | Float
     | Date
     | Time 
@@ -37,10 +37,10 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int32 -> "int32"*)
       | CoreInt64 -> "Core_int64_extended.t option"
       | CoreInt32 -> "Core_int32_extended.t option"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
+      | Uint8_extended_t -> "Uint8_extended.t option"
+      | Uint16_extended_t -> "Uint16_extended.t option"
+      | Uint32_extended_t -> "Uint32_extended.t option"
+      | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
       | Date -> "Core.Date.t option"
       | Time -> "Core_time_extended.t option"
@@ -53,10 +53,10 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int32 -> "int32"*)
       | CoreInt64 -> "Core_int64_extended.t"
       | CoreInt32 -> "Core_int32_extended.t"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
+      | Uint8_extended_t -> "Uint8_extended.t"
+      | Uint16_extended_t -> "Uint16_extended.t"
+      | Uint32_extended_t -> "Uint32_extended.t"
+      | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
       | Date -> "Core.Date.t"
       | Time -> "Core_time_extended.t"
@@ -92,14 +92,14 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | true, Int32 ->
     | false, Int32 -> 
     | true, Int64 ->*) 
-    | false, Uint8_w_sexp_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint8_w_sexp_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint16_w_sexp_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint16_w_sexp_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint32_w_sexp_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint32_w_sexp_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint64_w_sexp_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint64_w_sexp_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint8_extended_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint8_extended_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint16_extended_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint16_extended_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint32_extended_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint32_extended_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint64_extended_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint64_extended_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
@@ -115,10 +115,10 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int32 -> "int32"*)
       | CoreInt64  
       | CoreInt32 -> "Null.int"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
+      | Uint8_extended_t -> "Uint8_extended.t option"
+      | Uint16_extended_t -> "Uint16_extended.t option"
+      | Uint32_extended_t -> "Uint32_extended.t option"
+      | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
       | Date -> "Core.Date.t option"
       | Time -> "Core_time_extended.t option"
@@ -131,10 +131,10 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int32 -> "int32"*)
       | CoreInt64 
       | CoreInt32 -> "Field.int"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
+      | Uint8_extended_t -> "Uint8_extended.t"
+      | Uint16_extended_t -> "Uint16_extended.t"
+      | Uint32_extended_t -> "Uint32_extended.t"
+      | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
       | Date -> "Core.Date.t"
       | Time -> "Core_time_extended.t"

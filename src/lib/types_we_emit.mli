@@ -2,10 +2,10 @@ module Types_we_emit : sig
   type t =
     | CoreInt64
     | CoreInt32
-    | Uint8_w_sexp_t
-    | Uint16_w_sexp_t
-    | Uint32_w_sexp_t
-    | Uint64_w_sexp_t
+    | Uint8_extended_t
+    | Uint16_extended_t
+    | Uint32_extended_t
+    | Uint64_extended_t
     | Float
     | Date
     | Time 

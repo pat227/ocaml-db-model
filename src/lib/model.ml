@@ -300,6 +300,9 @@ module Model = struct
 		     ~host ~user ~password ~database =
     let open Core in 
     let module_name = String.capitalize table_name in
+    (*===todo===either make fields mandatory or default, or else remove all the
+      functions that depend on fields extension when generating modules, ie, the 
+      query functions.*)
     let ppx_decorators_list =
       if Option.is_some ppx_decorators then 
 	Option.value_exn (Utilities.parse_list ppx_decorators)
@@ -309,10 +312,12 @@ module Model = struct
     let other_modules =
       String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
 			       "module Utilities = Utilities.Utilities";
-			       "module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Ocaml_db_model.Uint8_w_sexp";
+			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+			       "module Core_int64_extended = Core_int64_extended.Core_int64_extended";
+			       "module Core_int32_extended = Core_int32_extended.Core_int32_extended";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
@@ -368,10 +373,12 @@ module Model = struct
     let module_name = String.capitalize table_name in
     let other_modules =
       String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-			       "module Uint64_w_sexp = Ocaml_db_model.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Ocaml_db_model.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Ocaml_db_model.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Ocaml_db_model.Uint8_w_sexp";
+			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+			       "module Core_int64_extended = Core_int64_extended.Core_int64_extended";
+			       "module Core_int32_extended = Core_int32_extended.Core_int32_extended";
 			       "open Sexplib.Std\n"] in
     let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
@@ -460,9 +467,9 @@ module Model = struct
     let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml" in
     let lines =
       In_channel.input_lines inchan in 
-    (*replace lines 15 through 21 and then write to location*)
-    let first15lines = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i < 14)) in
-    let lines22_toend = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 20)) in
+    (*replace lines 18 through 24 and then write to location*)
+    let first18lines = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i < 18)) in
+    let lines25_toend = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 24)) in
     let replacement_lines =
       String.concat ~sep:"\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
@@ -472,16 +479,16 @@ module Model = struct
 		     "    let open Mysql in ";
 		     "    quick_connect";
 		     "      ~host ~database ~password ~user ();;"] in
-    let modified_utils = String.concat ~sep:"\n" [first15lines;replacement_lines;lines22_toend] in
+    let modified_utils = String.concat ~sep:"\n" [first18lines;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
     let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli" in
     let lines_mli =
       In_channel.input_lines inchan_mli in
-    (*replace line 7 and then write to location*)
-    let first6lines = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 6)) in
-    let lines8_toend = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i > 6)) in
+    (*replace line 10 and then write to location*)
+    let first9lines = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 9)) in
+    let lines11_toend = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i > 9)) in
     let replacement_line = "  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd" in
-    let modified_utils_mli = String.concat ~sep:"\n" [first6lines;replacement_line;lines8_toend] in
+    let modified_utils_mli = String.concat ~sep:"\n" [first9lines;replacement_line;lines11_toend] in
     write_module ~outputdir:destinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =

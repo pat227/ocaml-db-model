@@ -52,4 +52,20 @@ module Uint32_extended = struct
   let compare_uint32 t1 t2 = Uint32.compare t1 t2
   let equal = equal_uint32
   let compare = compare_uint32
+
+  let to_yojson t =
+    let s = Uint32.to_string t in
+    let s2 = Core.String.concat ["{uint32:";s;"}"] in
+    Yojson.Safe.from_string s2;;
+    
+  let of_yojson j =
+    try
+      let s = Yojson.Safe.to_string j in
+      let splits = Core.String.split s ':' in
+      let value_half = Core.List.nth_exn splits 1 in
+      let rbracket_i = Core.String.index_exn value_half '}' in 
+      let value = Core.String.slice value_half 0 rbracket_i in 
+      Result.Ok (Uint32.of_string value)
+    with err -> Error "uint32_extended::of_yojson() failed.";;
+
 end 

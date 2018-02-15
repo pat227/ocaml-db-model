@@ -1,8 +1,8 @@
 open Core
-module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
-module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
-module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
-module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
+module Uint64_extended = Uint64_extended.Uint64_extended
+module Uint32_extended = Uint32_extended.Uint32_extended
+module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint8_extended = Uint8_extended.Uint8_extended
 (*Types from mysql that are relatively more safely mapped to Ocaml*)
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Utilities = Utilities2copy.Utilities
@@ -34,13 +34,13 @@ module Sql_supported_types = struct
   let ml_type_of_supported_sql_type t =
     match t with
     | TINYINT -> Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
-    | TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_w_sexp_t
+    | TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_extended_t
     | TINYINT_BOOL -> Ok Types_we_emit.Bool
-    | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_w_sexp_t
+    | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_extended_t
     | INTEGER -> Ok Types_we_emit.CoreInt64
-    | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
+    | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
     | BIGINT -> Ok Types_we_emit.CoreInt64
-    | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
+    | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
     | DECIMAL
     | FLOAT 
     | DOUBLE -> Ok Types_we_emit.Float

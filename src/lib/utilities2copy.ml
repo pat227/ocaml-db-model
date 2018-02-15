@@ -1,9 +1,10 @@
 module Core_int64_extended = Core_int64_extended.Core_int64_extended
 module Core_int32_extended = Core_int32_extended.Core_int32_extended
-module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
-module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
-module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
-module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
+module Core_time_extended = Core_time_extended.Core_time_extended
+module Uint8_extended = Uint8_extended.Uint8_extended
+module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint32_extended = Uint32_extended.Uint32_extended
+module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
 open Core
 module Utilities = struct
@@ -158,42 +159,42 @@ module Utilities = struct
     
   let parse_uint8_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Uint8_w_sexp.of_string s;;
+    Uint8_extended.of_string s;;
 
   let parse_optional_uint8_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Uint8_w_sexp.of_string s in Some i
+    | Some s -> let i = Uint8_extended.of_string s in Some i
     | None -> None;;
 
   let parse_uint16_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Uint16_w_sexp.of_string s;;
+    Uint16_extended.of_string s;;
 
   let parse_optional_uint16_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Uint16_w_sexp.of_string s in Some i
+    | Some s -> let i = Uint16_extended.of_string s in Some i
     | None -> None;;
 
   let parse_uint32_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Uint32_w_sexp.of_string s;;
+    Uint32_extended.of_string s;;
 
   let parse_optional_uint32_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Uint32_w_sexp.of_string s in Some i
+    | Some s -> let i = Uint32_extended.of_string s in Some i
     | None -> None;;
 
   let parse_uint64_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Uint64_w_sexp.of_string s;;
+    Uint64_extended.of_string s;;
 
   let parse_optional_uint64_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Uint64_w_sexp.of_string s in Some i
+    | Some s -> let i = Uint64_extended.of_string s in Some i
     | None -> None;;
     
   (*-----booleans------*)
@@ -229,12 +230,12 @@ module Utilities = struct
 
   let parse_time_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core.Time.of_string s;;
+    Core_time_extended.of_string s;;
 
   let parse_optional_time_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core.Time.of_string s in Some dt
+    | Some s -> let dt = Core_time_extended.of_string s in Some dt
     | None -> None;;
 
 end

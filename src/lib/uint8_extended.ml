@@ -62,7 +62,7 @@ module Uint8_extended = struct
     try
       let s = Yojson.Safe.to_string j in
       let splits = Core.String.split s ':' in
-      let value_half = List.nth_exn splits 1 in
+      let value_half = Core.List.nth_exn splits 1 in
       let rbracket_i = Core.String.index_exn value_half '}' in 
       let value = Core.String.slice value_half 0 rbracket_i in 
       Result.Ok (Uint8.of_string value)
