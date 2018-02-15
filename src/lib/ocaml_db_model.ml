@@ -1,4 +1,5 @@
 module Core_time_extended = Core_time_extended.Core_time_extended
+module Core_date_extended = Core_date_extended.Core_date_extended
 module Core_int64_extended = Core_int64_extended
 module Core_int32_extended = Core_int32_extended     
 module Credentials = Credentials.Credentials
