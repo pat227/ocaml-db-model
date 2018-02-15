@@ -11,7 +11,7 @@ module Credentials = struct
       db = db;
     };;
 
-  let getuname t = t.username;;
+  let getusername t = t.username;;
   let getpw t = t.pw;;
   let getdb t = t.db;;
 

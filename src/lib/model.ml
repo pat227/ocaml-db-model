@@ -317,8 +317,8 @@ module Model = struct
 			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-			       "module Core_int64_extended = Core_int64_extended.Core_int64_extended";
-			       "module Core_int32_extended = Core_int32_extended.Core_int32_extended";
+			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
+			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
@@ -380,8 +380,8 @@ module Model = struct
 			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-			       "module Core_int64_extended = Core_int64_extended.Core_int64_extended";
-			       "module Core_int32_extended = Core_int32_extended.Core_int32_extended";
+			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
+			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
 			       "open Sexplib.Std\n"] in
     let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
@@ -425,7 +425,7 @@ module Model = struct
   let construct_db_credentials ~credentials =
     let open Core in 
     let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in
-    String.concat [body_start;(Credentials.getuname credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"];;
+    String.concat [body_start;(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"];;
 
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
@@ -469,29 +469,40 @@ module Model = struct
      *)    
     let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml" in
     let lines =
-      In_channel.input_lines inchan in 
+      In_channel.input_lines inchan in
+    (*replace lines 1 through 7 with updated modules*)
     (*replace lines 18 through 24 and then write to location*)
-    let first18lines = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i < 18)) in
+    let lines8to17 = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i < 17 && i > 7)) in
     let lines25_toend = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 24)) in
     let replacement_lines =
       String.concat ~sep:"\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
-		     "	     ?database=(Credentials.credentials.db)";
-		     "	     ?password=(Credentials.credentials.pw)";
-		     "	     ?user=(Credentials.credentials.username) () =";
+		     "	     ?database=(Credentials.credentials.getdb)";
+		     "	     ?password=(Credentials.credentials.getpw)";
+		     "	     ?user=(Credentials.credentials.getusername) () =";
 		     "    let open Mysql in ";
 		     "    quick_connect";
 		     "      ~host ~database ~password ~user ();;"] in
-    let modified_utils = String.concat ~sep:"\n" [first18lines;replacement_lines;lines25_toend] in
+    let replacement_modules =
+      String.concat ~sep:"\n"
+		    ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+		     "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+		     "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+		     "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+		     "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+		     "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+		     "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
+		     "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";] in 
+    let modified_utils = String.concat ~sep:"\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
     let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli" in
     let lines_mli =
       In_channel.input_lines inchan_mli in
     (*replace line 10 and then write to location*)
-    let first9lines = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 9)) in
+    let lines7to9 = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 9 && i > 6)) in
     let lines11_toend = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i > 9)) in
     let replacement_line = "  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd" in
-    let modified_utils_mli = String.concat ~sep:"\n" [first9lines;replacement_line;lines11_toend] in
+    let modified_utils_mli = String.concat ~sep:"\n" [replacement_modules;lines7to9;replacement_line;lines11_toend] in
     write_module ~outputdir:destinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =
