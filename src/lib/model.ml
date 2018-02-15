@@ -311,6 +311,7 @@ module Model = struct
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+			       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
 			       "module Utilities = Utilities.Utilities";
 			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
@@ -373,6 +374,8 @@ module Model = struct
     let module_name = String.capitalize table_name in
     let other_modules =
       String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+			       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+			       "module Utilities = Utilities.Utilities";
 			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
