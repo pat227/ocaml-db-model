@@ -1,4 +1,4 @@
-module Credentials = Credentials.Credentials
+module Credentials = Credentials2copy.Credentials
 module Utilities = Utilities2copy.Utilities
 module Model = Model.Model
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
@@ -11,6 +11,8 @@ module Command = struct
     try
       let credentials = Credentials.of_username_pw ~username:user ~pw:password ~db:database in
       let conn = Utilities.getcon ~host ~user ~password ~database in
+      let ppx_decorators = ppxlist_opt in 
+      let () = Model.construct_db_credentials ~credentials ~destinationdir:"src/lib/" in 
       let fields_map =
 	Model.get_fields_map_for_all_tables
 	  ~regexp_opt ~table_list_opt ~conn ~schema:database in
@@ -21,7 +23,6 @@ module Command = struct
 		Utilities.closecon conn
 	| h::t ->
 	   let title_cased_h = String.capitalize h in 
-	   let ppx_decorators = ppxlist_opt in 
 	   let body =
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
@@ -43,10 +44,6 @@ module Command = struct
 	   let () = Model.write_appending_module
 		      ~outputdir:"src/tables/" ~fname:"tables.ml"
 		      ~body:(String.concat ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
-	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.mli"
-				       ~body:(Model.construct_db_credentials_mli ()) in
-	   let () = Model.write_module ~outputdir:"src/lib/" ~fname:"credentials.ml"
-				       ~body:(Model.construct_db_credentials ~credentials) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   helper t map in
       helper keys fields_map

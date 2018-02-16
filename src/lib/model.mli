@@ -1,5 +1,5 @@
 module Pcre = Pcre
-module Credentials = Credentials.Credentials
+module Credentials = Credentials2copy.Credentials
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Model : sig
@@ -37,8 +37,7 @@ module Model : sig
 		       password:string -> database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string option -> string
-  val construct_db_credentials_mli : unit -> string
-  val construct_db_credentials : credentials:Credentials.t -> string
+  val construct_db_credentials : credentials:Credentials.t -> destinationdir:string -> unit
   val write_module : outputdir:string -> fname:string -> body:string -> unit
   val write_appending_module : outputdir:string -> fname:string -> body:string -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module

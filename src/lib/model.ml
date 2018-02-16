@@ -1,5 +1,5 @@
 module Pcre = Pcre
-module Credentials = Credentials.Credentials
+module Credentials = Credentials2copy.Credentials
 module Utilities = Utilities2copy.Utilities
 module Table = Table.Table
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
@@ -417,16 +417,6 @@ module Model = struct
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
-  (*NOTE: unlike credentials in this project; the written module includes a set of credentials
-    with user supplied values.*)
-  let construct_db_credentials_mli () =
-    "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
-
-  let construct_db_credentials ~credentials =
-    let open Core in 
-    let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in
-    String.concat [body_start;(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"];;
-
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
@@ -443,6 +433,32 @@ module Model = struct
 	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush ("\nFailed to write to file:" ^ fname)
+
+  (*NOTE: unlike credentials in this project; the written module includes a set of credentials
+    with user supplied values.
+  let construct_db_credentials_mli () =
+    "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
+   *)
+  let construct_db_credentials ~credentials ~destinationdir =
+    let open Core in 
+    (*==========================================================================
+      DESPITE being so short, copy it to avoid maintaining this module and mli 
+      in 2 places, ie, avoid code duplication
+      ==========================================================================
+let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in*)
+    let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/credentials2copy.ml" in
+    let lines =
+      In_channel.input_lines inchan in
+    (*insert a value here and into mli*)
+    let lines2to16 = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 0 && i < 16)) in
+    let body = String.concat [lines2to16;"  let credentials = of_username_pw ~username:\"";(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"] in
+    let () = write_module ~outputdir:destinationdir ~fname:"credentials.ml" ~body in
+    let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/credentials2copy.mli" in
+    let lines_mli =
+      In_channel.input_lines inchan_mli in
+    let lines_first6 = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 6)) in
+    let body_mli = String.concat [lines_first6;"  val credentials : t\nend"] in
+    write_module ~outputdir:destinationdir ~fname:"credentials.mli" ~body:body_mli;;
 
   let write_appending_module ~outputdir ~fname ~body = 
     let open Core.Unix in
@@ -477,9 +493,9 @@ module Model = struct
     let replacement_lines =
       String.concat ~sep:"\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
-		     "	     ?database=(Credentials.credentials.getdb)";
-		     "	     ?password=(Credentials.credentials.getpw)";
-		     "	     ?user=(Credentials.credentials.getusername) () =";
+		     "	     ?(database=Credentials.getdb Credentials.credentials)";
+		     "	     ?(password=Credentials.getpw Credentials.credentials)";
+		     "	     ?(user=Credentials.getusername Credentials.credentials) () =";
 		     "    let open Mysql in ";
 		     "    quick_connect";
 		     "      ~host ~database ~password ~user ();;"] in
@@ -492,7 +508,8 @@ module Model = struct
 		     "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 		     "module Uint8_extended = Ocaml_db_model.Uint8_extended";
 		     "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-		     "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";] in 
+		     "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
+		     "module Credentials = Credentials.Credentials"] in 
     let modified_utils = String.concat ~sep:"\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
     let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli" in
