@@ -21,6 +21,7 @@ module Sql_supported_types = struct
     | DOUBLE
     | DATE
     | DATETIME
+  (*| TIME <<<<====TODO -- support with use of Core.Time.Span.t *)
     | TIMESTAMP
     | BINARY
     | VARBINARY
@@ -45,6 +46,7 @@ module Sql_supported_types = struct
     | FLOAT 
     | DOUBLE -> Ok Types_we_emit.Float
     | DATE -> Ok Types_we_emit.Date
+  (*| TIME <<<<====TODO  -- support with use of Core.Time.Span.t *)
     | DATETIME 
     | TIMESTAMP -> Ok Types_we_emit.Time
     | BINARY
@@ -79,6 +81,7 @@ module Sql_supported_types = struct
       | false, "date" -> DATE 
       | false, "datetime" -> DATETIME
       | false, "timestamp" -> TIMESTAMP
+(*    | false, "time" ->  <<<<===TODO -- support with use of Core.Time.Span.t *)
       | false, "blob"
       | false, "binary"
       | false, "varbinary"

@@ -14,7 +14,7 @@ module Types_we_emit = struct
     | Int32*)
     | CoreInt64
     | CoreInt32
-    (*| Int8 ===TODO===support this type *)
+  (*| Int8 ===TODO===support this type  *)
     | Uint8_extended_t
     | Uint16_extended_t
     | Uint32_extended_t
