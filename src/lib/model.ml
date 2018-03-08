@@ -439,6 +439,14 @@ module Model = struct
   let construct_db_credentials_mli () =
     "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
    *)
+  let get_path2lib () =
+    (*Use CAML_LD_LIBRARY_PATH env var. It is /home/<homedir>/.opam/4.04.1/lib/stublibs; extract version*)
+    let ldpath = Sys.getenv "CAML_LD_LIBRARY_PATH" in
+    let pathelems = String.split ~on:"/" ldpath in
+    let paths = List.split_n pathelems ((List.length pathelems) - 1) in
+    let path_elems_less_stublibs = fst paths in
+    String.concat path_elemns_less_stublibs ~sep:"/";;
+				      
   let construct_db_credentials ~credentials ~destinationdir =
     let open Core in 
     (*==========================================================================
@@ -446,14 +454,14 @@ module Model = struct
       in 2 places, ie, avoid code duplication
       ==========================================================================
 let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in*)
-    let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/credentials2copy.ml" in
-    let lines =
-      In_channel.input_lines inchan in
+    let path2lib = get_path2lib () in 
+    let inchan = In_channel.create (String.concat[path2lib;"/ocaml_db_model/credentials2copy.ml"]) in
+    let lines = In_channel.input_lines inchan in
     (*insert a value here and into mli*)
     let lines2to16 = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 0 && i < 16)) in
     let body = String.concat [lines2to16;"  let credentials = of_username_pw ~username:\"";(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"] in
     let () = write_module ~outputdir:destinationdir ~fname:"credentials.ml" ~body in
-    let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/credentials2copy.mli" in
+    let inchan_mli = In_channel.create (String.concat [path2lib;"/ocaml_db_model/credentials2copy.mli"]) in
     let lines_mli =
       In_channel.input_lines inchan_mli in
     let lines_first6 = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 6)) in
@@ -482,8 +490,9 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     --how to specify the (opam install) path to utilities.ml?---
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
-     *)    
-    let inchan = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.ml" in
+     *)
+    let path2lib = get_path2lib () in 
+    let inchan = In_channel.create (String.concat [path2lib;"/ocaml_db_model/utilities2copy.ml"]) in
     let lines =
       In_channel.input_lines inchan in
     (*replace lines 1 through 7 with updated modules*)
@@ -512,7 +521,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "module Credentials = Credentials.Credentials"] in 
     let modified_utils = String.concat ~sep:"\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
-    let inchan_mli = In_channel.create "/home/paul/.opam/4.04.1/lib/ocaml_db_model/utilities2copy.mli" in
+    let inchan_mli = In_channel.create (String.concat [path2lib;"/ocaml_db_model/utilities2copy.mli"]) in
     let lines_mli =
       In_channel.input_lines inchan_mli in
     (*replace line 10 and then write to location*)
