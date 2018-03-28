@@ -1,10 +1,10 @@
-module Pcre = Pcre
 module Credentials = Credentials2copy.Credentials
-module Utilities = Utilities2copy.Utilities
-module Table = Table.Table
-module Sql_supported_types = Sql_supported_types.Sql_supported_types
-module Types_we_emit = Types_we_emit.Types_we_emit
 module Mysql = Mysql
+module Pcre = Pcre
+module Sql_supported_types = Sql_supported_types.Sql_supported_types
+module Table = Table.Table
+module Types_we_emit = Types_we_emit.Types_we_emit
+module Utilities = Utilities2copy.Utilities
 (*module String_set = Core.Set.Make(Core.String)*)
 open Sexplib.Std
 open Sexplib
@@ -295,10 +295,31 @@ module Model = struct
     String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
 			     recursive_call;"          with\n          | err ->";
 			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
-      
+
+  let get_all_available_user_written_modules ~where2find_modules =
+    let open Core.Std.Unix in 
+    let rec helper path2dir dirhandle accum =
+      try
+	let nextfile = readdir dirhandle in
+	let stat = stat (Core.Std.String.concat [path2dir;nextfile]) in
+	match stat.st_kind with
+	| S_REG -> 
+	   if Core.Std.String.is_suffix nextfile ~suffix:"mli" then
+	     helper dirhandle accum
+	   else 
+	     helper dirhandle (nextfile::accum)
+	| _ -> helper dirhandle accum
+      with End_of_file ->
+	let () = Core.Std.Unix.closedir dirhandle in accum in
+    let dir_handle = Core.Std.Unix.opendir path2dir in
+    helper where2find_modules dir_handle [];;
+    
+    
   let construct_body ~table_name ~map ~ppx_decorators
-		     ~host ~user ~password ~database =
-    let open Core in 
+		     ~host ~user ~password ~database
+		     ~module_names ~where2find_modules =
+    let open Core in
+    let client_modules = get_all_available_user_written_modules ~where2find_modules in 
     let module_name = String.capitalize table_name in
     (*===todo===either make fields mandatory or default, or else remove all the
       functions that depend on fields extension when generating modules, ie, the 
@@ -318,26 +339,42 @@ module Model = struct
 			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
 			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
-			       "open Sexplib.Std\n"] in
+			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in 
-    let rec helper l tbody =
+					(Int.to_string (List.length tfields_list))) in
+    (*--need to know which modules were added so we can add them to 
+     other_modules defined above*)
+    let rec helper l tbody added_modules =
       match l with
       | [] -> tbody
       | h :: t ->
-	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in 
-	 let tbody_new =
-	   Core.String.concat [tbody;"\n    ";h.col_name;" : ";
-				   string_of_data_type;";"] in
-	 helper t tbody_new in 
-    let tbody = helper tfields_list "" in
+	 (*--if client has defined a module of same name and desires to use it
+           --as a type, do so here. Module must define some way to marshall
+           --the type, ie, must have an of_string method. And a to_string
+           --method in order to save it.*)
+	 if List.mem h.col_name client_modules &&
+	      List.mem h.col_name module_names then
+	   let tbody_new =
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 h.col_name;".t;"] in
+	   helper t tbody_new (h.col_name :: added_modules)
+	 else 
+	   let string_of_data_type =
+	     Types_we_emit.to_string h.data_type h.is_nullable in 
+	   let tbody_new =
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;";"] in
+	   helper t tbody_new accum in
+    let more_specific_modules = [] in
+    let tbody = helper tfields_list "" more_specific_modules in
+    let other_modules =
+      String.concat ~sep:"\n" [other_modules;more_specific_modules;
+			       "open Sexplib.Std\n"] in 
     let almost_done =
       Core.String.concat [other_modules;start_module;start_type_t;
 			      tbody;"\n";end_type_t] in
@@ -381,8 +418,7 @@ module Model = struct
 			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
 			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
-			       "open Sexplib.Std\n"] in
+			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
     let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in

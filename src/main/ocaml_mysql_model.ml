@@ -5,7 +5,9 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 open Core
 module Command = struct
 
-  let execute regexp_opt table_list_opt ppxlist_opt sequoia host user password database () =
+  let execute regexp_opt table_list_opt ppxlist_opt
+	      module_names where2find_modules
+	      sequoia host user password database () =
     let open Core.Result in
     (*==todo==refactor the below into a functon in model.ml*)
     try
@@ -25,7 +27,8 @@ module Command = struct
 	   let title_cased_h = String.capitalize h in 
 	   let body =
 	     Model.construct_body
-	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
+	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database
+	       ~module_names ~where2findmodules in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
 	   let () = if sequoia then
 		      let seq_module = Model.construct_one_sequoia_struct
@@ -70,6 +73,16 @@ module Command = struct
 				 ~doc:"Comma seperated list of ppx extensions; \
 				       currently support fields, show, sexp, \
 				       ord, eq, yojson, which are also defaults."
+			 +> flag "-module-field-types" (optional string)
+				 ~doc:"Force any db fields whose name matches any in the \
+				       csv-with-no-spaces list to not be a primitive, but \
+				       instead a type defined in a module of the same name.\ 
+				       A directory must be provided where to find the source \
+				       ml files for each in another (the next) arg."
+			 (*==todo==make this one required if the prior is supplied*)
+			 +> flag "-path-to-modules"
+				 ~doc:"Absolute path to the directory within the project that \
+				       contains any modules specified by module-field-types arg."
 			 +> flag "-sequoia" (no_arg)
 				 ~doc:"Support for sequoia: optionally output \
 				       modules suitable for use with the Sequoia\
