@@ -34,9 +34,12 @@ module Model : sig
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t ->
 		       ppx_decorators:string option -> host:string -> user:string ->
-		       password:string -> database:string -> string
+		       password:string -> database:string ->
+		       module_names:string list -> where2find_modules:string 
+		       -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
-		      ppx_decorators:string option -> string
+		      ppx_decorators:string option -> module_names:string list ->
+		      where2find_modules:string -> string
   val construct_db_credentials : credentials:Credentials.t -> destinationdir:string -> unit
   val write_module : outputdir:string -> fname:string -> body:string -> unit
   val write_appending_module : outputdir:string -> fname:string -> body:string -> unit

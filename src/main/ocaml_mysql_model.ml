@@ -28,8 +28,8 @@ module Command = struct
 	   let body =
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database
-	       ~module_names ~where2findmodules in
-	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
+	       ~module_names ~where2find_modules in
+	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~module_names ~where2find_modules in
 	   let () = if sequoia then
 		      let seq_module = Model.construct_one_sequoia_struct
 					 ~conn ~table_name:h ~map in
@@ -78,11 +78,12 @@ module Command = struct
 				       csv-with-no-spaces list to not be a primitive, but \
 				       instead a type defined in a module of the same name.\ 
 				       A directory must be provided where to find the source \
-				       ml files for each in another (the next) arg."
+				       ml files for each in another (the next) arg. The name \
+				       should not be sans suffix, ie, without \".ml\" or \".mli\""
 			 (*==todo==make this one required if the prior is supplied*)
 			 +> flag "-path-to-modules"
 				 ~doc:"Absolute path to the directory within the project that \
-				       contains any modules specified by module-field-types arg."
+				       contains any modules (mli files) specified by module-field-types arg."
 			 +> flag "-sequoia" (no_arg)
 				 ~doc:"Support for sequoia: optionally output \
 				       modules suitable for use with the Sequoia\

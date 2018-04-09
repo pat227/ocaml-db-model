@@ -58,7 +58,7 @@ module Model = struct
 	       let new_fkey_record =
 		 Fields.create
 		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
-	       let newset = Core.String.Map.add accum ~key:col_name ~data:new_fkey_record in 
+	       let newset = Core.String.Map.set accum ~key:col_name ~data:new_fkey_record in 
 	       helper newset results (Mysql.fetch results)
 	      )
 	    with err ->
@@ -305,48 +305,47 @@ module Model = struct
 	match stat.st_kind with
 	| S_REG -> 
 	   if Core.Std.String.is_suffix nextfile ~suffix:"mli" then
-	     helper dirhandle accum
+	     helper where2find_modules dirhandle accum
 	   else 
-	     helper dirhandle (nextfile::accum)
-	| _ -> helper dirhandle accum
+	     helper where2find_modules dirhandle (nextfile::accum)
+	| _ -> helper where2find_modules dirhandle accum
       with End_of_file ->
 	let () = Core.Std.Unix.closedir dirhandle in accum in
-    let dir_handle = Core.Std.Unix.opendir path2dir in
+    let dir_handle = Core.Std.Unix.opendir where2find_modules in
     helper where2find_modules dir_handle [];;
     
     
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database
 		     ~module_names ~where2find_modules =
-    let open Core in
     let client_modules = get_all_available_user_written_modules ~where2find_modules in 
-    let module_name = String.capitalize table_name in
+    let module_name = Core.String.capitalize table_name in
     (*===todo===either make fields mandatory or default, or else remove all the
       functions that depend on fields extension when generating modules, ie, the 
       query functions.*)
     let ppx_decorators_list =
-      if Option.is_some ppx_decorators then 
-	Option.value_exn (Utilities.parse_list ppx_decorators)
+      if Core.Option.is_some ppx_decorators then 
+	Core.Option.value_exn (Utilities.parse_list ppx_decorators)
       else
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
-      String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-			       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
-			       "module Utilities = Utilities.Utilities";
-			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
-			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
-			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
-			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
+      ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+       "module Utilities = Utilities.Utilities";
+       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
+       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list_reversed = Core.String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in
+					(Core.Int.to_string (List.length tfields_list))) in
     (*--need to know which modules were added so we can add them to 
      other_modules defined above*)
     let rec helper l tbody added_modules =
@@ -369,12 +368,13 @@ module Model = struct
 	   let tbody_new =
 	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
 				 string_of_data_type;";"] in
-	   helper t tbody_new accum in
+	   helper t tbody_new added_modules in
     let more_specific_modules = [] in
     let tbody = helper tfields_list "" more_specific_modules in
     let other_modules =
-      String.concat ~sep:"\n" [other_modules;more_specific_modules;
-			       "open Sexplib.Std\n"] in 
+      Core.String.concat ~sep:"\n" ((other_modules @
+				       more_specific_modules) @
+				      ["open Sexplib.Std\n"]) in 
     let almost_done =
       Core.String.concat [other_modules;start_module;start_type_t;
 			      tbody;"\n";end_type_t] in
@@ -382,76 +382,88 @@ module Model = struct
       match ppx_decorators_list with
       | [] -> almost_done ^ "\n"
       | h :: t ->
-	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
+	 let ppx_extensions = Core.String.concat ~sep:"," ppx_decorators_list in
 	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
-      String.concat ["  let tablename=\"";table_name;
+      Core.String.concat ["  let tablename=\"";table_name;
 	"\" \n\n  let get_tablename () = tablename;;\n"] in
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
     let query_function = construct_sql_query_function ~table_name ~map ~host
 						      ~user ~password ~database in 
-    String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
+    Core.String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
 
-  let construct_mli ~table_name ~map ~ppx_decorators =
-    let open Core in 
+  let construct_mli ~table_name ~map ~ppx_decorators
+		    ~module_names ~where2find_modules =
+    let client_modules = get_all_available_user_written_modules ~where2find_modules in 
     (*at very least, fail if supplied csv list of ppx decorators is gibberish and 
       not a csv list  ===TODO===check that each is a true ppx extension, emit 
       warning if not. Still better than optional flags at command line, one for
       every possible ppx extension known and unknown in the future. *)
     let ppx_decorators_list =
-      if Option.is_some ppx_decorators then 
-	Option.value_exn (Utilities.parse_list ppx_decorators)
+      if Core.Option.is_some ppx_decorators then 
+	Core.Option.value_exn (Utilities.parse_list ppx_decorators)
       else
 	(*defaults*)
 	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
-    let module_name = String.capitalize table_name in
+    let module_name = Core.String.capitalize table_name in
     let other_modules =
-      String.concat ~sep:"\n" ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-			       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
-			       "module Utilities = Utilities.Utilities";
-			       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
-			       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
-			       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
-			       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-			       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-			       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
-    let start_module = String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
+      ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
+       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+       "module Utilities = Utilities.Utilities";
+       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
+       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list_reversed = Core.String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in 
-    let rec helper l tbody =
+					(Core.Int.to_string (List.length tfields_list))) in
+    let more_specific_modules = [] in 
+    let rec helper l tbody added_modules =
       match l with
       | [] -> tbody
       | h :: t ->
-	 let string_of_data_type =
-	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	 let tbody_new = Core.String.concat
-			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
-	 helper t tbody_new in 
-    let tbody = helper tfields_list "" in
-    let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
+	 if List.mem h.col_name client_modules &&
+	      List.mem h.col_name module_names
+	 then
+	   let tbody_new =
+	     Core.String.concat
+	       [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
+	   helper t tbody_new (h::added_modules)
+	 else 
+	   let string_of_data_type =
+	     Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
+	   let tbody_new =
+	     Core.String.concat
+	       [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
+	   helper t tbody_new added_modules in 
+    let tbody = helper tfields_list "" more_specific_modules in
+    let other_modules = Core.String.concat ~sep:"\n" (other_modules @ more_specific_modules) in 
+    let start_module = Core.String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
+    let almost_done = Core.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =
       match ppx_decorators_list with
       | [] -> almost_done
       | h :: t ->
-	 let ppx_extensions = String.concat ~sep:"," ppx_decorators_list in
-	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
+	 let ppx_extensions = Core.String.concat ~sep:"," ppx_decorators_list in
+	 Core.String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
-      String.concat
+      Core.String.concat
 	~sep:"\n"
 	["  val get_tablename : unit -> string";
 	 "  val get_sql_query : unit -> string";
 	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	 "end"] in
-    String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
+    Core.String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
@@ -478,10 +490,10 @@ module Model = struct
   let get_path2lib () =
     (*Use CAML_LD_LIBRARY_PATH env var. It is /home/<homedir>/.opam/4.04.1/lib/stublibs; extract version*)
     let ldpath = Sys.getenv "CAML_LD_LIBRARY_PATH" in
-    let pathelems = String.split ~on:"/" ldpath in
-    let paths = List.split_n pathelems ((List.length pathelems) - 1) in
+    let pathelems = Core.String.split ~on:'/' ldpath in
+    let paths = Core.List.split_n pathelems ((List.length pathelems) - 1) in
     let path_elems_less_stublibs = fst paths in
-    String.concat path_elemns_less_stublibs ~sep:"/";;
+    Core.String.concat path_elems_less_stublibs ~sep:"/";;
 				      
   let construct_db_credentials ~credentials ~destinationdir =
     let open Core in 
