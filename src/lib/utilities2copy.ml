@@ -49,8 +49,6 @@ module Utilities = struct
       | None -> None
     with
     | _ -> None;;
-
-
     
   let serialize_optional_field ~field ~conn =
     match field with

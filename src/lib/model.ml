@@ -297,21 +297,21 @@ module Model = struct
 			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
 
   let get_all_available_user_written_modules ~where2find_modules =
-    let open Core.Std.Unix in 
+    let open Core.Unix in 
     let rec helper path2dir dirhandle accum =
       try
 	let nextfile = readdir dirhandle in
-	let stat = stat (Core.Std.String.concat [path2dir;nextfile]) in
+	let stat = stat (Core.String.concat [path2dir;nextfile]) in
 	match stat.st_kind with
 	| S_REG -> 
-	   if Core.Std.String.is_suffix nextfile ~suffix:"mli" then
+	   if Core.String.is_suffix nextfile ~suffix:"mli" then
 	     helper where2find_modules dirhandle accum
 	   else 
 	     helper where2find_modules dirhandle (nextfile::accum)
 	| _ -> helper where2find_modules dirhandle accum
       with End_of_file ->
-	let () = Core.Std.Unix.closedir dirhandle in accum in
-    let dir_handle = Core.Std.Unix.opendir where2find_modules in
+	let () = Core.Unix.closedir dirhandle in accum in
+    let dir_handle = Core.Unix.opendir where2find_modules in
     helper where2find_modules dir_handle [];;
     
     
