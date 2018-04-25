@@ -318,7 +318,10 @@ module Model = struct
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database
 		     ~module_names ~where2find_modules =
-    let client_modules = get_all_available_user_written_modules ~where2find_modules in 
+    let client_modules =
+      match where2find_modules with
+      | None -> None
+      | Some path -> Some (get_all_available_user_written_modules ~where2find_modules:path) in 
     let module_name = Core.String.capitalize table_name in
     (*===todo===either make fields mandatory or default, or else remove all the
       functions that depend on fields extension when generating modules, ie, the 
@@ -356,8 +359,10 @@ module Model = struct
            --as a type, do so here. Module must define some way to marshall
            --the type, ie, must have an of_string method. And a to_string
            --method in order to save it.*)
-	 if List.mem h.col_name client_modules &&
-	      List.mem h.col_name module_names then
+	 if Core.Option.is_some client_modules &&
+	      Core.Option.is_some module_names &&
+		List.mem h.col_name (Core.Option.value_exn client_modules) &&
+		  List.mem h.col_name (Core.Option.value_exn module_names) then
 	   let tbody_new =
 	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
 				 h.col_name;".t;"] in
@@ -398,7 +403,10 @@ module Model = struct
 
   let construct_mli ~table_name ~map ~ppx_decorators
 		    ~module_names ~where2find_modules =
-    let client_modules = get_all_available_user_written_modules ~where2find_modules in 
+    let client_modules =
+      match where2find_modules with
+      | None -> None
+      | Some path -> Some (get_all_available_user_written_modules ~where2find_modules:path) in 
     (*at very least, fail if supplied csv list of ppx decorators is gibberish and 
       not a csv list  ===TODO===check that each is a true ppx extension, emit 
       warning if not. Still better than optional flags at command line, one for
@@ -432,9 +440,10 @@ module Model = struct
       match l with
       | [] -> tbody
       | h :: t ->
-	 if List.mem h.col_name client_modules &&
-	      List.mem h.col_name module_names
-	 then
+	 if Core.Option.is_some client_modules &&
+	      Core.Option.is_some module_names &&
+		List.mem h.col_name (Core.Option.value_exn client_modules) &&
+		  List.mem h.col_name (Core.Option.value_exn module_names) then
 	   let tbody_new =
 	     Core.String.concat
 	       [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in

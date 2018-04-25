@@ -11,8 +11,8 @@ module Command = struct
   let regexp_opt = ref None;;
   let table_list_opt = ref None;;
   let ppxlist_opt = ref None;;
-  let module_names_raw_opt = None;;
-  let where2find_modules_opt = None;;
+  let module_names_raw_opt = ref None;;
+  let where2find_modules_opt = ref None;;
   let sequoia = ref false;;
   (*--required--*)
   let host = ref "";;
@@ -95,14 +95,16 @@ module Command = struct
 		     ] in
       Arg.parse speclist print_endline usagemsg);;
   let () =
-    let modules_names =
-      match module_names_raw_opt with
+    let module_names =
+      match !module_names_raw_opt with
       | None -> None
       | Some s -> Some (Core.String.split s ~on:',') in
     let where2find_modules =
-      match where2find_modules_opt 
+      match !where2find_modules_opt with
+      | None -> None
+      | Some s -> Some (s) in 
     execute !regexp_opt !table_list_opt !ppxlist_opt
-	    module_names !where2find_modules
+	    module_names where2find_modules
 	    !sequoia !host !user !pwd !db ();;
 end 
 
