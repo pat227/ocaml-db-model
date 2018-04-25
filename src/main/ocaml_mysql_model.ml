@@ -4,6 +4,23 @@ module Model = Model.Model
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Command = struct
 
+  let usagemsg = "Connect to a mysql db, get schema, write modules and (primitive) \
+		  types out of thin air with ppx extensions and a utility module  \
+		  for parsing mysql strings into present directory. Use basic \
+		  regexp, or a list, to filter table names.";;
+  let regexp_opt = ref None;;
+  let table_list_opt = ref None;;
+  let ppxlist_opt = ref None;;
+  let module_names_raw_opt = None;;
+  let where2find_modules_opt = None;;
+  let sequoia = ref false;;
+  (*--required--*)
+  let host = ref "";;
+  let db = ref "";;
+  let user = ref "";;
+  let pwd = ref "";;
+    
+  
   let execute regexp_opt table_list_opt ppxlist_opt
 	      module_names where2find_modules
 	      sequoia host user password database () =
@@ -36,8 +53,7 @@ module Command = struct
 		      Model.write_appending_module
 			~outputdir:"src/tables/" ~fname:(".ml") ~body:seq_module
 		    else
-		      () 
-	   in
+		      () in
 	   let mlfile = String.concat [h;".ml"] in
 	   let mlifile = String.concat [h;".mli"] in 
 	   let () = Model.write_module
@@ -56,41 +72,35 @@ module Command = struct
     | Failure s -> Utilities.print_n_flush s
 
   let main_command_nocore =
-    let usagemsg = "Connect to a mysql db, get schema, write modules and (primitive) \
-		    types out of thin air with ppx extensions and a utility module  \
-		    for parsing mysql strings into present directory. Use basic \
-		    regexp, or a list, to filter table names." in
-    let regexp_opt = ref None in
-    let table_list_opt = ref None in
-    let ppxlist_opt = ref None in
-    let module_names_raw = ref "" in
-    let where2find_modules = ref "" in
-    let sequoia = ref false in
-    let host = ref "" in
-    let db = ref "" in
-    let user = ref "" in
-    let pwd = ref "" in
-    let speclist = [("-host", Arg.Set_string host, "ipv4 of the db host.");
-		    ("-user", Arg.Set_string user, "db user.");
-		    ("-password", Arg.Set_string pwd, "db password.");
-		    ("-db", Arg.Set_string db, "db name.");
-		    ("table-regexp", Arg.String (fun s -> regexp_opt := (Some s)), "Only model those tables that match a regexp.");
-		    ("table-list", Arg.String (fun s -> table_list_opt := (Some s)) ,"Csv-with-no-spaces table-name list.");
-		    ("ppx-extensions", Arg.String (fun s -> ppxlist_opt := (Some s)),
-		     "Comma seperated list of ppx extensions; currently support fields, show, sexp, ord, eq, \
-		      yojson, which are also defaults.");
-		    ("module-field-types", Arg.Set_string module_names_raw,
-		     "Force any db fields whose name matches any in the csv-with-no-spaces list to not be a \
-		      primitive, but instead a type defined in a module of the same name. A directory must\
-		      be provided where to find the source ml files for each in another (the next) arg. \
-		      The name should not be sans suffix, ie, without \".ml\" or \".mli\"");
-		    ("path-to-modules", Arg.Set_string where2find_modules,
-		     "Absolute path to the directory within the project that contains any modules (mli files) \
-		      specified by module-field-types arg.");
-		    ("-sequoia", Arg.Set sequoia,
-		     "Support for sequoia: optionally output modules suitable for use with the Sequoia library.")
-		   ] in
-    let module_names = Core.String.split !module_names_raw ~on:',' in 
+    (
+      let speclist = [("-host", Arg.Set_string host, "ipv4 of the db host.");
+		      ("-user", Arg.Set_string user, "db user.");
+		      ("-password", Arg.Set_string pwd, "db password.");
+		      ("-db", Arg.Set_string db, "db name.");
+		      ("table-regexp", Arg.String (fun s -> regexp_opt := (Some s)), "Only model those tables that match a regexp.");
+		      ("table-list", Arg.String (fun s -> table_list_opt := (Some s)) ,"Csv-with-no-spaces table-name list.");
+		      ("ppx-extensions", Arg.String (fun s -> ppxlist_opt := (Some s)),
+		       "Comma seperated list of ppx extensions; currently support fields, show, sexp, ord, eq, \
+			  yojson, which are also defaults.");
+		      ("module-field-types", Arg.String (fun s -> module_names_raw_opt := (Some s)),
+		       "Force any db fields whose name matches any in the csv-with-no-spaces list to not be a \
+			primitive, but instead a type defined in a module of the same name. A directory must\
+			be provided where to find the source ml files for each in another (the next) arg. \
+			The name should not be sans suffix, ie, without \".ml\" or \".mli\"");
+		      ("path-to-modules", Arg.String (fun s -> where2find_modules_opt := (Some s)),
+		       "Absolute path to the directory within the project that contains any modules (mli files) \
+			specified by module-field-types arg.");
+		      ("-sequoia", Arg.Set sequoia,
+		       "Support for sequoia: optionally output modules suitable for use with the Sequoia library.")
+		     ] in
+      Arg.parse speclist print_endline usagemsg);;
+  let () =
+    let modules_names =
+      match module_names_raw_opt with
+      | None -> None
+      | Some s -> Some (Core.String.split s ~on:',') in
+    let where2find_modules =
+      match where2find_modules_opt 
     execute !regexp_opt !table_list_opt !ppxlist_opt
 	    module_names !where2find_modules
 	    !sequoia !host !user !pwd !db ();;
