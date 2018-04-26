@@ -296,24 +296,32 @@ module Model = struct
 			     recursive_call;"          with\n          | err ->";
 			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
 
+
+  let list_of_user_modules = ref None;;
+
   let get_all_available_user_written_modules ~where2find_modules =
-    let open Core.Unix in 
+    let open Core.Unix in
+    let () = Utilities.print_n_flush "\nget_all_available_user_written_modules() " in
     let rec helper path2dir dirhandle accum =
-      try
+      (try
 	let nextfile = readdir dirhandle in
-	let stat = stat (Core.String.concat [path2dir;nextfile]) in
-	match stat.st_kind with
+	let stat = stat (Core.String.concat [path2dir;"/";nextfile]) in
+	(match stat.st_kind with
 	| S_REG -> 
 	   if Core.String.is_suffix nextfile ~suffix:"mli" then
 	     helper where2find_modules dirhandle accum
-	   else 
-	     helper where2find_modules dirhandle (nextfile::accum)
-	| _ -> helper where2find_modules dirhandle accum
+	   else
+	     let () = Utilities.print_n_flush ("\nIncluding module " ^ nextfile) in 
+	     helper where2find_modules dirhandle ((Core.String.lowercase nextfile)::accum)
+	| _ -> helper where2find_modules dirhandle accum)
       with End_of_file ->
-	let () = Core.Unix.closedir dirhandle in accum in
-    let dir_handle = Core.Unix.opendir where2find_modules in
-    helper where2find_modules dir_handle [];;
-    
+	let () = Core.Unix.closedir dirhandle in accum) in
+    (match !list_of_user_modules with
+    | None ->
+       let dir_handle = Core.Unix.opendir where2find_modules in
+       let l = helper where2find_modules dir_handle [] in
+       let () = list_of_user_modules := l in l
+    | Some l -> l)
     
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database
@@ -361,8 +369,8 @@ module Model = struct
            --method in order to save it.*)
 	 if Core.Option.is_some client_modules &&
 	      Core.Option.is_some module_names &&
-		List.mem h.col_name (Core.Option.value_exn client_modules) &&
-		  List.mem h.col_name (Core.Option.value_exn module_names) then
+		List.mem (Core.String.lowercase h.col_name) (Core.Option.value_exn client_modules) &&
+		  List.mem (Core.String.lowercase h.col_name) (Core.Option.value_exn module_names) then
 	   let tbody_new =
 	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
 				 h.col_name;".t;"] in
