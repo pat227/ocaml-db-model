@@ -77,17 +77,17 @@ module Command = struct
 		      ("-user", Arg.Set_string user, "db user.");
 		      ("-password", Arg.Set_string pwd, "db password.");
 		      ("-db", Arg.Set_string db, "db name.");
-		      ("table-regexp", Arg.String (fun s -> regexp_opt := (Some s)), "Only model those tables that match a regexp.");
-		      ("table-list", Arg.String (fun s -> table_list_opt := (Some s)) ,"Csv-with-no-spaces table-name list.");
-		      ("ppx-extensions", Arg.String (fun s -> ppxlist_opt := (Some s)),
+		      ("-table-regexp", Arg.String (fun s -> regexp_opt := (Some s)), "Only model those tables that match a regexp.");
+		      ("-table-list", Arg.String (fun s -> table_list_opt := (Some s)) ,"Csv-with-no-spaces table-name list.");
+		      ("-ppx-extensions", Arg.String (fun s -> ppxlist_opt := (Some s)),
 		       "Comma seperated list of ppx extensions; currently support fields, show, sexp, ord, eq, \
 			  yojson, which are also defaults.");
-		      ("module-field-types", Arg.String (fun s -> module_names_raw_opt := (Some s)),
+		      ("-module-field-types", Arg.String (fun s -> module_names_raw_opt := (Some s)),
 		       "Force any db fields whose name matches any in the csv-with-no-spaces list to not be a \
 			primitive, but instead a type defined in a module of the same name. A directory must\
 			be provided where to find the source ml files for each in another (the next) arg. \
 			The name should not be sans suffix, ie, without \".ml\" or \".mli\"");
-		      ("path-to-modules", Arg.String (fun s -> where2find_modules_opt := (Some s)),
+		      ("-path-to-modules", Arg.String (fun s -> where2find_modules_opt := (Some s)),
 		       "Absolute path to the directory within the project that contains any modules (mli files) \
 			specified by module-field-types arg.");
 		      ("-sequoia", Arg.Set sequoia,
