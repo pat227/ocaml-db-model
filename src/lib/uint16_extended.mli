@@ -1,8 +1,7 @@
-(*Unfortunately Uint16 module does not define sexp converters, so we have to.*)
+open Stdint
 module Uint16_extended :
 sig
   type t = Uint16.t
-  type uint16 = t
   val zero : uint16
   val one : uint16
   val add : uint16 -> uint16 -> uint16
@@ -29,18 +28,12 @@ sig
   val to_string_bin : uint16 -> string
   val to_string_oct : uint16 -> string
   val to_string_hex : uint16 -> string
-  val bits_of_float : float -> uint16
-  val float_of_bits : uint16 -> float
   val compare : t -> t -> int
   val printer : Format.formatter -> uint16 -> unit
   val printer_bin : Format.formatter -> uint16 -> unit
   val printer_oct : Format.formatter -> uint16 -> unit
   val printer_hex : Format.formatter -> uint16 -> unit
 						    
-  val sexp_of_t : t -> Sexplib.Sexp.t
-  val t_of_sexp : Sexplib.Sexp.t -> t
-  val sexp_of_uint16 : Uint16.t -> Sexplib.Sexp.t
-  val uint16_of_sexp : Sexplib.Sexp.t -> Uint16.t
   val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
   val show : t -> Ppx_deriving_runtime.string
   val pp_uint16 : Format.formatter -> t -> Ppx_deriving_runtime.unit

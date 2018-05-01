@@ -9,14 +9,12 @@ module Uint8_extended = Uint8_extended.Uint8_extended*)
   is sans Core in case anyone cares.*)
 module Types_we_emit = struct
   type t =
-    (*  Int
     | Int64
-    | Int32*)
-    | CoreInt64
-    | CoreInt32
+    | Int32
   (*| Int8 ===TODO===support this type  *)
     | Uint8_extended_t
     | Uint16_extended_t
+    | Uint24_extended_t
     | Uint32_extended_t
     | Uint64_extended_t
     | Float
@@ -32,11 +30,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
   let to_string ~t ~is_nullable =
     if is_nullable then
       match t with
-      (*  Int -> "int"
-      | Int64 -> "int64"
-      | Int32 -> "int32"*)
-      | CoreInt64 -> "Core_int64_extended.t option"
-      | CoreInt32 -> "Core_int32_extended.t option"
+      | Int64 -> "Int64_extended.t option"
+      | Int32 -> "Int32_extended.t option"
       | Uint8_extended_t -> "Uint8_extended.t option"
       | Uint16_extended_t -> "Uint16_extended.t option"
       | Uint32_extended_t -> "Uint32_extended.t option"

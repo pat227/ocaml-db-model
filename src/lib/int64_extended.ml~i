@@ -1,11 +1,7 @@
-module Int64 = Core.Int64
-module Core_int64_extended : sig
-  include (module type of Int64)
+open Stdint
+module Int64_extended : sig
+  include Int64
 	    
-  val sexp_of_t : Core.Int64.t -> Sexplib.Sexp.t
-  val t_of_sexp : Sexplib.Sexp.t -> Core.Int64.t
-  val sexp_of_int64 : Core.Int64.t -> Sexplib.Sexp.t
-  val int64_of_sexp : Sexplib.Sexp.t -> Core.Int64.t
   val pp : Format.formatter -> t -> unit
   val show : Core.Int64.t -> string
   val pp_int64 : Format.formatter -> t -> unit

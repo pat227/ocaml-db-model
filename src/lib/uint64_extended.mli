@@ -1,8 +1,7 @@
-(*Unfortunately Uint64 module does not define sexp converters, so we have to.*)
+open Stdint
 module Uint64_extended :
 sig
   type t = Uint64.t
-  type uint64 = t
   val zero : uint64
   val one : uint64
   val add : uint64 -> uint64 -> uint64
@@ -29,18 +28,12 @@ sig
   val to_string_bin : uint64 -> string
   val to_string_oct : uint64 -> string
   val to_string_hex : uint64 -> string
-  val bits_of_float : float -> uint64
-  val float_of_bits : uint64 -> float
   val compare : t -> t -> int
   val printer : Format.formatter -> uint64 -> unit
   val printer_bin : Format.formatter -> uint64 -> unit
   val printer_oct : Format.formatter -> uint64 -> unit
   val printer_hex : Format.formatter -> uint64 -> unit
-						    
-  val sexp_of_t : t -> Sexplib.Sexp.t
-  val t_of_sexp : Sexplib.Sexp.t -> t
-  val sexp_of_uint64 : Uint64.t -> Sexplib.Sexp.t
-  val uint64_of_sexp : Sexplib.Sexp.t -> Uint64.t
+
   val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
   val show : t -> Ppx_deriving_runtime.string
   val pp_uint64 : Format.formatter -> t -> Ppx_deriving_runtime.unit

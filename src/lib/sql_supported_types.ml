@@ -1,4 +1,3 @@
-open Core
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
