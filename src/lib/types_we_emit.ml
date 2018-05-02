@@ -34,22 +34,22 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Int32 -> "Int32_extended.t option"
       | Uint8_extended_t -> "Uint8_extended.t option"
       | Uint16_extended_t -> "Uint16_extended.t option"
+      | Uint24_extended_t -> "Uint24_extended.t option"
       | Uint32_extended_t -> "Uint32_extended.t option"
       | Uint64_extended_t -> "Uint64_extended.t option"
+      (*================TODO===========extend float if needed; ditto definitely for date and time=======*)
       | Float -> "Core.Float.t option"
-      | Date -> "Core_date_extended.t option"
-      | Time -> "Core_time_extended.t option"
+      | Date -> "Date_extended.t option"
+      | Time -> "Time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
     else 
       match t with
-      (*  Int -> "int"
-      | Int64 -> "int64"
-      | Int32 -> "int32"*)
-      | CoreInt64 -> "Core_int64_extended.t"
-      | CoreInt32 -> "Core_int32_extended.t"
+      | Int64 -> "Int64_extended.t"
+      | Int32 -> "Int32_extended.t"
       | Uint8_extended_t -> "Uint8_extended.t"
       | Uint16_extended_t -> "Uint16_extended.t"
+      | Uint24_extended_t -> "Uint24_extended.t"
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
@@ -91,6 +91,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | true, Uint8_extended_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Uint16_extended_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Uint16_extended_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint24_extended_t -> String.concat ["Utilities.parse_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint24_extended_t -> String.concat ["Utilities.parse_optional_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Uint32_extended_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Uint32_extended_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Uint64_extended_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]

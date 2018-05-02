@@ -1,8 +1,9 @@
-module Core_int64_extended = Core_int64_extended.Core_int64_extended
-module Core_int32_extended = Core_int32_extended.Core_int32_extended
+module Int64_extended = Core_int64_extended.Core_int64_extended
+module Int32_extended = Core_int32_extended.Core_int32_extended
 module Core_time_extended = Core_time_extended.Core_time_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint24_extended = Uint24_extended.Uint16_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Utilities : sig
@@ -40,16 +41,16 @@ module Utilities : sig
     arrayofstring:string option array -> string option
   val parse_int64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_int64_extended.t
+    arrayofstring:string option array -> Int64_extended.t
   val parse_optional_int64_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_int64_extended.t option
+    arrayofstring:string option array -> Int64_extended.t option
   val parse_int32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_int32_extended.t
+    arrayofstring:string option array -> Int32_extended.t
   val parse_optional_int32_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_int32_extended.t option
+    arrayofstring:string option array -> Int32_extended.t option
   (*---uint 8,16,32,64----*)  
   val parse_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
@@ -61,6 +62,12 @@ module Utilities : sig
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint16_extended.t
   val parse_optional_uint16_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Uint16_extended.t option
+  val parse_uint24_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Uint16_extended.t
+  val parse_optional_uint24_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint16_extended.t option
   val parse_uint32_field_exn :

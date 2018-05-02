@@ -13,7 +13,7 @@ module Int64_extended = struct
 
   let to_yojson t =
     let s = Int64.to_string t in
-    let s2 = String.concat "" ["{coreint64:";s;"}"] in
+    let s2 = String.concat "" ["{int64:";s;"}"] in
     Yojson.Safe.from_string s2;;
 
   let of_yojson j =
@@ -24,5 +24,5 @@ module Int64_extended = struct
       let rbracket_i = String.index value_half '}' in 
       let value = String.sub value_half 0 rbracket_i in 
       Result.Ok (Int64.of_string value)
-    with err -> Error "core_int64_extended::of_yojson() failed.";;
+    with err -> Error "int64_extended::of_yojson() failed.";;
 end 

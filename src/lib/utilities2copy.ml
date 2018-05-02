@@ -1,8 +1,9 @@
-module Core_int64_extended = Core_int64_extended.Core_int64_extended
-module Core_int32_extended = Core_int32_extended.Core_int32_extended
+module Int64_extended = Core_int64_extended.Core_int64_extended
+module Int32_extended = Core_int32_extended.Core_int32_extended
 module Core_time_extended = Core_time_extended.Core_time_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint24_extended = Uint16_extended.Uint24_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
@@ -124,7 +125,7 @@ module Utilities = struct
   let parse_int64_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core_int64_extended.of_string s
+      Int64_extended.of_string s
     with err ->
 	 let () = print_n_flush "\nutilities::parse_int64_field_exn() failed" in
 	 raise err;;
@@ -132,7 +133,7 @@ module Utilities = struct
   let parse_int32_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Core_int32_extended.of_string s
+      Int32_extended.of_string s
     with err ->
       let () = print_n_flush "\nutilities::parse_int32_field_exn() failed" in
       raise err;;
@@ -173,6 +174,16 @@ module Utilities = struct
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
     | Some s -> let i = Uint16_extended.of_string s in Some i
+    | None -> None;;
+
+  let parse_uint24_field_exn ~fieldname ~results ~arrayofstring =
+    let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
+    Uint24_extended.of_string s;;
+
+  let parse_optional_uint24_field_exn ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Uint24_extended.of_string s in Some i
     | None -> None;;
 
   let parse_uint32_field_exn ~fieldname ~results ~arrayofstring =
