@@ -229,22 +229,22 @@ module Utilities = struct
   (*----------------date and time--------------*)
   let parse_date_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core.Date.of_string s;;
+    Date.of_string s;;
 
   let parse_optional_date_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core.Date.of_string s in Some dt
+    | Some s -> let dt = Date.of_string s in Some dt
     | None -> None;;
 
   let parse_time_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core_time_extended.of_string s;;
+    Time_extended.of_string s;;
 
   let parse_optional_time_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core_time_extended.of_string s in Some dt
+    | Some s -> let dt = Time_extended.of_string s in Some dt
     | None -> None;;
 
 end

@@ -5,7 +5,7 @@
 
 READ sql standard...literals.
 *)
-module Date_time_extended = struct
+module Date_extended = struct
   type t = Unix.tm
 
   let month_of_int i =
@@ -26,7 +26,7 @@ module Date_time_extended = struct
      
   let to_yojson t =
     let f,t2 = Unix.mktime t in
-    let s = String.concat_with_sep "" ["{dt:";(string_of_float);"}"] in 
+    let s = String.concat_with_sep "" ["{date:";(string_of_float);"}"] in 
     Yojson.Safe.from_string s;;
 
   let of_yojson j =
@@ -52,65 +52,61 @@ module Date_time_extended = struct
       let tl = 
       { Unix.tm_sec = sec; tm_min = min;
         tm_hour = hour; tm_mday = day;
-	tm_mon = month; tm_year = year;
+	tm_mon = month; tn_year = year;
 	tm_wday = 0;
 	tm_yday = 0;
 	tm_isdst = false;
       } in 
       let f,t2 = Unix.mktime tl in t2 *)
-    with err -> Error "date_time_extended::of_yojson() failed.";;
+    with err -> Error "date_extended::of_yojson() failed.";;
 
   let pp fmt t =
     let s =
       String.concat_with_sep
-	"" [(string_of_int (t.Unix.tm_year)+1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
-	    (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)] in
+	"" [(string_of_int (t.Unix.tm_year) + 1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)] in
     (Format.fprintf fmt "%s") s;;
 
   let show t =
     String.concat_with_sep
-      "" [(string_of_int (t.Unix.tm_year)+1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
-	  (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)];;
+      "" [(string_of_int t.Unix.tm_year);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)];;
 
   let of_string s =
     try
-      let splits = String.split_on_char ' ' s in
-      let date_half = List.nth splits 0 in
-      let time_half = List.nth splits 1 in
       let date_parts = String.split_on_char '-' date_half in
-      let time_parts = String.split_on_char ':' time_half in
       let year = (int_of_string (List.nth date_parts 0)) - 1900 in
       let month = int_of_string (List.nth date_parts 1) in 
       let day = int_of_string (List.nth date_parts 2) in
-      let hour = int_of_string (List.nth time_parts 0) in
-      let min = int_of_string (List.nth time_parts 1) in
-      let sec = int_of_string (List.nth time_parts 2) in
-      let tm = { Unix.tm_sec = sec; tm_min = min;
-		 tm_hour = hour; tm_mday = day;
-		 tm_mon = month; tm_year = year;
+      let tm = { Unix.tm_sec = 0; tm_min = 0; tm_hour = 0;
+		 tm_mday = day; tm_mon = month; tm_year = year;
 		 tm_wday = 0;
 		 tm_yday = 0;
 		 tm_isdst = false;
 	       } in 
       let _f,t = Unix.mktime tm in t
-    with err -> Error "date_time_extended::of_string() failed";;
-
+    with err -> Error "date_extended::of_string() failed";;
+    
   let pp_core_time_extended = pp
   let show_core_time_extended = show
 
-  let equal_datetime_extended t1 t2 =
+  let equal_date_extended t1 t2 =
     let f1,tm1 = Unix.mktime t1 in
-    let f2,tm2 = Unix.mktime t2 in 
-    not (f1 >. f2) &&
-      not (f2 <. f2);;
+    let f2,tm2 = Unix.mktime t2 in
+    (tm1.tm_year = tm2.tm_year) && 
+      (tm1.tm_mon = t2.tm_mon) &&
+	(tm1.tm_mday = tm2.tm_mday) &&
+	  (tm1.tm_hour = tm2.tm_hour) &&
+	    (tm1.tm_sec = tm2.tm_sec);;
 
-  let compare_datetime_extended t1 t2 =
-    let f1,tm1 = Unix.mktime t1 in
-    let f2,tm2 = Unix.mktime t2 in 
-    if f1 >. f2 then 1
-    else
-      if f1 <. f2 then -1
-      else 0;;
+  let compare_date_extended t1 t2 =
+    let _f1,tm1 = Unix.mktime t1 in
+    let _f2,tm2 = Unix.mktime t2 in 
+    if tm1.tm_year > tm2.tm_year then 1
+    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon > tm2.tm_mon then 1
+    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon = tm2.tm_mon &&
+	      tm1.tm_mday > tm2.tm_mday then 1
+    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon = tm2.tm_mon &&
+	      tm1.tm_mday = tm2.tm_mday then 0
+    else -1;;
 
   let equal = equal_core_time_extended
   let compare = compare_core_time_extended
