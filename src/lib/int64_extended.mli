@@ -1,5 +1,5 @@
 module Int64_extended : sig
-	    
+  type t = int64
   val pp : Format.formatter -> int64 -> unit
   val show : int64 -> string
   val pp_int64 : Format.formatter -> int64 -> unit

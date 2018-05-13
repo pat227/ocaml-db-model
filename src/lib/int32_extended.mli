@@ -1,5 +1,5 @@
 module Int32_extended : sig
-	    
+  type t = int32
   val pp : Format.formatter -> int32 -> unit
   val show : int32 -> string
   val pp_int32 : Format.formatter -> int32 -> unit

@@ -1,5 +1,5 @@
 module Int32_extended = struct
-
+  type t = int32
   let pp fmt t = (Format.fprintf fmt "%s") (Int32.to_string t)
   let show t = Int32.to_string t
 

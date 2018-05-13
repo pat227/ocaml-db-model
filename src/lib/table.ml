@@ -9,8 +9,6 @@ module Table = struct
    
   let get_tables ~conn ~schema =
     let open Mysql in
-    let open Core in
-    let open Core.Result in 
     let table_query ~schema =
       "SELECT table_name, table_schema, table_type, engine FROM 
        information_schema.tables WHERE table_schema='" ^ schema ^ "';" in
@@ -20,8 +18,8 @@ module Table = struct
        | Some arrayofstring ->
 	  try
 	    (let table_name =
-	       String.strip
-		 ~drop:Char.is_whitespace
+	       String.map
+		 ~f:(fun c -> if (Char.code c < 33 || Char.code c > 126) then '_' else c  
 		 (Option.value_exn
 		    ~message:"Failed to get table name."
 		    (Mysql.column results

@@ -1,4 +1,4 @@
-module Date_time_extended : sig
+module Date_extended : sig
   type t = Unix.tm
   
   val show : t -> Ppx_deriving_runtime.string

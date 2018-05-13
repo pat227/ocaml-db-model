@@ -26,7 +26,7 @@ module Date_extended = struct
      
   let to_yojson t =
     let f,t2 = Unix.mktime t in
-    let s = String.concat_with_sep "" ["{date:";(string_of_float);"}"] in 
+    let s = String.concat "" ["{date:";(string_of_float f);"}"] in 
     Yojson.Safe.from_string s;;
 
   let of_yojson j =
@@ -37,7 +37,7 @@ module Date_extended = struct
       let rbracket_i = String.index value_half '}' in 
       let value = String.sub value_half 0 rbracket_i in
       let f = float_of_string value in
-      Unix.gmtime f
+      Ok (Unix.gmtime f)
       (*let time_date_split = String.split_on_char "|" value in
       let time_value = List.nth time_date_split 0 in
       let date_value = List.nth time_date_split 1 in
@@ -60,19 +60,20 @@ module Date_extended = struct
       let f,t2 = Unix.mktime tl in t2 *)
     with err -> Error "date_extended::of_yojson() failed.";;
 
-  let pp fmt t =
-    let s =
-      String.concat_with_sep
-	"" [(string_of_int (t.Unix.tm_year) + 1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)] in
-    (Format.fprintf fmt "%s") s;;
+  let to_string t =
+    String.concat
+      "" [(string_of_int ((t.Unix.tm_year) + 1900));
+	  "-";(string_of_int t.Unix.tm_mon);"-";
+	  (string_of_int t.Unix.tm_mday)];;
 
   let show t =
-    String.concat_with_sep
-      "" [(string_of_int t.Unix.tm_year);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)];;
+    String.concat
+      "" [(string_of_int t.Unix.tm_year);"-";
+	  (string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)];;
 
-  let of_string s =
+  let of_string_exn s =
     try
-      let date_parts = String.split_on_char '-' date_half in
+      let date_parts = String.split_on_char '-' s in
       let year = (int_of_string (List.nth date_parts 0)) - 1900 in
       let month = int_of_string (List.nth date_parts 1) in 
       let day = int_of_string (List.nth date_parts 2) in
@@ -82,32 +83,29 @@ module Date_extended = struct
 		 tm_yday = 0;
 		 tm_isdst = false;
 	       } in 
-      let _f,t = Unix.mktime tm in t
+      let _f,t = Unix.mktime tm in Ok t
     with err -> Error "date_extended::of_string() failed";;
     
-  let pp_core_time_extended = pp
-  let show_core_time_extended = show
-
   let equal_date_extended t1 t2 =
     let f1,tm1 = Unix.mktime t1 in
     let f2,tm2 = Unix.mktime t2 in
-    (tm1.tm_year = tm2.tm_year) && 
-      (tm1.tm_mon = t2.tm_mon) &&
-	(tm1.tm_mday = tm2.tm_mday) &&
-	  (tm1.tm_hour = tm2.tm_hour) &&
-	    (tm1.tm_sec = tm2.tm_sec);;
+    (tm1.Unix.tm_year = tm2.Unix.tm_year) && 
+      (tm1.Unix.tm_mon = t2.Unix.tm_mon) &&
+	(tm1.Unix.tm_mday = tm2.Unix.tm_mday) &&
+	  (tm1.Unix.tm_hour = tm2.Unix.tm_hour) &&
+	    (tm1.Unix.tm_sec = tm2.Unix.tm_sec);;
 
   let compare_date_extended t1 t2 =
     let _f1,tm1 = Unix.mktime t1 in
     let _f2,tm2 = Unix.mktime t2 in 
-    if tm1.tm_year > tm2.tm_year then 1
-    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon > tm2.tm_mon then 1
-    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon = tm2.tm_mon &&
-	      tm1.tm_mday > tm2.tm_mday then 1
-    else if tm1.tm_year = tm2.tm_year && tm1.tm_mon = tm2.tm_mon &&
-	      tm1.tm_mday = tm2.tm_mday then 0
+    if tm1.Unix.tm_year > tm2.Unix.tm_year then 1
+    else if tm1.Unix.tm_year = tm2.Unix.tm_year && tm1.Unix.tm_mon > tm2.Unix.tm_mon then 1
+    else if tm1.Unix.tm_year = tm2.Unix.tm_year && tm1.Unix.tm_mon = tm2.Unix.tm_mon &&
+	      tm1.Unix.tm_mday > tm2.Unix.tm_mday then 1
+    else if tm1.Unix.tm_year = tm2.Unix.tm_year && tm1.Unix.tm_mon = tm2.Unix.tm_mon &&
+	      tm1.Unix.tm_mday = tm2.Unix.tm_mday then 0
     else -1;;
 
-  let equal = equal_core_time_extended
-  let compare = compare_core_time_extended
+  let equal = equal_date_extended
+  let compare = compare_date_extended
 end

@@ -5,9 +5,10 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Table = Table.Table
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Utilities = Utilities2copy.Utilities
-(*module String_set = Core.Set.Make(Core.String)*)
+(*module String_set = Core.Set.Make(Core.String)
 open Sexplib.Std
-open Sexplib
+open Sexplib*)
+module type S = Map.S
 module Model = struct
   type t = {
     col_name : string; 
@@ -16,7 +17,9 @@ module Model = struct
     is_nullable : bool;
     is_primary_key : bool;
   } [@@deriving show, fields]
-    
+
+  module StringMap = Map.Make(String);;  
+
   (*we only need this submodule to get foreign keys*)
   module Sequoia_support = struct
     module T = struct  
@@ -58,7 +61,7 @@ module Model = struct
 	       let new_fkey_record =
 		 Fields.create
 		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
-	       let newset = Core.String.Map.set accum ~key:col_name ~data:new_fkey_record in 
+	       let newset = StringMap.set accum ~key:col_name ~data:new_fkey_record in 
 	       helper newset results (Mysql.fetch results)
 	      )
 	    with err ->
@@ -73,20 +76,19 @@ module Model = struct
       let queryresult = Mysql.exec conn query in
       let isSuccess = Mysql.status conn in
       match isSuccess with
-      | Mysql.StatusEmpty ->  Ok Core.String.Map.empty
+      | Mysql.StatusEmpty ->  Ok StringMap.empty
       | Mysql.StatusError _ -> 
 	 let () = Utilities.print_n_flush
 		    ("Query for foreign keys returned nothing.  ... \n") in
 	 let () = Utilities.closecon conn in
 	 Error "model.ml::get_any_foreign_key_references() Error in sql"
       | Mysql.StatusOK -> let () = Utilities.print_n_flush "\nGot foreign key info for table." in
-			  let empty = Core.String.Map.empty in 
+			  let empty = StringMap.empty in 
 			  helper empty queryresult (Mysql.fetch queryresult);;
   end 
 
   let get_fields_for_given_table ~conn ~table_name =
     let open Mysql in
-    let open Core in 
     (*Only column_type gives us the acceptable values of an enum type if present, 
       unsigned; use the column_comment to input per field directives for ppx 
       extensions...way down the road, such as key or default for json ppx extension. 
@@ -174,7 +176,6 @@ module Model = struct
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
   let make_regexp s =
-    let open Core in 
     match s with
     | Some sr ->
        (try
@@ -187,7 +188,6 @@ module Model = struct
     | None -> None;;
     
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
-    let open Core.Result in 
     let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
@@ -244,10 +244,10 @@ module Model = struct
 	       let newmap = update_map ~table_name:h.Table.table_name in
 	       helper t newmap
 	   ) in
-      helper tables Core.String.Map.empty
+      helper tables StringMap.empty
     else
       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
-      Core.String.Map.empty;;
+      StringMap.empty;;
     
   (**Construct an otherwise tedious function that creates instances of type t from
      a query; for each field in struct, get the string option from the string 
@@ -260,7 +260,6 @@ module Model = struct
      pass to such a function...that would be very good. *)
   let construct_sql_query_function ~table_name ~map ~host
 				   ~user ~password ~database =
-    let open Core in 
     let preamble =
       (*--do not place db creds into each file; one connection function with creds in utilities file; copied into the project.*)
       String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon () in \n";] in

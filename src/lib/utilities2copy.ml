@@ -1,21 +1,21 @@
-module Int64_extended = Core_int64_extended.Core_int64_extended
-module Int32_extended = Core_int32_extended.Core_int32_extended
-module Core_time_extended = Core_time_extended.Core_time_extended
+module Int64_extended = Int64_extended.Int64_extended
+module Int32_extended = Int32_extended.Int32_extended
+module Date_time_extended = Date_time_extended.Date_time_extended
+module Date_extended = Date_extended.Date_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
-module Uint24_extended = Uint16_extended.Uint24_extended
+module Uint24_extended = Uint24_extended.Uint24_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
-open Core
 module Utilities = struct
-
+(* --TODO
   let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
     let open Core in 
     Out_channel.output_string oc s;
     Out_channel.flush oc;;
-
+ *)
   (*Client code makefile supplies credentials and uses this function; credentials in client
    projects are stored in credentials.ml; this file is copied with modifications
    to make of type () -> Mysql.dbd with credentials optional with default values.*)
@@ -25,26 +25,25 @@ module Utilities = struct
       ~host ~database ~password ~user ();;
 
   let closecon c = Mysql.disconnect c;;
-
+(*
   let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
     Core.Out_channel.output_string oc s;
     Core.Out_channel.flush oc;;
-
+ *)
   let parse_list s =
-    let open Core in 
     try
       match s with
       | Some sl ->
 	 (try
-	     let () = print_n_flush ("parse_list() from " ^ sl) in
-	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.count l ~f:(fun x -> true) in
+	     (*let () = print_n_flush ("parse_list() from " ^ sl) in*)
+	     let l = String.split_on_char ~on:',' sl in
+	     let len = List.count l ~f:(fun x -> true) in
 	     if len > 0 then Some l else None
 	   with
 	   | err ->
-	      let () = print_n_flush
-			 "\nFailed parsing table name list..." in
+	      (*let () = print_n_flush
+			 "\nFailed parsing table name list..." in*)
 	      raise err
 	 )
       | None -> None
@@ -68,13 +67,11 @@ module Utilities = struct
     | None -> "NULL"
     | Some b -> if b then "TRUE" else "FALSE";;
   let serialize_optional_float_field_as_int ~field =
-    let open Core in 
     match field with
-    | Some f -> Int.to_string (Float.to_int (f *. 100.0))
+    | Some f -> string_of_int (int_of_float (f *. 100.0))
     | None -> "NULL";;
   let serialize_float_field_as_int ~field =
-    let open Core in 
-    Int.to_string (Float.to_int (field *. 100.0));;
+    string_of_int (int_of_float (field *. 100.0));;
 
   (*===========parsers=============*)
   let parse_boolean_field_exn ~field =
@@ -89,10 +86,7 @@ module Utilities = struct
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
-(*		  
-  let parse_64bit_int_field_exn ~field =
-    Core.Std.Int64.of_string field
- *)
+
   let extract_field_as_string_exn ~fieldname ~results ~arrayofstring =
     try
       String.strip
@@ -219,32 +213,32 @@ module Utilities = struct
   (*----------------floats--------------*)
   let parse_float_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
-    Core.Float.of_string s;;
+    float_of_string s;;
 
   let parse_optional_float_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let f = Core.Float.of_string s in Some f
+    | Some s -> let f = float_of_string s in Some f
     | None -> None;;
   (*----------------date and time--------------*)
   let parse_date_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Date.of_string s;;
+    Date_extended.of_string s;;
 
   let parse_optional_date_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Date.of_string s in Some dt
+    | Some s -> let dt = Date_extended.of_string s in Some dt
     | None -> None;;
 
-  let parse_time_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Time_extended.of_string s;;
+    Date_time_extended.of_string s;;
 
-  let parse_optional_time_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_optional_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Time_extended.of_string s in Some dt
+    | Some s -> let dt = Date_time_extended.of_string s in Some dt
     | None -> None;;
 
 end

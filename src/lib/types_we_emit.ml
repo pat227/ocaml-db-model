@@ -10,7 +10,8 @@ module Types_we_emit = struct
     | Uint64_extended_t
     | Float
     | Date
-    | Time 
+    | DateTime
+   (* | Time TODO *)
     | String
     | Bool
 	[@@deriving show]
@@ -30,8 +31,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint64_extended_t -> "Uint64_extended.t option"
       (*================TODO===========extend float if needed; ditto definitely for date and time=======*)
       | Float -> "float option"
-      | Date -> "Date_time_extended.t option"
-      | Time -> "Time_extended.t option"
+      | Date -> "Date_extended.t option"
+      | DateTime -> "Date_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
     else 
@@ -44,8 +45,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "float"
-      | Date -> "Date_time__extended.t"
-      | Time -> "Time_extended.t"
+      | Date -> "Date_extended.t"
+      | DateTime -> "Date_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
 		
@@ -54,66 +55,67 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
    t - the type of the field
    *)
   let converter_of_string_of_type ~is_optional ~t ~fieldname =
-    let open Core in 
     match is_optional, t with
       false, String ->
-      String.concat ["Utilities.extract_field_as_string_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+      String.concat "" ["Utilities.extract_field_as_string_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, String ->
-       String.concat ["Utilities.extract_optional_field ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.extract_optional_field ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Bool ->
-       String.concat ["Utilities.parse_bool_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_bool_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Bool ->
-       String.concat ["Utilities.parse_optional_bool_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_optional_bool_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Int64 ->
-       String.concat ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Int64 ->
-       String.concat ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Int32 ->
-       String.concat ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Int32 ->
-       String.concat ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint8_extended_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint8_extended_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint16_extended_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint16_extended_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint24_extended_t -> String.concat ["Utilities.parse_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint24_extended_t -> String.concat ["Utilities.parse_optional_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint32_extended_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint32_extended_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint64_extended_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint64_extended_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Time -> String.concat ["Utilities.parse_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Time -> String.concat ["Utilities.parse_optional_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+       String.concat "" ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint8_extended_t -> String.concat "" ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint8_extended_t -> String.concat "" ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint16_extended_t -> String.concat "" ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint16_extended_t -> String.concat "" ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint24_extended_t -> String.concat "" ["Utilities.parse_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint24_extended_t -> String.concat "" ["Utilities.parse_optional_uint24_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint32_extended_t -> String.concat "" ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint32_extended_t -> String.concat "" ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint64_extended_t -> String.concat "" ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint64_extended_t -> String.concat "" ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Float -> String.concat "" ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Float -> String.concat "" ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Date -> String.concat "" ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Date -> String.concat "" ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, DateTime -> String.concat "" ["Utilities.parse_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, DateTime -> String.concat "" ["Utilities.parse_optional_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
 
   let to_string_for_sequoia ~t ~is_nullable =
     if is_nullable then
       match t with
-      | Int64 -> "Int64"
-      | Int32 -> "Int32"
+      | Int64 -> "Int64 option"
+      | Int32 -> "Int32 option"
       | Uint8_extended_t -> "Uint8_extended.t option"
       | Uint16_extended_t -> "Uint16_extended.t option"
+      | Uint24_extended_t -> "Uint24_extended.t option"
       | Uint32_extended_t -> "Uint32_extended.t option"
       | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "float option"
-      | Date -> "Date_time_extended.t option"
-      | Time -> "Time_extended.t option"
+      | Date -> "Date_extended.t option"
+      | DateTime -> "Date_time_extended.t option"
       | String -> "string option"
       | Bool -> "bool option"
     else 
       match t with
-      | Int64 
+      | Int64
       | Int32 -> "Field.int"
       | Uint8_extended_t -> "Uint8_extended.t"
       | Uint16_extended_t -> "Uint16_extended.t"
+      | Uint24_extended_t -> "Uint24_extended.t"
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "float"
-      | Date -> "Date_time_extended.t"
-      | Time -> "Time_extended.t"
+      | Date -> "Date_extended.t"
+      | DateTime -> "Date_time_extended.t"
       | String -> "string"
       | Bool -> "bool";;
 end 

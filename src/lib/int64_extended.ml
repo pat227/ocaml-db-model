@@ -1,5 +1,5 @@
 module Int64_extended = struct
-
+  type t = int64
   let pp fmt t = (Format.fprintf fmt "%s") (Int64.to_string t)
   let show t = Int64.to_string t
 

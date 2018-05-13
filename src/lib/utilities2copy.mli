@@ -1,9 +1,10 @@
-module Int64_extended = Core_int64_extended.Core_int64_extended
-module Int32_extended = Core_int32_extended.Core_int32_extended
-module Core_time_extended = Core_time_extended.Core_time_extended
+module Int64_extended = Int64_extended.Int64_extended
+module Int32_extended = Int32_extended.Int32_extended
+module Date_extended = Date_extended.Date_extended
+module Date_time_extended = Date_time_extended.Date_time_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
-module Uint24_extended = Uint24_extended.Uint16_extended
+module Uint24_extended = Uint24_extended.Uint24_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Utilities : sig
@@ -92,21 +93,21 @@ module Utilities : sig
   (*---float/double---*)
   val parse_float_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Float.t
+    arrayofstring:string option array -> float
   val parse_optional_float_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Float.t option
+    arrayofstring:string option array -> float option
   (*---date/time---*)
   val parse_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Date.t
+    arrayofstring:string option array -> Date_extended.t
   val parse_optional_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core.Date.t option
+    arrayofstring:string option array -> Date_extended.t option
   val parse_time_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_time_extended.t
+    arrayofstring:string option array -> Date_time_extended.t
   val parse_optional_time_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Core_time_extended.t option
+    arrayofstring:string option array -> Date_time_extended.t option
 end 

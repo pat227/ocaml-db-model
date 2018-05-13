@@ -26,7 +26,7 @@ module Date_time_extended = struct
      
   let to_yojson t =
     let f,t2 = Unix.mktime t in
-    let s = String.concat_with_sep "" ["{dt:";(string_of_float);"}"] in 
+    let s = String.concat "" ["{dt:";(string_of_float f);"}"] in 
     Yojson.Safe.from_string s;;
 
   let of_yojson j =
@@ -37,7 +37,7 @@ module Date_time_extended = struct
       let rbracket_i = String.index value_half '}' in 
       let value = String.sub value_half 0 rbracket_i in
       let f = float_of_string value in
-      Unix.gmtime f
+      Ok (Unix.gmtime f)
       (*let time_date_split = String.split_on_char "|" value in
       let time_value = List.nth time_date_split 0 in
       let date_value = List.nth time_date_split 1 in
@@ -60,19 +60,20 @@ module Date_time_extended = struct
       let f,t2 = Unix.mktime tl in t2 *)
     with err -> Error "date_time_extended::of_yojson() failed.";;
 
-  let pp fmt t =
-    let s =
-      String.concat_with_sep
-	"" [(string_of_int (t.Unix.tm_year)+1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
-	    (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)] in
-    (Format.fprintf fmt "%s") s;;
-
+  let to_string t =
+    String.concat
+      "" [(string_of_int ((t.Unix.tm_year)+1900));"-";
+	  (string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
+	  (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";
+	  (string_of_int t.Unix.tm_sec)];;
+		    
   let show t =
-    String.concat_with_sep
-      "" [(string_of_int (t.Unix.tm_year)+1900);"-";(string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
-	  (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)];;
+    String.concat
+      "" [(string_of_int ((t.Unix.tm_year)+1900));"-";(string_of_int t.Unix.tm_mon);"-";
+	  (string_of_int t.Unix.tm_mday);" ";(string_of_int t.Unix.tm_hour);":";
+	  (string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)];;
 
-  let of_string s =
+  let of_string_exn s =
     try
       let splits = String.split_on_char ' ' s in
       let date_half = List.nth splits 0 in
@@ -92,26 +93,23 @@ module Date_time_extended = struct
 		 tm_yday = 0;
 		 tm_isdst = false;
 	       } in 
-      let _f,t = Unix.mktime tm in t
+      let _f,t = Unix.mktime tm in Ok t
     with err -> Error "date_time_extended::of_string() failed";;
-
-  let pp_core_time_extended = pp
-  let show_core_time_extended = show
 
   let equal_datetime_extended t1 t2 =
     let f1,tm1 = Unix.mktime t1 in
     let f2,tm2 = Unix.mktime t2 in 
-    not (f1 >. f2) &&
-      not (f2 <. f2);;
+    not (f1 > f2) &&
+      not (f2 < f2);;
 
   let compare_datetime_extended t1 t2 =
     let f1,tm1 = Unix.mktime t1 in
     let f2,tm2 = Unix.mktime t2 in 
-    if f1 >. f2 then 1
+    if f1 > f2 then 1
     else
-      if f1 <. f2 then -1
+      if f1 < f2 then -1
       else 0;;
 
-  let equal = equal_core_time_extended
-  let compare = compare_core_time_extended
+  let equal = equal_datetime_extended
+  let compare = compare_datetime_extended
 end

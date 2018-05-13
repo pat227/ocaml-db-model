@@ -20,32 +20,32 @@ module Sql_supported_types = struct
     | DOUBLE
     | DATE
     | DATETIME
-  (*| TIME <<<<====TODO -- support with use of Core.Time.Span.t *)
+  (*| TIME <<<<====TODO *)
     | TIMESTAMP
     | BINARY
     | VARBINARY
     | MEDIUMTEXT
     | VARCHAR
     | BLOB
-  (*| ENUM*)
+  (*| ENUM  -- generally not wise to use one of these anyway*)
     | UNSUPPORTED
 
-  (*--by default just use core int 64 type...*)
+  (*--by default just use int 64 type...*)
   let ml_type_of_supported_sql_type t =
     match t with
-    | TINYINT -> Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
+    | TINYINT -> Ok Types_we_emit.Int32  (*====TODO===find int8 type or make one *)
     | TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_extended_t
     | TINYINT_BOOL -> Ok Types_we_emit.Bool
     | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_extended_t
-    | INTEGER -> Ok Types_we_emit.CoreInt64
+    | INTEGER -> Ok Types_we_emit.Int64
     | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
-    | BIGINT -> Ok Types_we_emit.CoreInt64
+    | BIGINT -> Ok Types_we_emit.Int64
     | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
     | DECIMAL
     | FLOAT 
     | DOUBLE -> Ok Types_we_emit.Float
     | DATE -> Ok Types_we_emit.Date
-  (*| TIME <<<<====TODO  -- support with use of Core.Time.Span.t *)
+  (*| TIME <<<<====TODO *)
     | DATETIME 
     | TIMESTAMP -> Ok Types_we_emit.Time
     | BINARY

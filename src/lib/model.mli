@@ -2,6 +2,7 @@ module Pcre = Pcre
 module Credentials = Credentials2copy.Credentials
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
+module type S = Map.S
 module Model : sig
   type t = {
     col_name : string; 
@@ -12,6 +13,9 @@ module Model : sig
     is_nullable : bool;
     is_primary_key: bool;
   } [@@deriving show, fields]
+
+  module StringMap : S
+
   module Sequoia_support : sig
     type t = {
       col : string;
@@ -27,17 +31,17 @@ module Model : sig
 			     
   val get_fields_map_for_all_tables :
     regexp_opt:string option -> table_list_opt:string option ->
-    conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 
+    conn:Mysql.dbd -> schema:string -> (t list) StringMap.t 
   val get_fields_for_given_table :
     conn:Mysql.dbd ->
-    table_name:Core.String.Map.Key.t ->
-    (t list Core.String.Map.t, string) Core.Result.t 
-  val construct_body : table_name:string -> map:t list Core.String.Map.t ->
+    table_name:string ->
+    (t list StringMap.t, string) result 
+  val construct_body : table_name:string -> map:t list StringMap.t ->
 		       ppx_decorators:string option -> host:string -> user:string ->
 		       password:string -> database:string ->
 		       module_names:string list option -> where2find_modules:string option 
 		       -> string
-  val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
+  val construct_mli : table_name:string -> map:t list StringMap.t ->
 		      ppx_decorators:string option -> module_names:string list option ->
 		      where2find_modules:string option -> string
   val construct_db_credentials : credentials:Credentials.t -> destinationdir:string -> unit
@@ -46,5 +50,5 @@ module Model : sig
   (*For each key in the multi-map, construct the body of an Ocaml module
   val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)
   val copy_utilities : destinationdir:string -> unit
-  val construct_one_sequoia_struct : conn:Mysql.dbd -> table_name:string -> map:t list Core.String.Map.t -> string
+  val construct_one_sequoia_struct : conn:Mysql.dbd -> table_name:string -> map:t list StringMap.t -> string
 end 
