@@ -9,13 +9,9 @@ module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
 module Utilities = struct
-(* --TODO
-  let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
-    let open Core in 
-    Out_channel.output_string oc s;
-    Out_channel.flush oc;;
- *)
+    Printf.printf "%s!" s
+
   (*Client code makefile supplies credentials and uses this function; credentials in client
    projects are stored in credentials.ml; this file is copied with modifications
    to make of type () -> Mysql.dbd with credentials optional with default values.*)
@@ -37,8 +33,8 @@ module Utilities = struct
       | Some sl ->
 	 (try
 	     (*let () = print_n_flush ("parse_list() from " ^ sl) in*)
-	     let l = String.split_on_char ~on:',' sl in
-	     let len = List.count l ~f:(fun x -> true) in
+	     let l = String.split_on_char ',' sl in
+	     let len = List.length l in
 	     if len > 0 then Some l else None
 	   with
 	   | err ->
@@ -86,21 +82,21 @@ module Utilities = struct
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
-
+  (*For use with String.map (fun c -> if is_whitespace_char c then '' else c) s *)
+  let is_whitespace_char c =
+    let codepoint = Char.code c in 
+    if codepoint > 32 && codepoint < 127 then false else true
+    
   let extract_field_as_string_exn ~fieldname ~results ~arrayofstring =
-    try
-      String.strip
-	~drop:Char.is_whitespace
-	(Option.value_exn
-	   ~message:("Failed to get col " ^ fieldname)
-	   (Mysql.column results
-			 ~key:fieldname ~row:arrayofstring))
-    with
-    | _ ->
-       let () = print_n_flush ("\nutilities.ml::extract_field_as_string_exn() failed. \
-				most likely bad field name:" ^ fieldname) in
-       raise (Failure "utilities.ml::extract_field_as_string_exn() failed. \
-		       most likely bad field name")
+      let s_opt = (Mysql.column results
+				~key:fieldname ~row:arrayofstring) in
+      match s_opt with
+      | Some s -> String.trim s
+      | None ->
+	 let () = print_n_flush ("\nutilities.ml::extract_field_as_string_exn() failed. \
+				  most likely bad field name:" ^ fieldname) in
+	 raise (Failure "utilities.ml::extract_field_as_string_exn() failed. \
+			 most likely bad field name");;
 
   let extract_optional_field ~fieldname ~results ~arrayofstring =
     Mysql.column results ~key:fieldname ~row:arrayofstring;;
@@ -223,22 +219,22 @@ module Utilities = struct
   (*----------------date and time--------------*)
   let parse_date_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Date_extended.of_string s;;
+    Date_extended.of_string_exn s;;
 
   let parse_optional_date_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Date_extended.of_string s in Some dt
+    | Some s -> let dt = Date_extended.of_string_exn s in Some dt
     | None -> None;;
 
   let parse_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Date_time_extended.of_string s;;
+    Date_time_extended.of_string_exn s;;
 
   let parse_optional_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Date_time_extended.of_string s in Some dt
+    | Some s -> let dt = Date_time_extended.of_string_exn s in Some dt
     | None -> None;;
 
 end

@@ -67,10 +67,10 @@ module Utilities : sig
     arrayofstring:string option array -> Uint16_extended.t option
   val parse_uint24_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Uint16_extended.t
+    arrayofstring:string option array -> Uint24_extended.t
   val parse_optional_uint24_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Uint16_extended.t option
+    arrayofstring:string option array -> Uint24_extended.t option
   val parse_uint32_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint32_extended.t
@@ -100,14 +100,14 @@ module Utilities : sig
   (*---date/time---*)
   val parse_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Date_extended.t
+    arrayofstring:string option array -> (Date_extended.t,string) result
   val parse_optional_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Date_extended.t option
-  val parse_time_field_exn :
+    arrayofstring:string option array -> (Date_extended.t, string) result option
+  val parse_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Date_time_extended.t
-  val parse_optional_time_field_exn :
+    arrayofstring:string option array -> (Date_time_extended.t,string) result
+  val parse_optional_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Date_time_extended.t option
+    arrayofstring:string option array -> (Date_time_extended.t,string) result option
 end 

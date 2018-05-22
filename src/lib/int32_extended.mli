@@ -10,4 +10,5 @@ module Int32_extended : sig
   val compare : int32 -> int32 -> int
   val to_yojson : int32 -> Yojson.Safe.json
   val of_yojson : Yojson.Safe.json -> int32 Ppx_deriving_yojson_runtime.error_or
+  val of_string : string -> t
 end

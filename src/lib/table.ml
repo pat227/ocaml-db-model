@@ -19,25 +19,16 @@ module Table = struct
 	  try
 	    (let table_name =
 	       String.map
-		 ~f:(fun c -> if (Char.code c < 33 || Char.code c > 126) then '_' else c  
-		 (Option.value_exn
-		    ~message:"Failed to get table name."
-		    (Mysql.column results
-				  ~key:"table_name" ~row:arrayofstring)) in
+		 (fun c -> if (Char.code c < 33 || Char.code c > 126) then '_' else c)
+		 (Utilities.extract_field_as_string_exn ~fieldname:"table_name" ~results ~arrayofstring) in
 	     let table_type =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		 (Option.value_exn
-		    ~message:"Failed to get table_type."
-		    (Mysql.column results
-				  ~key:"table_type" ~row:arrayofstring)) in
+	       String.map
+		 (fun c -> if (Char.code c < 33 || Char.code c > 126) then '_' else c)
+		 (Utilities.extract_field_as_string_exn ~fieldname:"table_type" ~results ~arrayofstring) in
 	     let engine =
-	       String.strip
-		 ~drop:Char.is_whitespace
-		   (Option.value_exn
-		      ~message:"Failed to get table engine."
-		      (Mysql.column results
-				    ~key:"engine" ~row:arrayofstring)) in
+	       String.map
+		 (fun c -> if (Char.code c < 33 || Char.code c > 126) then '_' else c)
+		 (Utilities.extract_field_as_string_exn ~fieldname:"engine" ~results ~arrayofstring) in
 	     let new_table_t =
 	       Fields.create ~table_name ~table_type ~engine in
 	     table_helper (new_table_t::accum) results (fetch results)

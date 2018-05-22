@@ -47,7 +47,7 @@ module Sql_supported_types = struct
     | DATE -> Ok Types_we_emit.Date
   (*| TIME <<<<====TODO *)
     | DATETIME 
-    | TIMESTAMP -> Ok Types_we_emit.Time
+    | TIMESTAMP -> Ok Types_we_emit.DateTime
     | BINARY
     | BLOB
     | MEDIUMTEXT
@@ -62,11 +62,10 @@ module Sql_supported_types = struct
     combination with a numeric type in mysql, so we'll never see it here except with a 
     numeric type. *)
   let of_col_type_and_flags ~data_type ~col_type ~col_name =
-    let open Core in 
-    let is_unsigned = String.is_substring col_type ~substring:"unsigned" in
+    let is_unsigned = Str.string_match (Str.regexp "unsigned") col_type 0 in
     let the_col_type ~is_unsigned ~data_type =
       match is_unsigned, data_type with
-      | _, "tinyint" -> if String.is_substring col_name ~substring:"is_" then TINYINT_BOOL else TINYINT_UNSIGNED
+      | _, "tinyint" -> if Str.string_match (Str.regexp "is_") col_name 0 then TINYINT_BOOL else TINYINT_UNSIGNED
       | true, "smallint" -> SMALLINT_UNSIGNED
       | true, "int" 
       | true, "integer" -> INTEGER_UNSIGNED
@@ -86,19 +85,16 @@ module Sql_supported_types = struct
       | false, "varbinary"
       | false, "mediumtext" 
       | false, "varchar" -> VARCHAR
-      | _, _ -> let () = Utilities.print_n_flush (String.concat [col_name;" with type ";col_type;" is not supported."])
+      | _, _ -> let () = Utilities.print_n_flush (String.concat "" [col_name;" with type ";col_type;" is not supported."])
 		in UNSUPPORTED in
     the_col_type ~is_unsigned ~data_type;;
     
   let one_step ~data_type ~col_type ~col_name =
     let supported_t = of_col_type_and_flags ~data_type ~col_type ~col_name in
     let name_result = ml_type_of_supported_sql_type supported_t in
-    if is_ok name_result then
-      (fun x -> match x with
-	       | Ok name -> name
-	       | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
-    else 
-      raise (Failure "Unsupported sql type.")
+    match name_result with
+    | Ok name -> name
+    | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type") name_result
 end 
 (*  let of_string s =
     match s with

@@ -25,4 +25,6 @@ module Int32_extended = struct
       let value = String.sub value_half 0 rbracket_i in 
       Result.Ok (Int32.of_string value)
     with err -> Error "int32_extended::of_yojson() failed.";;
+
+  let of_string s = Int32.of_string s;;
 end 
