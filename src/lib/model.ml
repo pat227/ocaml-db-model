@@ -5,9 +5,6 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Table = Table.Table
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Utilities = Utilities2copy.Utilities
-(*module String_set = Core.Set.Make(Core.String)
-open Sexplib.Std
-open Sexplib*)
 module type S = Map.S
 module Model = struct
   type t = {
@@ -28,10 +25,9 @@ module Model = struct
 	table : string;
 	referenced_table : string;
 	referenced_field : string;
-      } [@@deriving eq, ord, show, fields, sexp]
+      } [@@deriving eq, ord, show, fields]
     end
     include T
-    (*module TComp = Core.Comparable.Make(T)*)
     
     let get_any_foreign_key_references ~conn ~table_name = 
       (*work this into sequoia support...only way to discover foreign keys on a table*)
@@ -61,12 +57,11 @@ module Model = struct
 	       let new_fkey_record =
 		 Fields.create
 		   ~col:col_name ~table:table_name ~referenced_table ~referenced_field in
-	       let newset = StringMap.set accum ~key:col_name ~data:new_fkey_record in 
+	       let newset = StringMap.add col_name new_fkey_record accum in 
 	       helper newset results (Mysql.fetch results)
 	      )
 	    with err ->
-	      let () = Utilities.print_n_flush ("\nError " ^ (Core.Exn.to_string err) ^
-						  " getting foreign key info from db.") in
+	      let () = Utilities.print_n_flush ("\nError getting foreign key info from db.") in
 	      Error "Failed to get foreign key info from db."
 	) in
       (*let conn = (fun c -> if Core.Option.is_none c then
@@ -88,7 +83,6 @@ module Model = struct
   end 
 
   let get_fields_for_given_table ~conn ~table_name =
-    let open Mysql in
     (*Only column_type gives us the acceptable values of an enum type if present, 
       unsigned; use the column_comment to input per field directives for ppx 
       extensions...way down the road, such as key or default for json ppx extension. 
@@ -110,21 +104,21 @@ module Model = struct
 	    (let col_name =
 	       let temp = Utilities.extract_field_as_string_exn
 			    ~fieldname:"column_name" ~results ~arrayofstring in
-	       let temp = String.lowercase temp in 
+	       let temp = String.lowercase_ascii temp in 
 	       (*--cannot permit invalid literals or reserved keywords--must start
                 with lowercase char or underscore and field names should not be
                 case sensitive anyway. TODO: check for special chars and other
                 reserved keywords.
 		*)
-	       let first_char = String.nget temp 0 in
-	       if Char.is_digit first_char ||
+	       let first_char = String.get temp 0 in
+	       if Utilities.is_digit first_char ||
 		    String.equal "type" temp ||
 		      String.equal "module" temp ||
 			String.equal "end" temp ||
 			  String.equal "sig" temp 
 	       then
 		 (*--we have to do some name mangling or do not support such field names?--*)
-		 String.concat ["x_";temp]
+		 String.concat "" ["x_";temp]
 	       else 
 		 temp in 
 	     let data_type =
@@ -151,29 +145,33 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     let newmap = String.Map.add_multi accum table_name new_field_record in 
-	     helper newmap results (fetch results)
+	     if StringMap.mem table_name accum then
+	       let oldbinding = StringMap.find table_name accum in 
+	       let newmap = StringMap.add table_name (new_field_record::oldbinding) accum in
+	       helper newmap results (Mysql.fetch results)
+	     else
+	       let newmap = StringMap.add table_name [new_field_record] accum in 
+	       helper newmap results (Mysql.fetch results)
 	    )
 	  with err ->
-	    let () = Utilities.print_n_flush ("\nError " ^ (Exn.to_string err) ^
-				      " getting tables from db.") in
+	    let () = Utilities.print_n_flush ("\nError getting tables from db.") in
 	    Error "Failed to get tables from db."
       ) in
     (*let conn = (fun c -> if is_none c then
 			   Utilities.getcon_defaults ()
 			 else
 			   Option.value_exn c) conn in *)
-    let queryresult = exec conn fields_query in
-    let isSuccess = status conn in
+    let queryresult = Mysql.exec conn fields_query in
+    let isSuccess = Mysql.status conn in
     match isSuccess with
-    | StatusEmpty ->  Ok String.Map.empty
-    | StatusError _ -> 
+    | Mysql.StatusEmpty ->  Ok StringMap.empty
+    | Mysql.StatusError _ -> 
        let () = Utilities.print_n_flush
 		  ("Query for columns in " ^ table_name  ^  "returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
        Error "model.ml::get_fields_for_given_table() Error in sql"
-    | StatusOK -> let () = Utilities.print_n_flush ("\nGot fields for table " ^ table_name) in 
-		  helper String.Map.empty queryresult (fetch queryresult);;
+    | Mysql.StatusOK -> let () = Utilities.print_n_flush ("\nGot fields for table " ^ table_name) in 
+			helper StringMap.empty queryresult (Mysql.fetch queryresult);;
 
   let make_regexp s =
     match s with
@@ -189,8 +187,8 @@ module Model = struct
     
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
     let table_list_result = Table.get_tables ~conn ~schema in
-    if is_ok table_list_result then
-      let tables = ok_or_failwith table_list_result in
+    match table_list_result with
+    | Ok tables -> 
       let regexp_opt = make_regexp regexp_opt in
       let table_list_opt = Utilities.parse_list table_list_opt in 
       let rec helper ltables map =

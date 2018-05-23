@@ -82,10 +82,15 @@ module Utilities = struct
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
+
+  let is_digit c =
+    let codepoint = Char.code c in 
+    codepoint > 47 && codepoint < 58
+    
   (*For use with String.map (fun c -> if is_whitespace_char c then '' else c) s *)
   let is_whitespace_char c =
     let codepoint = Char.code c in 
-    if codepoint > 32 && codepoint < 127 then false else true
+    not (codepoint > 32 && codepoint < 127)
     
   let extract_field_as_string_exn ~fieldname ~results ~arrayofstring =
       let s_opt = (Mysql.column results

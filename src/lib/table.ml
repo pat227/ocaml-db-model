@@ -8,7 +8,8 @@ module Table = struct
   } [@@deriving fields]
    
   let get_tables ~conn ~schema =
-    let open Mysql in
+    (* Cannot open mysql and use pervasives result type (Ok / Error)
+     let open Mysql in*)
     let table_query ~schema =
       "SELECT table_name, table_schema, table_type, engine FROM 
        information_schema.tables WHERE table_schema='" ^ schema ^ "';" in
@@ -31,24 +32,23 @@ module Table = struct
 		 (Utilities.extract_field_as_string_exn ~fieldname:"engine" ~results ~arrayofstring) in
 	     let new_table_t =
 	       Fields.create ~table_name ~table_type ~engine in
-	     table_helper (new_table_t::accum) results (fetch results)
+	     table_helper (new_table_t::accum) results (Mysql.fetch results)
 	    )
 	  with err ->
-	    let () = Utilities.print_n_flush ("\nError " ^ (Exn.to_string err) ^
-				      " getting tables from db.") in
-	    Error "table.ml::get_tables() line 46"
+	    let () = Utilities.print_n_flush ("\nError getting tables from db.") in 
+	    Error "table.ml::get_tables() line 49"
       ) in
     (*let conn = (fun c -> if is_none c then Utilities.getcon else Option.value_exn c) conn in *)
-    let queryresult = exec conn (table_query ~schema) in
-    let isSuccess = status conn in
+    let queryresult = Mysql.exec conn (table_query ~schema) in
+    let isSuccess = Mysql.status conn in
     match isSuccess with
-    | StatusEmpty ->
+    | Mysql.StatusEmpty ->
        let () = Utilities.print_n_flush ("Query for table names returned nothing  ... \n") in
        Ok []
-    | StatusError _ -> 
+    | Mysql.StatusError _ -> 
        let () = Utilities.print_n_flush ("Error in query for table  ... \n") in
        Error "table.ml::get_tables() SQL error"
-    | StatusOK ->
+    | Mysql.StatusOK ->
        let () = Utilities.print_n_flush "\nGot table names..." in 
-       table_helper [] queryresult (fetch queryresult);;
+       table_helper [] queryresult (Mysql.fetch queryresult);;
 end

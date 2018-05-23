@@ -14,6 +14,9 @@ module Utilities : sig
   val print_n_flush : string -> unit
   val parse_list : string option -> string list option
 
+  val is_whitespace_char : char -> bool
+  val is_digit : char -> bool
+				     
   val serialize_optional_field : field:string option -> conn:Mysql.dbd -> string
   val serialize_optional_field_with_default :
     field:string option -> conn:Mysql.dbd -> default:string -> string

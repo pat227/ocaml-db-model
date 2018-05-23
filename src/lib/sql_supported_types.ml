@@ -94,7 +94,7 @@ module Sql_supported_types = struct
     let name_result = ml_type_of_supported_sql_type supported_t in
     match name_result with
     | Ok name -> name
-    | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type") name_result
+    | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type")
 end 
 (*  let of_string s =
     match s with
