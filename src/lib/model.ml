@@ -15,8 +15,9 @@ module Model = struct
     is_primary_key : bool;
   } [@@deriving show, fields]
 
-  module StringMap = Map.Make(String);;  
-
+  module StringMap2List = Map.Make(String);;  
+  module StringMap = Map.Make(String);;
+    
   (*we only need this submodule to get foreign keys*)
   module Sequoia_support = struct
     module T = struct  
@@ -145,12 +146,12 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     if StringMap.mem table_name accum then
-	       let oldbinding = StringMap.find table_name accum in 
-	       let newmap = StringMap.add table_name (new_field_record::oldbinding) accum in
+	     if StringMap2List.mem table_name accum then
+	       let oldbinding = StringMap2List.find table_name accum in 
+	       let newmap = StringMap2List.add table_name (new_field_record::oldbinding) accum in
 	       helper newmap results (Mysql.fetch results)
 	     else
-	       let newmap = StringMap.add table_name [new_field_record] accum in 
+	       let newmap = StringMap2List.add table_name [new_field_record] accum in 
 	       helper newmap results (Mysql.fetch results)
 	    )
 	  with err ->
@@ -164,14 +165,14 @@ module Model = struct
     let queryresult = Mysql.exec conn fields_query in
     let isSuccess = Mysql.status conn in
     match isSuccess with
-    | Mysql.StatusEmpty ->  Ok StringMap.empty
+    | Mysql.StatusEmpty ->  Ok StringMap2List.empty
     | Mysql.StatusError _ -> 
        let () = Utilities.print_n_flush
 		  ("Query for columns in " ^ table_name  ^  "returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
        Error "model.ml::get_fields_for_given_table() Error in sql"
     | Mysql.StatusOK -> let () = Utilities.print_n_flush ("\nGot fields for table " ^ table_name) in 
-			helper StringMap.empty queryresult (Mysql.fetch queryresult);;
+			helper StringMap2List.empty queryresult (Mysql.fetch queryresult);;
 
   let make_regexp s =
     match s with
@@ -194,58 +195,60 @@ module Model = struct
       let rec helper ltables map =
 	let update_map ~table_name =
 	  let fs_result = get_fields_for_given_table ~conn ~table_name in
-	  if is_ok fs_result then
-	    let newmap = ok_or_failwith fs_result in
-	     let combinedmaps =
-	       Core.Map.merge
-		 map newmap
-		 ~f:
-		 (fun ~key vals ->
-		  match vals with
-		  | `Left v1 -> Some v1
-		  | `Right v2 -> Some v2
-		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
-		 ) in  
-	     combinedmaps
-	  else  
-	    map in 
-	match ltables with
-	| [] -> map
-	| h::t ->
-	   (**---filter on regexp or list here, if present at all---*)
-	   (match regexp_opt, table_list_opt with
-	    | None, Some l ->
-	       if List.mem h.Table.table_name l then
-		 let newmap = update_map ~table_name:h.Table.table_name in
-		 helper t newmap
-	       else
-		 helper t map
-	    | Some r, None ->
-	       (try
-		   let _intarray =
+	  (match fs_result with
+	   | Ok newmap ->
+	      StringMap2List.add table_name (StringMap2List.find table_name newmap) map
+	      (*let combinedmaps =
+		StringMap2List.merge
+		  (fun key valLopt valRopt ->
+		   match valLopt, valRopt with
+		   | Some v1, None -> v1
+		   | None, Some v2 -> v2
+		   | None, None -> None
+		   | Some v1, Some v2 -> raise (Failure "Duplicate table name!?!"))
+		  map newmap
+	      in  
+	      combinedmaps*)
+	   | Error _ -> map
+	  ) in 
+	(match ltables with
+	 | [] -> map
+	 | h::t ->
+	    (**---filter on regexp or list here, if present at all---*)
+	    (match regexp_opt, table_list_opt with
+	     | None, Some l ->
+		if List.mem h.Table.table_name l then
+		  let newmap = update_map ~table_name:h.Table.table_name in
+		  helper t newmap
+		else
+		  helper t map
+	     | Some r, None ->
+		(try
+		    let _intarray =
 		     Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
-		   let newmap = update_map ~table_name:h.Table.table_name in
-		   helper t newmap
-		 with
-		 | _ -> helper t map
-	       )
-	    | Some r, Some l -> (*--presume regexp over list---*)
-	       (try
-		   let _intarray =
-		     Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
-		   let newmap = update_map ~table_name:h.Table.table_name in
-		   helper t newmap
-		 with
-		 | _ -> helper t map
-	       )
-	    | None, None -> 
-	       let newmap = update_map ~table_name:h.Table.table_name in
-	       helper t newmap
-	   ) in
-      helper tables StringMap.empty
-    else
-      let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
-      StringMap.empty;;
+		    let newmap = update_map ~table_name:h.Table.table_name in
+		    helper t newmap
+		  with
+		  | _ -> helper t map
+		)
+	     | Some r, Some l -> (*--presume regexp over list---*)
+		(try
+		    let _intarray =
+		      Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
+		    let newmap = update_map ~table_name:h.Table.table_name in
+		    helper t newmap
+		  with
+		  | _ -> helper t map
+		)
+	     | None, None -> 
+		let newmap = update_map ~table_name:h.Table.table_name in
+		helper t newmap
+	    )
+	) in
+      helper tables StringMap2List.empty
+    | Error _ -> 
+       let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
+       StringMap2List.empty;;
     
   (**Construct an otherwise tedious function that creates instances of type t from
      a query; for each field in struct, get the string option from the string 
@@ -260,36 +263,36 @@ module Model = struct
 				   ~user ~password ~database =
     let preamble =
       (*--do not place db creds into each file; one connection function with creds in utilities file; copied into the project.*)
-      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon () in \n";] in
+      String.concat "" ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon () in \n";] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
     let suffix =
-      String.concat 
+      String.concat ""
 	["    let queryresult = exec conn query in\n    let isSuccess = status conn in\n    match isSuccess with\n    | StatusEmpty ->  Ok [] \n    | StatusError _ -> \n       let () = Utilities.print_n_flush (\"Error during query of table ";
 	 table_name;"...\") in\n       let () = Utilities.closecon conn in\n       Error \"get_from_db() Error in sql\"\n    | StatusOK -> \n       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n       helper [] queryresult (fetch queryresult);;"] in
     let rec for_each_field ~flist ~accum =
       match flist with
-      | [] -> String.concat ~sep:"\n" accum
+      | [] -> String.concat "\n" accum
       | h :: t ->
 	 let parser_function_call =
 	   Types_we_emit.converter_of_string_of_type
 	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
-	 let output = String.concat
+	 let output = String.concat ""
 			["            let ";h.col_name;" = ";
 			 parser_function_call;" in "] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
     let rec make_fields_create_line ~flist ~accum =
       match flist with
-      | [] -> let fields = String.concat accum in
-	      String.concat ["            let new_t = Fields.create ";fields;" in "]
+      | [] -> let fields = String.concat "" accum in
+	      String.concat "" ["            let new_t = Fields.create ";fields;" in "]
       | h :: t ->
-	 let onef = String.concat ["~";h.col_name] in
+	 let onef = String.concat "" ["~";h.col_name] in
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
-    let fields_list = Map.find_exn map table_name in
+    let fields_list = StringMap.find table_name map in
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
     let parser_lines = for_each_field fields_list [] in
-    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
+    String.concat "\n" [preamble;helper_preamble;parser_lines;creation_line;
 			     recursive_call;"          with\n          | err ->";
 			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
 
@@ -297,19 +300,18 @@ module Model = struct
   let list_of_user_modules = ref None;;
 
   let get_all_available_user_written_modules ~where2find_modules =
-    let open Core.Unix in
     let () = Utilities.print_n_flush "\nget_all_available_user_written_modules() " in
     let rec helper path2dir dirhandle accum =
       (try
-	let nextfile = readdir dirhandle in
-	let stat = stat (Core.String.concat [path2dir;"/";nextfile]) in
-	(match stat.st_kind with
-	| S_REG -> 
-	   if Core.String.is_suffix nextfile ~suffix:"mli" then
+	let nextfile = Unix.readdir dirhandle in
+	let stat = Unix.stat (String.concat "" [path2dir;"/";nextfile]) in
+	(match stat.Unix.st_kind with
+	| Unix.S_REG -> 
+	   if String.is_suffix nextfile ~suffix:"mli" then
 	     helper where2find_modules dirhandle accum
 	   else
 	     let () = Utilities.print_n_flush ("\nIncluding module " ^ nextfile) in 
-	     helper where2find_modules dirhandle ((Core.String.lowercase nextfile)::accum)
+	     helper where2find_modules dirhandle ((String.lowercase nextfile)::accum)
 	| _ -> helper where2find_modules dirhandle accum)
       with End_of_file ->
 	let () = Core.Unix.closedir dirhandle in accum) in
