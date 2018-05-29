@@ -13,7 +13,8 @@ module Utilities : sig
   val closecon : Mysql.dbd ->  unit
   val print_n_flush : string -> unit
   val parse_list : string option -> string list option
-
+  val is_suffix : string -> string -> bool
+					   
   val is_whitespace_char : char -> bool
   val is_digit : char -> bool
 				     

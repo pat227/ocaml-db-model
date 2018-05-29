@@ -45,6 +45,19 @@ module Utilities = struct
       | None -> None
     with
     | _ -> None;;
+
+  let is_suffix s suffix =
+    let l = String.length s in
+    let suffixl = String.length suffix in
+    if suffixl >= l then
+      false
+    else
+      if suffixl = 0 then
+	false
+      else
+	let sample = String.sub s (l - suffixl) suffixl in
+	String.equal sample suffix
+	  
     
   let serialize_optional_field ~field ~conn =
     match field with

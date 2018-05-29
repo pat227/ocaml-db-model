@@ -15,7 +15,6 @@ module Model = struct
     is_primary_key : bool;
   } [@@deriving show, fields]
 
-  module StringMap2List = Map.Make(String);;  
   module StringMap = Map.Make(String);;
     
   (*we only need this submodule to get foreign keys*)
@@ -146,12 +145,12 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     if StringMap2List.mem table_name accum then
-	       let oldbinding = StringMap2List.find table_name accum in 
-	       let newmap = StringMap2List.add table_name (new_field_record::oldbinding) accum in
+	     if StringMap.mem table_name accum then
+	       let oldbinding = StringMap.find table_name accum in 
+	       let newmap = StringMap.add table_name (new_field_record::oldbinding) accum in
 	       helper newmap results (Mysql.fetch results)
 	     else
-	       let newmap = StringMap2List.add table_name [new_field_record] accum in 
+	       let newmap = StringMap.add table_name [new_field_record] accum in 
 	       helper newmap results (Mysql.fetch results)
 	    )
 	  with err ->
@@ -165,14 +164,14 @@ module Model = struct
     let queryresult = Mysql.exec conn fields_query in
     let isSuccess = Mysql.status conn in
     match isSuccess with
-    | Mysql.StatusEmpty ->  Ok StringMap2List.empty
+    | Mysql.StatusEmpty ->  Ok StringMap.empty
     | Mysql.StatusError _ -> 
        let () = Utilities.print_n_flush
 		  ("Query for columns in " ^ table_name  ^  "returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
        Error "model.ml::get_fields_for_given_table() Error in sql"
     | Mysql.StatusOK -> let () = Utilities.print_n_flush ("\nGot fields for table " ^ table_name) in 
-			helper StringMap2List.empty queryresult (Mysql.fetch queryresult);;
+			helper StringMap.empty queryresult (Mysql.fetch queryresult);;
 
   let make_regexp s =
     match s with
@@ -197,9 +196,9 @@ module Model = struct
 	  let fs_result = get_fields_for_given_table ~conn ~table_name in
 	  (match fs_result with
 	   | Ok newmap ->
-	      StringMap2List.add table_name (StringMap2List.find table_name newmap) map
+	      StringMap.add table_name (StringMap.find table_name newmap) map
 	      (*let combinedmaps =
-		StringMap2List.merge
+		StringMap.merge
 		  (fun key valLopt valRopt ->
 		   match valLopt, valRopt with
 		   | Some v1, None -> v1
@@ -245,10 +244,10 @@ module Model = struct
 		helper t newmap
 	    )
 	) in
-      helper tables StringMap2List.empty
+      helper tables StringMap.empty
     | Error _ -> 
        let () = Utilities.print_n_flush "\nFailed to get list of tables.\n" in
-       StringMap2List.empty;;
+       StringMap.empty;;
     
   (**Construct an otherwise tedious function that creates instances of type t from
      a query; for each field in struct, get the string option from the string 
@@ -307,19 +306,21 @@ module Model = struct
 	let stat = Unix.stat (String.concat "" [path2dir;"/";nextfile]) in
 	(match stat.Unix.st_kind with
 	| Unix.S_REG -> 
-	   if String.is_suffix nextfile ~suffix:"mli" then
+	   if Utilities.is_suffix nextfile "mli" then
 	     helper where2find_modules dirhandle accum
-	   else
+	   else if Utilities.is_suffix nextfile "ml" then 
 	     let () = Utilities.print_n_flush ("\nIncluding module " ^ nextfile) in 
-	     helper where2find_modules dirhandle ((String.lowercase nextfile)::accum)
+	     helper where2find_modules dirhandle ((String.lowercase_ascii nextfile)::accum)
+	   else
+	     helper where2find_modules dirhandle accum
 	| _ -> helper where2find_modules dirhandle accum)
       with End_of_file ->
-	let () = Core.Unix.closedir dirhandle in accum) in
+	let () = Unix.closedir dirhandle in accum) in
     (match !list_of_user_modules with
     | None ->
-       let dir_handle = Core.Unix.opendir where2find_modules in
+       let dir_handle = Unix.opendir where2find_modules in
        let l = helper where2find_modules dir_handle [] in
-       let () = list_of_user_modules := l in l
+       let () = list_of_user_modules := (Some l) in l
     | Some l -> l)
     
   let construct_body ~table_name ~map ~ppx_decorators
@@ -329,15 +330,19 @@ module Model = struct
       match where2find_modules with
       | None -> None
       | Some path -> Some (get_all_available_user_written_modules ~where2find_modules:path) in 
-    let module_name = Core.String.capitalize table_name in
+    let module_name = String.capitalize_ascii table_name in
     (*===todo===either make fields mandatory or default, or else remove all the
       functions that depend on fields extension when generating modules, ie, the 
       query functions.*)
     let ppx_decorators_list =
-      if Core.Option.is_some ppx_decorators then 
-	Core.Option.value_exn (Utilities.parse_list ppx_decorators)
-      else
-	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
+      match ppx_decorators with
+      | Some ppx_decorators_l -> let r = Utilities.parse_list ppx_decorators_l in
+			       (match r with
+				| Some l -> l
+				| None -> raise (Failure "")
+			       )
+      | None -> 
+	 ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
@@ -352,10 +357,10 @@ module Model = struct
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list_reversed = Core.String.Map.find_exn map table_name in
+    let tfields_list_reversed = StringMap.find table_name map in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Core.Int.to_string (List.length tfields_list))) in
+					(string_of_int (List.length tfields_list))) in
     (*--need to know which modules were added so we can add them to 
      other_modules defined above*)
     let rec helper l tbody added_modules =
@@ -366,46 +371,48 @@ module Model = struct
            --as a type, do so here. Module must define some way to marshall
            --the type, ie, must have an of_string method. And a to_string
            --method in order to save it.*)
-	 if Core.Option.is_some client_modules &&
-	      Core.Option.is_some module_names &&
-		List.mem (Core.String.lowercase h.col_name) (Core.Option.value_exn client_modules) &&
-		  List.mem (Core.String.lowercase h.col_name) (Core.Option.value_exn module_names) then
-	   let tbody_new =
-	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
-				 h.col_name;".t;"] in
-	   helper t tbody_new (h.col_name :: added_modules)
-	 else 
-	   let string_of_data_type =
-	     Types_we_emit.to_string h.data_type h.is_nullable in 
-	   let tbody_new =
-	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+	 (match client_modules, module_names with
+	  | Some clientmodules, Some modulenames -> 
+	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
+		  List.mem (String.lowercase_ascii h.col_name) modulenames then
+	       let tbody_new =
+		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
+				   h.col_name;".t;"] in
+	       helper t tbody_new (h.col_name :: added_modules)
+	     else
+	       helper t tbody added_modules
+	  | _, _ -> 
+	     let string_of_data_type =
+	       Types_we_emit.to_string h.data_type h.is_nullable in 
+	     let tbody_new =
+	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				 string_of_data_type;";"] in
-	   helper t tbody_new added_modules in
+	     helper t tbody_new added_modules) in
     let more_specific_modules = [] in
     let tbody = helper tfields_list "" more_specific_modules in
     let other_modules =
-      Core.String.concat ~sep:"\n" ((other_modules @
-				       more_specific_modules) @
-				      ["open Sexplib.Std\n"]) in 
+      String.concat "\n" ((other_modules @
+			     more_specific_modules) @
+			    ["open Sexplib.Std\n"]) in 
     let almost_done =
-      Core.String.concat [other_modules;start_module;start_type_t;
-			      tbody;"\n";end_type_t] in
+      String.concat "" [other_modules;start_module;start_type_t;
+			tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators_list with
       | [] -> almost_done ^ "\n"
       | h :: t ->
-	 let ppx_extensions = Core.String.concat ~sep:"," ppx_decorators_list in
+	 let ppx_extensions = String.concat "," ppx_decorators_list in
 	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
     (*Insert a few functions and variables.*)
     let table_related_lines =
-      Core.String.concat ["  let tablename=\"";table_name;
+      String.concat "" ["  let tablename=\"";table_name;
 	"\" \n\n  let get_tablename () = tablename;;\n"] in
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
     let query_function = construct_sql_query_function ~table_name ~map ~host
 						      ~user ~password ~database in 
-    Core.String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
+    String.concat "\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators
@@ -419,12 +426,10 @@ module Model = struct
       warning if not. Still better than optional flags at command line, one for
       every possible ppx extension known and unknown in the future. *)
     let ppx_decorators_list =
-      if Core.Option.is_some ppx_decorators then 
-	Core.Option.value_exn (Utilities.parse_list ppx_decorators)
-      else
-	(*defaults*)
-	["fields";"show";"sexp";"ord";"eq";"yojson"] in 
-    let module_name = Core.String.capitalize table_name in
+      match ppx_decorators with
+      | Some ppx_decs -> Utilities.parse_list ppx_decs
+      | None -> Some ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
+    let module_name = String.capitalize_ascii table_name in
     let other_modules =
       ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
        "module Core_date_extended = Ocaml_db_model.Core_date_extended";
@@ -438,53 +443,54 @@ module Model = struct
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list_reversed = Core.String.Map.find_exn map table_name in
+    let tfields_list_reversed = StringMap.find table_name map in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Core.Int.to_string (List.length tfields_list))) in
+					(string_of_int (List.length tfields_list))) in
     let more_specific_modules = [] in 
     let rec helper l tbody added_modules =
       match l with
       | [] -> tbody
       | h :: t ->
-	 if Core.Option.is_some client_modules &&
-	      Core.Option.is_some module_names &&
-		List.mem h.col_name (Core.Option.value_exn client_modules) &&
-		  List.mem h.col_name (Core.Option.value_exn module_names) then
-	   let tbody_new =
-	     Core.String.concat
-	       [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
-	   helper t tbody_new (h::added_modules)
-	 else 
-	   let string_of_data_type =
-	     Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	   let tbody_new =
-	     Core.String.concat
-	       [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
-	   helper t tbody_new added_modules in 
+	 (match client_modules, module_names with
+	  | Some clientmodules, Some modulenames ->
+	     if List.mem h.col_name clientmodules &&
+		  List.mem h.col_name modulenames then
+	       let tbody_new =
+		 String.concat
+		   "" [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
+	       helper t tbody_new (h::added_modules)
+	     else
+	       helper t tbody added_modules
+	  | _,_ ->
+	     let string_of_data_type =
+	       Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
+	     let tbody_new =
+	       String.concat
+		 "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
+	     helper t tbody_new added_modules) in 
     let tbody = helper tfields_list "" more_specific_modules in
-    let other_modules = Core.String.concat ~sep:"\n" (other_modules @ more_specific_modules) in 
-    let start_module = Core.String.concat [other_modules;"\n";"module ";module_name;" : sig \n"] in 
-    let almost_done = Core.String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
+    let other_modules = String.concat "\n" (other_modules @ more_specific_modules) in 
+    let start_module = String.concat "" [other_modules;"\n";"module ";module_name;" : sig \n"] in 
+    let almost_done = String.concat "" [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =
       match ppx_decorators_list with
       | [] -> almost_done
       | h :: t ->
-	 let ppx_extensions = Core.String.concat ~sep:"," ppx_decorators_list in
-	 Core.String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
+	 let ppx_extensions = String.concat "," ppx_decorators_list in
+	 String.concat "" [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
-      Core.String.concat
-	~sep:"\n"
-	["  val get_tablename : unit -> string";
-	 "  val get_sql_query : unit -> string";
-	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
-	 "end"] in
-    Core.String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
+      String.concat
+	"\n" ["  val get_tablename : unit -> string";
+	      "  val get_sql_query : unit -> string";
+	      "  val get_from_db : query:string -> (t list, string) Core.Result.t";
+	      "end"] in
+    String.concat "\n" [with_ppx_decorators;function_lines];;
 
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
-    let open Core.Unix in
+    let open Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     let check_or_create_dir ~dir =
       try 
