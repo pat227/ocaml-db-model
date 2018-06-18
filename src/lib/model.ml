@@ -475,9 +475,11 @@ module Model = struct
     let almost_done = String.concat "" [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =
       match ppx_decorators_list with
-      | [] -> almost_done
-      | h :: t ->
-	 let ppx_extensions = String.concat "," ppx_decorators_list in
+      | None 
+      | Some [] ->
+	 String.concat "" [almost_done;" [@@deriving ";"fields";"show";"sexp";"ord";"eq";"yojson";"]\n"]
+      | Some (l) ->
+	 let ppx_extensions = String.concat "," l in
 	 String.concat "" [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
       String.concat
@@ -491,44 +493,77 @@ module Model = struct
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
     let open Unix in
-    let myf sbuf fd = single_write fd ~buf:sbuf in
+    let myf sbuf fd = single_write fd sbuf 0 (Bytes.length sbuf) in
     let check_or_create_dir ~dir =
       try 
 	let _stats = stat dir in ()	
       with _ ->
-	mkdir ~perm:0o770 dir in
+	mkdir dir 0o770 in
     try
-      let () = check_or_create_dir ~dir:outputdir in 
-      let _bytes_written =
-	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
-		  ~perm:0o644 ~f:(myf body) in ()
+      let () = check_or_create_dir ~dir:outputdir in
+      let name = (outputdir ^ fname) in
+      let f = openfile name [O_RDWR;O_CREAT;O_TRUNC] 0o644 in
+      let _bytes_written = myf body f in 
+      close f
     with _ -> Utilities.print_n_flush ("\nFailed to write to file:" ^ fname)
 
   (*NOTE: unlike credentials in this project; the written module includes a set of credentials
     with user supplied values.
-  let construct_db_credentials_mli () =
-    "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
+    let construct_db_credentials_mli () =
+      "module Credentials : sig\n  type t\n  val of_username_pw : username:string -> pw:string -> db:string -> t\n  val getpw : t -> string\n  val getuname : t -> string\n  val getdb : t -> string\n  val credentials : t\nend";;
    *)
+  let list_split_n l n =
+    let rec helper i n li firsthalf secondhalf =
+      match li with
+      | [] -> (List.rev firsthalf),(List.rev secondhalf)
+      | h :: t ->
+	 if i < n then
+	   helper (i+1) n t (h::firsthalf) secondhalf
+	 else
+	   helper (i+1) n t firsthalf (h::secondhalf) in
+    let len = List.length l in
+    if n > len then
+      l,[]
+    else
+      if n < 0 then
+	[],l
+      else
+	helper 0 n l [] [];;
+				      
   let get_path2lib () =
     (*Use CAML_LD_LIBRARY_PATH env var. It is /home/<homedir>/.opam/4.04.1/lib/stublibs; extract version*)
     let ldpath = Sys.getenv "CAML_LD_LIBRARY_PATH" in
-    let pathelems = Core.String.split ~on:'/' ldpath in
-    let paths = Core.List.split_n pathelems ((List.length pathelems) - 1) in
+    let pathelems = String.split_on_char '/' ldpath in
+    let paths = list_split_n pathelems ((List.length pathelems) - 1) in
     let path_elems_less_stublibs = fst paths in
-    Core.String.concat path_elems_less_stublibs ~sep:"/";;
-				      
+    String.concat "/" path_elems_less_stublibs;;
+
+  let input_lines inchan =
+    let rec helper inc accum =
+      try
+	helper inc ((input_line inc)::accum)
+      with End_of_file -> List.rev accum in
+    helper inchan [];;
+
+  let filteri list startindex endindex  =
+    let rec helper l x i n accum =
+      if x >= i && x <= n then 
+	helper l (x+1) i n ((List.nth l x)::accum)
+      else if x >= n then  
+	List.rev accum in
+    helper list startindex startindex endindex;;
+    
   let construct_db_credentials ~credentials ~destinationdir =
-    let open Core in 
     (*==========================================================================
       DESPITE being so short, copy it to avoid maintaining this module and mli 
       in 2 places, ie, avoid code duplication
       ==========================================================================
 let body_start = "module Credentials = struct\n  type t = {\n    username: string;\n    pw:string;\n    db:string\n  }\n  let of_username_pw ~username ~pw ~db =\n    { username = username;\n      pw = pw;\n      db = db;\n    };;\n  let getuname t = t.username;;\n  let getpw t = t.pw;;\n  let getdb t = t.db;;\n  let credentials = of_username_pw ~username:\"" in*)
     let path2lib = get_path2lib () in 
-    let inchan = In_channel.create (String.concat[path2lib;"/ocaml_db_model/credentials2copy.ml"]) in
-    let lines = In_channel.input_lines inchan in
+    let inchan = open_in (String.concat "" [path2lib;"/ocaml_db_model/credentials2copy.ml"]) in
+    let lines = input_lines inchan in
     (*insert a value here and into mli*)
-    let lines2to16 = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 0 && i < 16)) in
+    let lines2to16 = String.concat "\n" (List.filteri lines (fun i _l -> i > 0 && i < 16)) in
     let body = String.concat [lines2to16;"  let credentials = of_username_pw ~username:\"";(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"] in
     let () = write_module ~outputdir:destinationdir ~fname:"credentials.ml" ~body in
     let inchan_mli = In_channel.create (String.concat [path2lib;"/ocaml_db_model/credentials2copy.mli"]) in
