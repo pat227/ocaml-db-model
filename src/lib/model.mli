@@ -22,7 +22,7 @@ module Model : sig
       table : string;
       referenced_table : string;
       referenced_field : string;
-    } [@@deriving eq, ord, show, fields, sexp]
+    } [@@deriving eq, ord, show, fields]
     
     (*module TSet : sig
       include Core.Comparable.S with type t := t

@@ -336,11 +336,12 @@ module Model = struct
       query functions.*)
     let ppx_decorators_list =
       match ppx_decorators with
-      | Some ppx_decorators_l -> let r = Utilities.parse_list ppx_decorators_l in
-			       (match r with
-				| Some l -> l
-				| None -> raise (Failure "")
-			       )
+      | Some ppx_decorators_l ->
+	 let r = Utilities.parse_list ppx_decorators in
+	 (match r with
+	  | Some l -> l
+	  | None -> raise (Failure "model.ml::line 343")
+	 )
       | None -> 
 	 ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
@@ -427,7 +428,7 @@ module Model = struct
       every possible ppx extension known and unknown in the future. *)
     let ppx_decorators_list =
       match ppx_decorators with
-      | Some ppx_decs -> Utilities.parse_list ppx_decs
+      | Some ppx_decs -> Utilities.parse_list ppx_decorators
       | None -> Some ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let module_name = String.capitalize_ascii table_name in
     let other_modules =
@@ -545,13 +546,17 @@ module Model = struct
       with End_of_file -> List.rev accum in
     helper inchan [];;
 
-  let filteri list startindex endindex  =
+  let filteri list startindex endindex =
     let rec helper l x i n accum =
       if x >= i && x <= n then 
 	helper l (x+1) i n ((List.nth l x)::accum)
-      else if x >= n then  
-	List.rev accum in
-    helper list startindex startindex endindex;;
+      else (*if x >= i && x > n then*)  
+	List.rev accum
+    in
+    match (startindex > endindex), (startindex < 0), (endindex >= (List.length list)) with
+    | false, false, false ->
+       helper list startindex startindex endindex []
+    | _, _, _ -> raise (Failure "filteri arguments either out of bounds or order.");;
     
   let construct_db_credentials ~credentials ~destinationdir =
     (*==========================================================================
@@ -563,49 +568,47 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     let inchan = open_in (String.concat "" [path2lib;"/ocaml_db_model/credentials2copy.ml"]) in
     let lines = input_lines inchan in
     (*insert a value here and into mli*)
-    let lines2to16 = String.concat "\n" (List.filteri lines (fun i _l -> i > 0 && i < 16)) in
-    let body = String.concat [lines2to16;"  let credentials = of_username_pw ~username:\"";(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"] in
+    let lines2to16 = String.concat "\n" (filteri lines 0 15) in
+    let body = String.concat "" [lines2to16;"  let credentials = of_username_pw ~username:\"";(Credentials.getusername credentials);"\" ~pw:\"";(Credentials.getpw credentials);"\" ~db:\"";(Credentials.getdb credentials);"\";;\nend"] in
     let () = write_module ~outputdir:destinationdir ~fname:"credentials.ml" ~body in
-    let inchan_mli = In_channel.create (String.concat [path2lib;"/ocaml_db_model/credentials2copy.mli"]) in
-    let lines_mli =
-      In_channel.input_lines inchan_mli in
-    let lines_first6 = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 6)) in
-    let body_mli = String.concat [lines_first6;"  val credentials : t\nend"] in
+    let inchan_mli = open_in (String.concat "" [path2lib;"/ocaml_db_model/credentials2copy.mli"]) in
+    let lines_mli = input_lines inchan_mli in
+    let lines_first6 = String.concat "\n" (filteri lines_mli 0 5) in
+    let body_mli = String.concat "" [lines_first6;"  val credentials : t\nend"] in
     write_module ~outputdir:destinationdir ~fname:"credentials.mli" ~body:body_mli;;
 
   let write_appending_module ~outputdir ~fname ~body = 
-    let open Core.Unix in
-    let myf sbuf fd = single_write fd ~buf:sbuf in
+    let open Unix in
+    let myf sbuf fd = single_write fd sbuf 0 (Bytes.length sbuf) in
     let check_or_create_dir ~dir =
       try 
 	let _stats = stat dir in ()	
       with _ ->
-	mkdir ~perm:0o770 dir in
+	mkdir dir 0o770 in
     try
-      let () = check_or_create_dir ~dir:outputdir in 
-      let _bytes_written =
-	with_file (outputdir ^ fname) ~mode:[O_RDWR;O_CREAT;O_APPEND]
-		  ~perm:0o644 ~f:(myf body) in ()
+      let () = check_or_create_dir ~dir:outputdir in
+      let name = (outputdir ^ fname) in
+      let f = openfile name [O_RDWR;O_CREAT;O_TRUNC] 0o644 in
+      let _bytes_written = myf body f in
+      close f
     with _ -> Utilities.print_n_flush ("\nFailed to write (appending) to file:" ^ fname)
 
   (*==UNTIL actually install package, nothing to do here.*)
   let copy_utilities ~destinationdir =
-    let open Core in 
     (*
     --how to specify the (opam install) path to utilities.ml?---
       Use ocamlfind query <packagename> after installing as a package via opam, then we'll
       have the path to directory in which to look.
      *)
     let path2lib = get_path2lib () in 
-    let inchan = In_channel.create (String.concat [path2lib;"/ocaml_db_model/utilities2copy.ml"]) in
-    let lines =
-      In_channel.input_lines inchan in
+    let inchan = open_in (String.concat "" [path2lib;"/ocaml_db_model/utilities2copy.ml"]) in
+    let lines = input_lines inchan in
     (*replace lines 1 through 7 with updated modules*)
     (*replace lines 18 through 24 and then write to location*)
-    let lines8to17 = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i < 17 && i > 7)) in
-    let lines25_toend = String.concat ~sep:"\n" (List.filteri lines (fun i _l -> i > 24)) in
+    let lines8to17 = String.concat "\n" (filteri lines 6 16) in
+    let lines25_toend = String.concat "\n" (filteri lines 23 ((List.length lines)-1)) in
     let replacement_lines =
-      String.concat ~sep:"\n"
+      String.concat "\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
 		     "	     ?(database=Credentials.getdb Credentials.credentials)";
 		     "	     ?(password=Credentials.getpw Credentials.credentials)";
@@ -614,7 +617,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "    quick_connect";
 		     "      ~host ~database ~password ~user ();;"] in
     let replacement_modules =
-      String.concat ~sep:"\n"
+      String.concat "\n"
 		    ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
 		     "module Core_date_extended = Ocaml_db_model.Core_date_extended";
 		     "module Uint64_extended = Ocaml_db_model.Uint64_extended";
@@ -624,38 +627,36 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
 		     "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
 		     "module Credentials = Credentials.Credentials"] in 
-    let modified_utils = String.concat ~sep:"\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
+    let modified_utils = String.concat "\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
-    let inchan_mli = In_channel.create (String.concat [path2lib;"/ocaml_db_model/utilities2copy.mli"]) in
-    let lines_mli =
-      In_channel.input_lines inchan_mli in
+    let inchan_mli = open_in (String.concat "" [path2lib;"/ocaml_db_model/utilities2copy.mli"]) in
+    let lines_mli = input_lines inchan_mli in
     (*replace line 10 and then write to location*)
-    let lines7to9 = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i < 9 && i > 6)) in
-    let lines11_toend = String.concat ~sep:"\n" (List.filteri lines_mli (fun i _l -> i > 9)) in
+    let lines7to9 = String.concat "\n" (filteri lines_mli 5 8) in
+    let lines11_toend = String.concat "\n" (filteri lines_mli 9 ((List.length lines)-1)) in
     let replacement_line = "  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd" in
-    let modified_utils_mli = String.concat ~sep:"\n" [replacement_modules;lines7to9;replacement_line;lines11_toend] in
+    let modified_utils_mli = String.concat "\n" [replacement_modules;lines7to9;replacement_line;lines11_toend] in
     write_module ~outputdir:destinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    
 
   let construct_one_sequoia_struct ~conn ~table_name ~map =
-    let open Core in
     let module_first_char = String.get table_name 0 in
-    let uppercased_first_char = Char.uppercase module_first_char in
-    let module_name = String.copy table_name in
-    let () = String.set module_name 0 uppercased_first_char in 
+    let uppercased_first_char = Char.uppercase_ascii module_first_char in
+    let module_name = Bytes.copy table_name in
+    let () = Bytes.set module_name 0 uppercased_first_char in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
-    let include_line = String.concat ["  include (val Mysql.table \"";table_name;"\")"] in 
+    let include_line = String.concat "" ["  include (val Mysql.table \"";table_name;"\")"] in 
     (*Supply only keys that exist else find_exn will fail.*)
-    let tfields_list_reversed = String.Map.find_exn map table_name in
+    let tfields_list_reversed = StringMap.find table_name map in
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in
+					(string_of_int (List.length tfields_list))) in
     let fkeys_map_result = Sequoia_support.get_any_foreign_key_references ~conn ~table_name in
     let fkeys_map = 
-      if Core.Result.is_ok fkeys_map_result then
-	Core.Result.ok_or_failwith fkeys_map_result
-      else
-	let () = Utilities.print_n_flush "\nFailed to get references tables and fields for sequoia support...\n" in
-	raise (Failure "Could not get referenced tables and fields for sequoia support.") in 
+      match fkeys_map_result with
+      | Ok fkeys_map -> fkeys_map
+      | Error _err -> 
+	 let () = Utilities.print_n_flush "\nFailed to get references tables and fields for sequoia support...\n" in
+	 raise (Failure "Could not get referenced tables and fields for sequoia support.") in 
     (*create list of lines, each is a let statement per field, with a type found in Sequoia's field.mli*)
     let rec helper l tbody =
       match l with
@@ -665,17 +666,17 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 	 let string_of_data_type =
 	   Types_we_emit.to_string h.data_type h.is_nullable in
 	 let tbody_new =
-	   if Core.String.Map.mem fkeys_map h.col_name then
-	     let reference_record = Core.String.Map.find_exn fkeys_map h.col_name in
+	   if StringMap.mem h.col_name fkeys_map then
+	     let reference_record = StringMap.find h.col_name fkeys_map in
 	     let referenced_table = reference_record.Sequoia_support.table in	     
-	     Core.String.concat [tbody;"\n  let ";h.col_name;" = Field.foreign_key ";
-				 h.col_name;" ~references:";referenced_table;".";
-				 reference_record.Sequoia_support.referenced_field]
+	     String.concat "" [tbody;"\n  let ";h.col_name;" = Field.foreign_key ";
+			       h.col_name;" ~references:";referenced_table;".";
+			       reference_record.Sequoia_support.referenced_field]
 	   else 
-	     Core.String.concat [tbody;"\n  let ";h.col_name;" = ";
-				 string_of_data_type;" ";h.col_name] in
+	     String.concat "" [tbody;"\n  let ";h.col_name;" = ";
+			       string_of_data_type;" ";h.col_name] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
-    Core.String.concat [start_module;include_line;tbody;"\n";"end"];;        
+    String.concat "" [start_module;include_line;tbody;"\n";"end"];;        
        
 end
