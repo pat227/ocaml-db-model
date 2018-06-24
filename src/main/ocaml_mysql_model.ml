@@ -19,13 +19,10 @@ module Command = struct
   let db = ref "";;
   let user = ref "";;
   let pwd = ref "";;
-    
-  
+
   let execute regexp_opt table_list_opt ppxlist_opt
 	      module_names where2find_modules
 	      sequoia host user password database () =
-    let open Core in 
-    let open Core.Result in
     (*==todo==refactor the below into a functon in model.ml*)
     try
       let credentials = Credentials.of_username_pw ~username:user ~pw:password ~db:database in
@@ -35,13 +32,13 @@ module Command = struct
       let fields_map =
 	Model.get_fields_map_for_all_tables
 	  ~regexp_opt ~table_list_opt ~conn ~schema:database in
-      let keys = Map.keys fields_map in 
+      let keys = Model.StringMap.keys fields_map in 
       let rec helper klist map =
 	match klist with
 	| [] -> let () = Model.copy_utilities ~destinationdir:"src/lib/" in
 		Utilities.closecon conn
 	| h::t ->
-	   let title_cased_h = String.capitalize h in 
+	   let title_cased_h = String.capitalize_ascii h in 
 	   let body =
 	     Model.construct_body
 	       ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database
@@ -54,15 +51,15 @@ module Command = struct
 			~outputdir:"src/tables/" ~fname:(".ml") ~body:seq_module
 		    else
 		      () in
-	   let mlfile = String.concat [h;".ml"] in
-	   let mlifile = String.concat [h;".mli"] in 
+	   let mlfile = String.concat "" [h;".ml"] in
+	   let mlifile = String.concat "" [h;".mli"] in 
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlfile ~body in
 	   let () = Model.write_module
 		      ~outputdir:"src/tables/" ~fname:mlifile ~body:mli in
 	   let () = Model.write_appending_module
 		      ~outputdir:"src/tables/" ~fname:"tables.ml"
-		      ~body:(String.concat ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
+		      ~body:(String.concat "" ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   helper t map in
       helper keys fields_map
@@ -98,7 +95,7 @@ module Command = struct
     let module_names =
       match !module_names_raw_opt with
       | None -> None
-      | Some s -> Some (Core.String.split s ~on:',') in
+      | Some s -> Some (String.split_on_char ',' s) in
     let where2find_modules =
       match !where2find_modules_opt with
       | None -> None

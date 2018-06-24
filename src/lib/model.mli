@@ -2,7 +2,8 @@ module Pcre = Pcre
 module Credentials = Credentials2copy.Credentials
 module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Types_we_emit = Types_we_emit.Types_we_emit
-module type S = Map.S
+(*module type S = Map.S*)
+module type MapExtended = Mapextended.MapExtended
 module Model : sig
   type t = {
     col_name : string; 
@@ -14,7 +15,7 @@ module Model : sig
     is_primary_key: bool;
   } [@@deriving show, fields]
 
-  module StringMap : S
+  module StringMap : MapExtended
 
   module Sequoia_support : sig
     type t = {

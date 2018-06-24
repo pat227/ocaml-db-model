@@ -5,7 +5,8 @@ module Sql_supported_types = Sql_supported_types.Sql_supported_types
 module Table = Table.Table
 module Types_we_emit = Types_we_emit.Types_we_emit
 module Utilities = Utilities2copy.Utilities
-module type S = Map.S
+(*module type S = Map.S*)
+module type MapExtended = Mapextended.MapExtended
 module Model = struct
   type t = {
     col_name : string; 
@@ -14,9 +15,21 @@ module Model = struct
     is_nullable : bool;
     is_primary_key : bool;
   } [@@deriving show, fields]
-
-  module StringMap = Map.Make(String);;
-    
+  module StringKey = struct
+    include String
+  end 
+  module String_Map = Map.Make(String);;
+  module StringMap = struct
+    include String_Map
+    let keys m =
+      let assoclist = String_Map.bindings m in
+      let rec extract_keys l accum =
+	match l with
+	| [] -> accum
+	| h :: t -> extract_keys t ((fst h)::accum) in
+      extract_keys assoclist [];;
+  end
+  
   (*we only need this submodule to get foreign keys*)
   module Sequoia_support = struct
     module T = struct  
