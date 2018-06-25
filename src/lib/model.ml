@@ -359,15 +359,15 @@ module Model = struct
 	 ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
-      ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+      ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
+       "module Date_extended = Ocaml_db_model.Date_extended";
        "module Utilities = Utilities.Utilities";
        "module Uint64_extended = Ocaml_db_model.Uint64_extended";
        "module Uint32_extended = Ocaml_db_model.Uint32_extended";
        "module Uint16_extended = Ocaml_db_model.Uint16_extended";
        "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
+       "module Int64_extended = Ocaml_db_model.Int64_extended";
+       "module Int32_extended = Ocaml_db_model.Int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -445,15 +445,15 @@ module Model = struct
       | None -> Some ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
     let module_name = String.capitalize_ascii table_name in
     let other_modules =
-      ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-       "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+      ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
+       "module Date_extended = Ocaml_db_model.Date_extended";
        "module Utilities = Utilities.Utilities";
        "module Uint64_extended = Ocaml_db_model.Uint64_extended";
        "module Uint32_extended = Ocaml_db_model.Uint32_extended";
        "module Uint16_extended = Ocaml_db_model.Uint16_extended";
        "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-       "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-       "module Core_int32_extended = Ocaml_db_model.Core_int32_extended"] in
+       "module Int64_extended = Ocaml_db_model.Int64_extended";
+       "module Int32_extended = Ocaml_db_model.Int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -631,14 +631,14 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "      ~host ~database ~password ~user ();;"] in
     let replacement_modules =
       String.concat "\n"
-		    ["module Core_time_extended = Ocaml_db_model.Core_time_extended";
-		     "module Core_date_extended = Ocaml_db_model.Core_date_extended";
+		    ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
+		     "module Date_extended = Ocaml_db_model.Date_extended";
 		     "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 		     "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 		     "module Uint16_extended = Ocaml_db_model.Uint16_extended";
 		     "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-		     "module Core_int64_extended = Ocaml_db_model.Core_int64_extended";
-		     "module Core_int32_extended = Ocaml_db_model.Core_int32_extended";
+		     "module Int64_extended = Ocaml_db_model.Int64_extended";
+		     "module Int32_extended = Ocaml_db_model.Int32_extended";
 		     "module Credentials = Credentials.Credentials"] in 
     let modified_utils = String.concat "\n" [replacement_modules;lines8to17;replacement_lines;lines25_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
@@ -691,5 +691,4 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     String.concat "" [start_module;include_line;tbody;"\n";"end"];;        
-       
 end

@@ -10,7 +10,7 @@ module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
 module Utilities = struct
   let print_n_flush s =
-    Printf.printf "%s!" s
+    Printf.printf "%s" s
 
   (*Client code makefile supplies credentials and uses this function; credentials in client
    projects are stored in credentials.ml; this file is copied with modifications
