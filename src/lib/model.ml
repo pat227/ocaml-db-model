@@ -569,7 +569,11 @@ module Model = struct
     match (startindex > endindex), (startindex < 0), (endindex >= (List.length list)) with
     | false, false, false ->
        helper list startindex startindex endindex []
-    | _, _, _ -> raise (Failure "filteri arguments either out of bounds or order.");;
+    | true, _, _ -> raise (Failure "filteri arguments out of order.")
+    | _, true, _ -> raise (Failure "filteri arguments out of bounds (start < zero!).")
+    | _, _, true -> raise (Failure ("filteri arguments out of bounds (end >= length). Start is: " ^
+				      (string_of_int startindex) ^ " End is:" ^ (string_of_int endindex) ^
+					" length is:" ^ (string_of_int (List.length list))));;
     
   let construct_db_credentials ~credentials ~destinationdir =
     (*==========================================================================
@@ -646,7 +650,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     let lines_mli = input_lines inchan_mli in
     (*replace line 10 and then write to location*)
     let lines7to9 = String.concat "\n" (filteri lines_mli 5 8) in
-    let lines11_toend = String.concat "\n" (filteri lines_mli 9 ((List.length lines)-1)) in
+    let lines11_toend = String.concat "\n" (filteri lines_mli 9 ((List.length lines_mli)-1)) in
     let replacement_line = "  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd" in
     let modified_utils_mli = String.concat "\n" [replacement_modules;lines7to9;replacement_line;lines11_toend] in
     write_module ~outputdir:destinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    
