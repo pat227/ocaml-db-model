@@ -209,7 +209,9 @@ module Model = struct
 	  let fs_result = get_fields_for_given_table ~conn ~table_name in
 	  (match fs_result with
 	   | Ok newmap ->
-	      StringMap.add table_name (StringMap.find table_name newmap) map
+	      let combinedmaps =
+		StringMap.add table_name (StringMap.find table_name newmap) map in
+	      combinedmaps
 	      (*let combinedmaps =
 		StringMap.merge
 		  (fun key valLopt valRopt ->
@@ -243,7 +245,7 @@ module Model = struct
 		  with
 		  | _ -> helper t map
 		)
-	     | Some r, Some l -> (*--presume regexp over list---*)
+	     | Some r, Some l -> (*--prefer regexp over list---*)
 		(try
 		    let _intarray =
 		      Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
@@ -373,13 +375,13 @@ module Model = struct
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = StringMap.find table_name map in
     let tfields_list = List.rev tfields_list_reversed in 
-    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
+    let () = Utilities.print_n_flush ("\nconstruct_body::List of fields found of length:" ^
 					(string_of_int (List.length tfields_list))) in
     (*--need to know which modules were added so we can add them to 
      other_modules defined above*)
     let rec helper l tbody added_modules =
       match l with
-      | [] -> tbody
+      | [] -> let () = Utilities.print_n_flush "construct_body::helper() empty list..." in tbody
       | h :: t ->
 	 (*--if client has defined a module of same name and desires to use it
            --as a type, do so here. Module must define some way to marshall
@@ -389,13 +391,21 @@ module Model = struct
 	  | Some clientmodules, Some modulenames -> 
 	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
 		  List.mem (String.lowercase_ascii h.col_name) modulenames then
+	       let () = Utilities.print_n_flush "construct_body::helper() client defined module match..." in
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				   h.col_name;".t;"] in
 	       helper t tbody_new (h.col_name :: added_modules)
 	     else
-	       helper t tbody added_modules
-	  | _, _ -> 
+	       let () = Utilities.print_n_flush "construct_body::helper() client defined module no match..." in
+	       let string_of_data_type =
+		 Types_we_emit.to_string h.data_type h.is_nullable in 
+	       let tbody_new =
+		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;";"] in
+	       helper t tbody_new added_modules
+	  | _, _ ->
+	     let () = Utilities.print_n_flush ("construct_body::helper() handling " ^ h.col_name) in
 	     let string_of_data_type =
 	       Types_we_emit.to_string h.data_type h.is_nullable in 
 	     let tbody_new =
@@ -459,7 +469,7 @@ module Model = struct
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = StringMap.find table_name map in
     let tfields_list = List.rev tfields_list_reversed in 
-    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
+    let () = Utilities.print_n_flush ("\nconstruct_mli::List of fields found of length:" ^
 					(string_of_int (List.length tfields_list))) in
     let more_specific_modules = [] in 
     let rec helper l tbody added_modules =
@@ -470,13 +480,21 @@ module Model = struct
 	  | Some clientmodules, Some modulenames ->
 	     if List.mem h.col_name clientmodules &&
 		  List.mem h.col_name modulenames then
+	       let () = Utilities.print_n_flush "construct_mli::helper() client defined module match..." in
 	       let tbody_new =
 		 String.concat
 		   "" [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
 	       helper t tbody_new (h::added_modules)
 	     else
-	       helper t tbody added_modules
+	       let () = Utilities.print_n_flush "construct_body::helper() client defined module no match..." in
+	       let string_of_data_type =
+		 Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
+	       let tbody_new =
+		 String.concat
+		   "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
+	       helper t tbody_new added_modules
 	  | _,_ ->
+	     let () = Utilities.print_n_flush ("construct_body::helper() handling " ^ h.col_name) in
 	     let string_of_data_type =
 	       Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	     let tbody_new =
