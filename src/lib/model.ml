@@ -358,7 +358,7 @@ module Model = struct
 	  | None -> raise (Failure "model.ml::line 343")
 	 )
       | None -> 
-	 ["fields";"show";"sexp";"ord";"eq";"yojson"] in 
+	 ["fields";"show";"ord";"eq";"yojson"] in (*sexp*)
     let start_module = "module " ^ module_name ^ " = struct\n" in
     let other_modules =
       ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
@@ -391,23 +391,18 @@ module Model = struct
 	  | Some clientmodules, Some modulenames -> 
 	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
 		  List.mem (String.lowercase_ascii h.col_name) modulenames then
-	       let () = Utilities.print_n_flush ("construct_body::helper() client defined module match for col:" ^ h.col_name) in
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				   h.col_name;".t;"] in
 	       helper t tbody_new (h.col_name :: added_modules)
 	     else
-	       let () = Utilities.print_n_flush ("construct_body::helper() client defined module no match; handling " ^ h.col_name) in
 	       let string_of_data_type =
 		 Types_we_emit.to_string h.data_type h.is_nullable in
-	       let () = Utilities.print_n_flush ("string_of_data_type:" ^ string_of_data_type) in 
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				   string_of_data_type;";"] in
-	       let () = Utilities.print_n_flush ("tbody_new:" ^ tbody_new) in 
 	       helper t tbody_new added_modules
 	  | _, _ ->
-	     let () = Utilities.print_n_flush ("construct_body::helper() handling " ^ h.col_name) in
 	     let string_of_data_type =
 	       Types_we_emit.to_string h.data_type h.is_nullable in 
 	     let tbody_new =
@@ -419,6 +414,7 @@ module Model = struct
     let other_modules =
       String.concat "\n" ((other_modules @
 			     more_specific_modules) @
+			    (*--remove this?---*)
 			    ["open Sexplib.Std\n"]) in 
     let almost_done =
       String.concat "" [other_modules;start_module;start_type_t;
@@ -482,13 +478,11 @@ module Model = struct
 	  | Some clientmodules, Some modulenames ->
 	     if List.mem h.col_name clientmodules &&
 		  List.mem h.col_name modulenames then
-	       let () = Utilities.print_n_flush "construct_mli::helper() client defined module match..." in
 	       let tbody_new =
 		 String.concat
 		   "" [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
 	       helper t tbody_new (h::added_modules)
 	     else
-	       let () = Utilities.print_n_flush "construct_body::helper() client defined module no match..." in
 	       let string_of_data_type =
 		 Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	       let tbody_new =
@@ -496,7 +490,6 @@ module Model = struct
 		   "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	       helper t tbody_new added_modules
 	  | _,_ ->
-	     let () = Utilities.print_n_flush ("construct_body::helper() handling " ^ h.col_name) in
 	     let string_of_data_type =
 	       Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	     let tbody_new =
@@ -511,7 +504,7 @@ module Model = struct
       match ppx_decorators_list with
       | None 
       | Some [] ->
-	 String.concat "" [almost_done;" [@@deriving ";"fields";"show";"sexp";"ord";"eq";"yojson";"]\n"]
+	 String.concat "" [almost_done;" [@@deriving ";"fields";"show";"ord";"eq";"yojson";"]\n"] (*sexp*)
       | Some (l) ->
 	 let ppx_extensions = String.concat "," l in
 	 String.concat "" [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in

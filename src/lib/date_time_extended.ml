@@ -66,12 +66,11 @@ module Date_time_extended = struct
 	  (string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday);" ";
 	  (string_of_int t.Unix.tm_hour);":";(string_of_int t.Unix.tm_min);":";
 	  (string_of_int t.Unix.tm_sec)];;
-		    
+
   let show t =
-    String.concat
-      "" [(string_of_int ((t.Unix.tm_year)+1900));"-";(string_of_int t.Unix.tm_mon);"-";
-	  (string_of_int t.Unix.tm_mday);" ";(string_of_int t.Unix.tm_hour);":";
-	  (string_of_int t.Unix.tm_min);":";(string_of_int t.Unix.tm_sec)];;
+    to_string t;;
+
+  let pp fmt t = (Format.fprintf fmt "%s") (to_string t)
 
   let of_string_exn s =
     try
