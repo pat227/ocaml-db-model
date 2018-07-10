@@ -391,18 +391,20 @@ module Model = struct
 	  | Some clientmodules, Some modulenames -> 
 	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
 		  List.mem (String.lowercase_ascii h.col_name) modulenames then
-	       let () = Utilities.print_n_flush "construct_body::helper() client defined module match..." in
+	       let () = Utilities.print_n_flush ("construct_body::helper() client defined module match for col:" ^ h.col_name) in
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				   h.col_name;".t;"] in
 	       helper t tbody_new (h.col_name :: added_modules)
 	     else
-	       let () = Utilities.print_n_flush "construct_body::helper() client defined module no match..." in
+	       let () = Utilities.print_n_flush ("construct_body::helper() client defined module no match; handling " ^ h.col_name) in
 	       let string_of_data_type =
-		 Types_we_emit.to_string h.data_type h.is_nullable in 
+		 Types_we_emit.to_string h.data_type h.is_nullable in
+	       let () = Utilities.print_n_flush ("string_of_data_type:" ^ string_of_data_type) in 
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				 string_of_data_type;";"] in
+				   string_of_data_type;";"] in
+	       let () = Utilities.print_n_flush ("tbody_new:" ^ tbody_new) in 
 	       helper t tbody_new added_modules
 	  | _, _ ->
 	     let () = Utilities.print_n_flush ("construct_body::helper() handling " ^ h.col_name) in
