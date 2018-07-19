@@ -70,7 +70,7 @@ module Date_extended = struct
     String.concat
       "" [(string_of_int t.Unix.tm_year);"-";
 	  (string_of_int t.Unix.tm_mon);"-";(string_of_int t.Unix.tm_mday)];;
-
+  let pp fmt t = (Format.fprintf fmt "%s") (to_string t)
   let of_string_exn s =
     try
       let date_parts = String.split_on_char '-' s in

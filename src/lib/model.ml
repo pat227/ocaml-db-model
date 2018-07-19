@@ -635,8 +635,8 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     let lines = input_lines inchan in
     (*replace lines 1 through 7 with updated modules*)
     (*replace lines 18 through 24 and then write to location*)
-    let lines10to17 = String.concat "\n" (filteri lines 10 16) in
-    let lines25_toend = String.concat "\n" (filteri lines 24 ((List.length lines)-1)) in
+    let lines11to17 = String.concat "\n" (filteri lines 10 16) in
+    let lines30_toend = String.concat "\n" (filteri lines 29 ((List.length lines)-1)) in
     let replacement_lines =
       String.concat "\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
@@ -659,12 +659,12 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "module Int32_extended = Ocaml_db_model.Int32_extended";
 		     "module Credentials = Credentials.Credentials";
 		     "module Mysql = Mysql"] in 
-    let modified_utils = String.concat "\n" [replacement_modules;lines10to17;replacement_lines;lines25_toend] in
+    let modified_utils = String.concat "\n" [replacement_modules;lines11to17;replacement_lines;lines30_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
     let inchan_mli = open_in (String.concat "" [path2lib;"/ocaml_db_model/utilities2copy.mli"]) in
     let lines_mli = input_lines inchan_mli in
     let lines10to11 = String.concat "\n" (filteri lines_mli 9 10) in    
-    let lines13_toend = String.concat "\n" (filteri lines_mli 13 ((List.length lines_mli)-1)) in
+    let lines13_toend = String.concat "\n" (filteri lines_mli 12 ((List.length lines_mli)-1)) in
     let replacement_line = "  val getcon : ?host:string -> ?database:string -> ?password:string -> ?user:string -> unit -> Mysql.dbd" in
     let modified_utils_mli = String.concat "\n" [replacement_modules;lines10to11;replacement_line;lines13_toend] in
     write_module ~outputdir:destinationdir ~fname:"utilities.mli" ~body:modified_utils_mli;;    

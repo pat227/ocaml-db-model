@@ -2,6 +2,7 @@ module Date_extended : sig
   type t = Unix.tm
   
   val show : t -> Ppx_deriving_runtime.string
+  val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
   val to_string : t -> string
   val of_string_exn : string -> (t,string) result
   val compare : t -> t -> Ppx_deriving_runtime.int
