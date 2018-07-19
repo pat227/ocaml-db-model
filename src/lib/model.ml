@@ -413,9 +413,7 @@ module Model = struct
     let tbody = helper tfields_list "" more_specific_modules in
     let other_modules =
       String.concat "\n" ((other_modules @
-			     more_specific_modules) @
-			    (*--remove this?---*)
-			    ["open Sexplib.Std\n"]) in 
+			     more_specific_modules)) in 
     let almost_done =
       String.concat "" [other_modules;start_module;start_type_t;
 			tbody;"\n";end_type_t] in
@@ -450,7 +448,7 @@ module Model = struct
     let ppx_decorators_list =
       match ppx_decorators with
       | Some ppx_decs -> Utilities.parse_list ppx_decorators
-      | None -> Some ["fields";"show";"ord";"eq";"yojson"] in (*sexp*)
+      | None -> Some ["fields";"show";"ord";"eq";"yojson"] in
     let module_name = String.capitalize_ascii table_name in
     let other_modules =
       ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
@@ -504,7 +502,7 @@ module Model = struct
       match ppx_decorators_list with
       | None 
       | Some [] ->
-	 String.concat "" [almost_done;" [@@deriving ";"fields";"show";"ord";"eq";"yojson";"]\n"] (*sexp*)
+	 String.concat "" [almost_done;" [@@deriving ";"fields";"show";"ord";"eq";"yojson";"]\n"]
       | Some (l) ->
 	 let ppx_extensions = String.concat "," l in
 	 String.concat "" [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
