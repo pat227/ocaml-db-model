@@ -324,8 +324,14 @@ module Model = struct
 	   if Utilities.is_suffix nextfile "mli" then
 	     helper where2find_modules dirhandle accum
 	   else if Utilities.is_suffix nextfile "ml" then 
-	     let () = Utilities.print_n_flush ("\nIncluding module " ^ nextfile) in 
-	     helper where2find_modules dirhandle ((String.lowercase_ascii nextfile)::accum)
+	     let () = Utilities.print_n_flush
+			(String.concat
+			   "" ["\nIncluding module name (less extension)";
+			       (String.lowercase_ascii nextfile)]) in
+	     let modulename =
+	       String.sub
+		    (String.lowercase_ascii nextfile) 0 ((String.length nextfile)-3) in
+	     helper where2find_modules dirhandle (modulename::accum)
 	   else
 	     helper where2find_modules dirhandle accum
 	| _ -> helper where2find_modules dirhandle accum)
@@ -355,7 +361,7 @@ module Model = struct
 	 let r = Utilities.parse_list ppx_decorators in
 	 (match r with
 	  | Some l -> l
-	  | None -> raise (Failure "model.ml::line 343")
+	  | None -> raise (Failure "model.ml::line 358")
 	 )
       | None -> 
 	 ["fields";"show";"ord";"eq";"yojson"] in (*sexp*)
@@ -391,11 +397,15 @@ module Model = struct
 	  | Some clientmodules, Some modulenames -> 
 	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
 		  List.mem (String.lowercase_ascii h.col_name) modulenames then
+	       let () = Utilities.print_n_flush
+			  (String.concat "" ["\nFound client-supplied module match for:";h.col_name]) in 
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				   h.col_name;".t;"] in
-	       helper t tbody_new (h.col_name :: added_modules)
+				   (String.capitalize_ascii h.col_name);".t;"] in
+	       helper t tbody_new ((String.capitalize_ascii h.col_name) :: added_modules)
 	     else
+	       let () = Utilities.print_n_flush
+			  (String.concat "" ["\nFailed to find client-supplied module match for:";h.col_name]) in 
 	       let string_of_data_type =
 		 Types_we_emit.to_string h.data_type h.is_nullable in
 	       let tbody_new =
@@ -403,14 +413,14 @@ module Model = struct
 				   string_of_data_type;";"] in
 	       helper t tbody_new added_modules
 	  | _, _ ->
+	     let () = Utilities.print_n_flush "\nNo client-supplied modules specified or found..." in 
 	     let string_of_data_type =
 	       Types_we_emit.to_string h.data_type h.is_nullable in 
 	     let tbody_new =
 	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				 string_of_data_type;";"] in
 	     helper t tbody_new added_modules) in
-    let more_specific_modules = [] in
-    let tbody = helper tfields_list "" more_specific_modules in
+    let tbody = helper tfields_list "" [] in
     let other_modules =
       String.concat "\n" ((other_modules @
 			     more_specific_modules)) in 
@@ -470,7 +480,7 @@ module Model = struct
     let more_specific_modules = [] in 
     let rec helper l tbody added_modules =
       match l with
-      | [] -> tbody
+      | [] -> tbody, added_modules
       | h :: t ->
 	 (match client_modules, module_names with
 	  | Some clientmodules, Some modulenames ->
@@ -479,7 +489,7 @@ module Model = struct
 	       let tbody_new =
 		 String.concat
 		   "" [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
-	       helper t tbody_new (h::added_modules)
+	       helper t tbody_new (h.col_name::added_modules)
 	     else
 	       let string_of_data_type =
 		 Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
@@ -494,8 +504,9 @@ module Model = struct
 	       String.concat
 		 "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	     helper t tbody_new added_modules) in 
-    let tbody = helper tfields_list "" more_specific_modules in
-    let other_modules = String.concat "\n" (other_modules @ more_specific_modules) in 
+    let tbody, user_supplied_modules_list = helper tfields_list "" more_specific_modules in
+    let user_supplied_module_names = List.map (fun x -> String.concat "" ["module ";(String.capitalize_ascii x);" = "]) user_supplied_modules_list in 
+    let other_modules = String.concat "\n" (other_modules @ user_supplied_modules) in 
     let start_module = String.concat "" [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let almost_done = String.concat "" [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =
@@ -634,7 +645,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     (*replace lines 1 through 7 with updated modules*)
     (*replace lines 18 through 24 and then write to location*)
     let lines11to17 = String.concat "\n" (filteri lines 10 16) in
-    let lines30_toend = String.concat "\n" (filteri lines 29 ((List.length lines)-1)) in
+    let lines23_toend = String.concat "\n" (filteri lines 22 ((List.length lines)-1)) in
     let replacement_lines =
       String.concat "\n"
 		    ["  let getcon ?(host=\"127.0.0.1\")";
@@ -657,7 +668,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
 		     "module Int32_extended = Ocaml_db_model.Int32_extended";
 		     "module Credentials = Credentials.Credentials";
 		     "module Mysql = Mysql"] in 
-    let modified_utils = String.concat "\n" [replacement_modules;lines11to17;replacement_lines;lines30_toend] in
+    let modified_utils = String.concat "\n" [replacement_modules;lines11to17;replacement_lines;lines23_toend] in
     let () = write_module ~outputdir:destinationdir ~fname:"utilities.ml" ~body:modified_utils in
     let inchan_mli = open_in (String.concat "" [path2lib;"/ocaml_db_model/utilities2copy.mli"]) in
     let lines_mli = input_lines inchan_mli in

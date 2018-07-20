@@ -21,12 +21,6 @@ module Utilities = struct
       ~host ~database ~password ~user ();;
 
   let closecon c = Mysql.disconnect c;;
-(*
-  let oc = Core.Out_channel.stdout;;    
-  let print_n_flush s =
-    Core.Out_channel.output_string oc s;
-    Core.Out_channel.flush oc;;
- *)
   let parse_list s =
     try
       match s with
