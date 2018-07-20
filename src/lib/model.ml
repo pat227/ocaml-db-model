@@ -359,7 +359,7 @@ module Model = struct
 	 )
       | None -> 
 	 ["fields";"show";"ord";"eq";"yojson"] in (*sexp*)
-    let start_module = "module " ^ module_name ^ " = struct\n" in
+    let start_module = "\nmodule " ^ module_name ^ " = struct\n" in
     let other_modules =
       ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
        "module Date_extended = Ocaml_db_model.Date_extended";
@@ -672,7 +672,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     let uppercased_first_char = Char.uppercase_ascii module_first_char in
     let module_name = Bytes.copy table_name in
     let () = Bytes.set module_name 0 uppercased_first_char in 
-    let start_module = "module " ^ module_name ^ " = struct\n" in
+    let start_module = "\nmodule " ^ module_name ^ " = struct\n" in
     let include_line = String.concat "" ["  include (val Mysql.table \"";table_name;"\")"] in 
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = StringMap.find table_name map in
