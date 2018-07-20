@@ -92,8 +92,9 @@ module Date_time_extended = struct
 		 tm_yday = 0;
 		 tm_isdst = false;
 	       } in 
-      let _f,t = Unix.mktime tm in Ok t
-    with err -> Error "date_time_extended::of_string() failed";;
+      let _f,t = Unix.mktime tm in t
+    with err ->
+      raise (Failure "date_time_extended::of_string() failed");;
 
   let equal_datetime_extended t1 t2 =
     let f1,tm1 = Unix.mktime t1 in

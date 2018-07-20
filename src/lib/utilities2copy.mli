@@ -103,14 +103,14 @@ module Utilities : sig
   (*---date/time---*)
   val parse_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> (Date_extended.t,string) result
+    arrayofstring:string option array -> Date_extended.t
   val parse_optional_date_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> (Date_extended.t, string) result option
+    arrayofstring:string option array -> Date_extended.t option
   val parse_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> (Date_time_extended.t,string) result
+    arrayofstring:string option array -> Date_time_extended.t
   val parse_optional_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> (Date_time_extended.t,string) result option
+    arrayofstring:string option array -> Date_time_extended.t option
 end 
