@@ -401,7 +401,7 @@ module Model = struct
 			  (String.concat "" ["\nFound client-supplied module match for:";h.col_name]) in 
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				   h.col_name;".t;"] in
+				   (String.capitalize_ascii h.col_name);".t;"] in
 	       helper t tbody_new ((String.capitalize_ascii h.col_name) :: added_modules)
 	     else
 	       let () = Utilities.print_n_flush
