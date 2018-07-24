@@ -387,7 +387,7 @@ module Model = struct
      other_modules defined above*)
     let rec helper l tbody added_modules =
       match l with
-      | [] -> let () = Utilities.print_n_flush "construct_body::helper() empty list..." in tbody
+      | [] -> tbody, added_modules
       | h :: t ->
 	 (*--if client has defined a module of same name and desires to use it
            --as a type, do so here. Module must define some way to marshall
@@ -401,7 +401,7 @@ module Model = struct
 			  (String.concat "" ["\nFound client-supplied module match for:";h.col_name]) in 
 	       let tbody_new =
 		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				   (String.capitalize_ascii h.col_name);".t;"] in
+				   h.col_name;".t;"] in
 	       helper t tbody_new ((String.capitalize_ascii h.col_name) :: added_modules)
 	     else
 	       let () = Utilities.print_n_flush
@@ -420,10 +420,12 @@ module Model = struct
 	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
 				 string_of_data_type;";"] in
 	     helper t tbody_new added_modules) in
-    let tbody = helper tfields_list "" [] in
-    let other_modules =
-      String.concat "\n" ((other_modules @
-			     more_specific_modules)) in 
+    let tbody, user_supplied_modules_list = helper tfields_list "" [] in
+    let user_supplied_module_names =
+      List.map (fun x ->
+		let capped = (String.capitalize_ascii x) in 
+		String.concat "" ["module ";capped;" = ";capped;".";capped]) user_supplied_modules_list in
+    let other_modules = String.concat "\n" (other_modules @ user_supplied_module_names) in     
     let almost_done =
       String.concat "" [other_modules;start_module;start_type_t;
 			tbody;"\n";end_type_t] in
@@ -477,18 +479,17 @@ module Model = struct
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nconstruct_mli::List of fields found of length:" ^
 					(string_of_int (List.length tfields_list))) in
-    let more_specific_modules = [] in 
     let rec helper l tbody added_modules =
       match l with
       | [] -> tbody, added_modules
       | h :: t ->
 	 (match client_modules, module_names with
 	  | Some clientmodules, Some modulenames ->
-	     if List.mem h.col_name clientmodules &&
-		  List.mem h.col_name modulenames then
+	     if List.mem h.col_name clientmodules && List.mem h.col_name modulenames then
 	       let tbody_new =
 		 String.concat
-		   "" [tbody;"\n    ";h.col_name;" : ";h.col_name;".t;"] in
+		   "" [tbody;"\n    ";h.col_name;
+		       " : ";(String.capitalize_ascii h.col_name);".t;"] in
 	       helper t tbody_new (h.col_name::added_modules)
 	     else
 	       let string_of_data_type =
@@ -504,9 +505,12 @@ module Model = struct
 	       String.concat
 		 "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
 	     helper t tbody_new added_modules) in 
-    let tbody, user_supplied_modules_list = helper tfields_list "" more_specific_modules in
-    let user_supplied_module_names = List.map (fun x -> String.concat "" ["module ";(String.capitalize_ascii x);" = "]) user_supplied_modules_list in 
-    let other_modules = String.concat "\n" (other_modules @ user_supplied_modules) in 
+    let tbody, user_supplied_modules_list = helper tfields_list "" [] in
+    let user_supplied_module_names =
+      List.map (fun x ->
+		let capped = (String.capitalize_ascii x) in 
+		String.concat "" ["module ";capped;" = ";capped;".";capped]) user_supplied_modules_list in 
+    let other_modules = String.concat "\n" (other_modules @ user_supplied_module_names) in 
     let start_module = String.concat "" [other_modules;"\n";"module ";module_name;" : sig \n"] in 
     let almost_done = String.concat "" [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators =

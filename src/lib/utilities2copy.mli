@@ -55,13 +55,13 @@ module Utilities : sig
   val parse_optional_int32_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Int32_extended.t option
-  (*---uint 8,16,32,64----*)  
+  (*---uint 8,16,32,64----*)
   val parse_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Uint8_extended.t
+    arrayofstring:string option array -> Stdint.uint8
   val parse_optional_uint8_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Uint8_extended.t option
+    arrayofstring:string option array -> Stdint.uint8 option
   val parse_uint16_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint16_extended.t
