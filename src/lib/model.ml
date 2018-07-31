@@ -311,6 +311,34 @@ module Model = struct
 			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
 
 
+  let rec ml_mli_helper ~l ~tbody ~added_modules ~client_modules
+			~module_names =
+    match l with
+    | [] -> tbody, added_modules
+    | h :: t ->
+       (match client_modules, module_names with
+	| Some clientmodules, Some modulenames -> 
+	   if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
+		List.mem (String.lowercase_ascii h.col_name) modulenames then
+	     let tbody_new =
+	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
+				 (String.capitalize_ascii h.col_name);".t;"] in
+	     ml_mli_helper ~l:t ~tbody:tbody_new ~added_modules:((String.capitalize_ascii h.col_name) :: added_modules) ~client_modules ~module_names
+	   else
+	     let string_of_data_type =
+	       Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in
+	     let tbody_new =
+	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;";"] in
+	     ml_mli_helper ~l:t ~tbody:tbody_new ~client_modules ~module_names ~added_modules
+	| _, _ ->
+	   let string_of_data_type =
+	     Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
+	   let tbody_new =
+	     String.concat "" [tbody;"\n    ";h.col_name;" : ";
+			       string_of_data_type;";"] in
+	   ml_mli_helper ~l:t ~tbody:tbody_new ~client_modules ~module_names ~added_modules);;
+    
   let list_of_user_modules = ref None;;
 
   let get_all_available_user_written_modules ~where2find_modules =
@@ -344,6 +372,18 @@ module Model = struct
        let () = list_of_user_modules := (Some l) in l
     | Some l -> l)
     
+
+  let other_modules =
+    ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
+     "module Date_extended = Ocaml_db_model.Date_extended";
+     "module Utilities = Utilities.Utilities";
+     "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+     "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+     "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+     "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+     "module Int64_extended = Ocaml_db_model.Int64_extended";
+     "module Int32_extended = Ocaml_db_model.Int32_extended"];;
+
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database
 		     ~module_names ~where2find_modules =
@@ -366,16 +406,6 @@ module Model = struct
       | None -> 
 	 ["fields";"show";"ord";"eq";"yojson"] in (*sexp*)
     let start_module = "\nmodule " ^ module_name ^ " = struct\n" in
-    let other_modules =
-      ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
-       "module Date_extended = Ocaml_db_model.Date_extended";
-       "module Utilities = Utilities.Utilities";
-       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
-       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
-       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
-       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-       "module Int64_extended = Ocaml_db_model.Int64_extended";
-       "module Int32_extended = Ocaml_db_model.Int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -385,42 +415,9 @@ module Model = struct
 					(string_of_int (List.length tfields_list))) in
     (*--need to know which modules were added so we can add them to 
      other_modules defined above*)
-    let rec helper l tbody added_modules =
-      match l with
-      | [] -> tbody, added_modules
-      | h :: t ->
-	 (*--if client has defined a module of same name and desires to use it
-           --as a type, do so here. Module must define some way to marshall
-           --the type, ie, must have an of_string method. And a to_string
-           --method in order to save it.*)
-	 (match client_modules, module_names with
-	  | Some clientmodules, Some modulenames -> 
-	     if List.mem (String.lowercase_ascii h.col_name) clientmodules &&
-		  List.mem (String.lowercase_ascii h.col_name) modulenames then
-	       let () = Utilities.print_n_flush
-			  (String.concat "" ["\nFound client-supplied module match for:";h.col_name]) in 
-	       let tbody_new =
-		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				   (String.capitalize_ascii h.col_name);".t;"] in
-	       helper t tbody_new ((String.capitalize_ascii h.col_name) :: added_modules)
-	     else
-	       let () = Utilities.print_n_flush
-			  (String.concat "" ["\nFailed to find client-supplied module match for:";h.col_name]) in 
-	       let string_of_data_type =
-		 Types_we_emit.to_string h.data_type h.is_nullable in
-	       let tbody_new =
-		 String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				   string_of_data_type;";"] in
-	       helper t tbody_new added_modules
-	  | _, _ ->
-	     let () = Utilities.print_n_flush "\nNo client-supplied modules specified or found..." in 
-	     let string_of_data_type =
-	       Types_we_emit.to_string h.data_type h.is_nullable in 
-	     let tbody_new =
-	       String.concat "" [tbody;"\n    ";h.col_name;" : ";
-				 string_of_data_type;";"] in
-	     helper t tbody_new added_modules) in
-    let tbody, user_supplied_modules_list = helper tfields_list "" [] in
+    let tbody, user_supplied_modules_list =
+      ml_mli_helper ~l:tfields_list ~client_modules
+		    ~module_names ~tbody:"" ~added_modules:[] in 
     let user_supplied_module_names =
       List.map (fun x ->
 		let capped = (String.capitalize_ascii x) in 
@@ -438,15 +435,15 @@ module Model = struct
     (*Insert a few functions and variables.*)
     let table_related_lines =
       String.concat "" ["  let tablename=\"";table_name;
-	"\" \n\n  let get_tablename () = tablename;;\n"] in
+			"\" \n\n  let get_tablename () = tablename;;\n"] in
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
     let query_function = construct_sql_query_function ~table_name ~map ~host
 						      ~user ~password ~database in 
     String.concat "\n" [finished_type_t;table_related_lines;sql_query_function;
-			     query_function;"\nend"];;
-
+			query_function;"\nend"];;
+    
   let construct_mli ~table_name ~map ~ppx_decorators
 		    ~module_names ~where2find_modules =
     let client_modules =
@@ -462,16 +459,6 @@ module Model = struct
       | Some ppx_decs -> Utilities.parse_list ppx_decorators
       | None -> Some ["fields";"show";"ord";"eq";"yojson"] in
     let module_name = String.capitalize_ascii table_name in
-    let other_modules =
-      ["module Date_time_extended = Ocaml_db_model.Date_time_extended";
-       "module Date_extended = Ocaml_db_model.Date_extended";
-       "module Utilities = Utilities.Utilities";
-       "module Uint64_extended = Ocaml_db_model.Uint64_extended";
-       "module Uint32_extended = Ocaml_db_model.Uint32_extended";
-       "module Uint16_extended = Ocaml_db_model.Uint16_extended";
-       "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-       "module Int64_extended = Ocaml_db_model.Int64_extended";
-       "module Int32_extended = Ocaml_db_model.Int32_extended"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -479,33 +466,9 @@ module Model = struct
     let tfields_list = List.rev tfields_list_reversed in 
     let () = Utilities.print_n_flush ("\nconstruct_mli::List of fields found of length:" ^
 					(string_of_int (List.length tfields_list))) in
-    let rec helper l tbody added_modules =
-      match l with
-      | [] -> tbody, added_modules
-      | h :: t ->
-	 (match client_modules, module_names with
-	  | Some clientmodules, Some modulenames ->
-	     if List.mem h.col_name clientmodules && List.mem h.col_name modulenames then
-	       let tbody_new =
-		 String.concat
-		   "" [tbody;"\n    ";h.col_name;
-		       " : ";(String.capitalize_ascii h.col_name);".t;"] in
-	       helper t tbody_new (h.col_name::added_modules)
-	     else
-	       let string_of_data_type =
-		 Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	       let tbody_new =
-		 String.concat
-		   "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
-	       helper t tbody_new added_modules
-	  | _,_ ->
-	     let string_of_data_type =
-	       Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	     let tbody_new =
-	       String.concat
-		 "" [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in
-	     helper t tbody_new added_modules) in 
-    let tbody, user_supplied_modules_list = helper tfields_list "" [] in
+    let tbody, user_supplied_modules_list =
+      ml_mli_helper ~l:tfields_list ~client_modules
+		    ~module_names ~tbody:"" ~added_modules:[] in 
     let user_supplied_module_names =
       List.map (fun x ->
 		let capped = (String.capitalize_ascii x) in 
@@ -528,7 +491,7 @@ module Model = struct
 	      "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	      "end"] in
     String.concat "\n" [with_ppx_decorators;function_lines];;
-
+    
   (*Intention is for invokation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
