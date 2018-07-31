@@ -594,7 +594,7 @@ let body_start = "module Credentials = struct\n  type t = {\n    username: strin
     try
       let () = check_or_create_dir ~dir:outputdir in
       let name = (outputdir ^ fname) in
-      let f = openfile name [O_RDWR;O_CREAT;O_TRUNC] 0o644 in
+      let f = openfile name [O_CREAT;O_APPEND] 0o644 in
       let _bytes_written = myf body f in
       close f
     with _ -> Utilities.print_n_flush ("\nFailed to write (appending) to file:" ^ fname)
