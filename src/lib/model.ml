@@ -22,11 +22,12 @@ module Model = struct
       In future for compare ppx extension, perhaps set all fields to return zero 
       EXCEPT for the primary key of table? This is also useful for Core Comparable 
       interface.*)
-    let fields_query = "SELECT column_name, is_nullable, column_comment,
-			column_type, data_type, column_key, extra, column_comment FROM 
-			information_schema.columns 
-			WHERE table_name='" ^ table_name ^ "';" in
-(* numeric_scale, column_default, character_maximum_length, 
+    let fields_query = String.concat [
+			   "SELECT column_name, is_nullable, column_comment,
+			    column_type, data_type, column_key, extra, column_comment FROM 
+			    information_schema.columns 
+			    WHERE table_name='";table_name;"';"] in
+    (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
     let rec helper accum results nextrow =
       (match nextrow with
@@ -64,8 +65,9 @@ module Model = struct
 	     helper newmap results (fetch results)
 	    )
 	  with err ->
-	    let () = Utilities.print_n_flush ("\nError " ^ (Exn.to_string err) ^
-				      " getting tables from db.") in
+	    let () = Utilities.print_n_flush
+		       (String.concat ["\nError ";(Exn.to_string err);
+				       " getting tables from db."]) in
 	    Error "Failed to get tables from db."
       ) in
     let conn = (fun c -> if is_none c then
@@ -89,7 +91,8 @@ module Model = struct
     match s with
     | Some sr ->
        (try
-	   let () = Utilities.print_n_flush ("make_regexp() from " ^ sr) in 
+	   let () = Utilities.print_n_flush
+		      (String.concat ["make_regexp() from ";sr]) in 
 	   let regexp = Pcre.regexp sr in Some regexp
 	 with
 	 | err -> let () = Utilities.print_n_flush "\nFailed to parse regexp..." in
@@ -103,7 +106,7 @@ module Model = struct
       match s with
       | Some sl ->
 	 (try
-	     let () = Utilities.print_n_flush ("parse_list() from " ^ sl) in
+	     let () = Utilities.print_n_flush (String.concat ["parse_list() from "sl]) in
 	     let l = Core.String.split sl ~on:',' in
 	     let len = Core.List.count l ~f:(fun x -> true) in
 	     if len > 1 then Some l else None
@@ -225,7 +228,7 @@ module Model = struct
     let parser_lines = for_each_field fields_list [] in
     String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
 			     recursive_call;"          with\n          | err ->";
-			     "             let () = Utilities.print_n_flush (\"\\nError: \" ^ (Exn.to_string err) ^ \"Skipping a record...\") in \n             helper accum results (fetch results)\n      ) in";suffix];;
+			     "             let () = Utilities.print_n_flush (String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping a record...\"]) in \n             helper accum results (fetch results)\n      ) in";suffix];;
       
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database =
@@ -247,8 +250,9 @@ module Model = struct
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
-    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in 
+    let () = Utilities.print_n_flush
+	       (String.concat ["\nList of fields found of length:";
+			       (Int.to_string (List.length tfields_list))]) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
@@ -265,14 +269,14 @@ module Model = struct
 			      tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
-      | [] -> almost_done ^ "end"
+      | [] -> String.concat [almost_done;"end"]
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-	 almost_done ^ " [@@deriving " ^ ppx_extensions ^ "]\n" in
+	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     (*Insert a few functions and variables.*)
     let table_related_lines =
-      "  let tablename=\"" ^ table_name ^
-	"\" \n\n  let get_tablename () = tablename;;\n" in
+      String.concat ["  let tablename=\"";table_name;
+		     "\" \n\n  let get_tablename () = tablename;;\n"] in
     (*General purpose query...client code can create others*)
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
@@ -293,8 +297,9 @@ module Model = struct
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
     let tfields_list = List.rev tfields_list_reversed in 
-    let () = Utilities.print_n_flush ("\nList of fields found of length:" ^
-					(Int.to_string (List.length tfields_list))) in 
+    let () = Utilities.print_n_flush
+	       (String.concat ["\nList of fields found of length:";
+			       (Int.to_string (List.length tfields_list))]) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
@@ -308,7 +313,7 @@ module Model = struct
     let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
     let with_ppx_decorators = 
       match ppx_decorators with
-      | [] -> almost_done ^ "end"
+      | [] -> String.concat [almost_done;"end"]
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
@@ -342,7 +347,7 @@ module Model = struct
     let open Core in 
     let open Core.Unix in
     (*--how to specify the (opam install) path to utilities.ml?---*)
-    let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in
+    let r = system (String.concat ["cp src/lib/utilities.ml ";destinationdir]) in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush result in 
     match r with
