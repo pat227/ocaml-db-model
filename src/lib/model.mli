@@ -24,7 +24,7 @@ module Model : sig
 		       password:string -> database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string list -> string
-  val write_module : outputdir:string -> fname:string -> body:string -> unit
+  val write_module : outputdir:string -> fname:string -> body:Core.Bytes.t -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
   val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)
   val copy_utilities : destinationdir:string -> unit

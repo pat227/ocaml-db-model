@@ -3,7 +3,7 @@ module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
 module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
 module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
 module Mysql = Mysql
-module Unix = Core.Std.Unix
+module Unix = Core.Unix
 module Utilities = struct
 
   let getcon () =
@@ -13,10 +13,10 @@ module Utilities = struct
 			~user:USER ();;
   let closecon c = Mysql.disconnect c;;
     
-  let oc = Core.Std.Out_channel.stdout;;    
+  let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
-    Core.Std.Out_channel.output_string oc s;
-    Core.Std.Out_channel.flush oc;;
+    Core.Out_channel.output_string oc s;
+    Core.Out_channel.flush oc;;
        
   let serialize_optional_field ~field ~conn =
     match field with
@@ -40,13 +40,13 @@ module Utilities = struct
 
   (*Int pennies*)
   let serialize_optional_float_field_as_int ~field =
-    let open Core.Std in 
+    let open Core in 
     match field with
     | Some f -> Int.to_string (Float.to_int (f *. 100.0))
     | None -> "NULL";;
 
   let serialize_float_field_as_int ~field =
-    let open Core.Std in 
+    let open Core in 
     Int.to_string (Float.to_int (field *. 100.0));;
 
   let parse_optional_boolean_field ~field =
@@ -77,7 +77,7 @@ module Utilities = struct
     Int.of_string field
 
   let parse_64bit_int_field field =
-    Core.Std.Int64.of_string field
+    Core.Int64.of_string field
 
   let parse_optional_uint8 field =
     match field with
@@ -100,19 +100,19 @@ module Utilities = struct
     | None -> None
 
   let parse_optional_float field =
-    let open Core.Std in 
+    let open Core in 
     match field with
     | Some s -> Some (Float.of_string s)
     | None -> None
 
   let parse_optional_date field =
-    let open Core.Std in 
+    let open Core in 
     match field with
     | Some s -> Some (Date.of_string s)
     | None -> None
 
   let parse_optional_time field =
-    let open Core.Std in 
+    let open Core in 
     match field with
     | Some s -> Some (Time.of_string s)
     | None -> None

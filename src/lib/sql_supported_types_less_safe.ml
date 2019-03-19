@@ -1,4 +1,4 @@
-open Core.Std
+open Core
 
 (*Types from mysql that are very safely mapped to Ocaml*)
 module Sql_supported_types = struct
@@ -41,9 +41,9 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
     | DECIMAL
     | FLOAT 
     | DOUBLE -> Ok "float"
-    | DATE -> Ok "Core.Std.Date.t"
+    | DATE -> Ok "Core.Date.t"
     | DATETIME 
-    | TIMESTAMP -> Ok "Core.Std.Time.t"
+    | TIMESTAMP -> Ok "Core.Time.t"
     | BINARY
     | BLOB
     | MEDIUMTEXT
@@ -58,7 +58,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
     combination with a numeric type in mysql, so we'll never see it here except with a 
     numeric type. *)
   let of_col_type_and_flags ~data_type ~col_type =
-    let open Core.Std in 
+    let open Core in 
     let is_unsigned = String.is_substring col_type ~substring:"unsigned" in
     let the_col_type s signed =
       match signed, s with

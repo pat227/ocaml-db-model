@@ -15,7 +15,7 @@ module Model = struct
 
   let get_fields_for_given_table ?conn ~table_name =
     let open Mysql in
-    let open Core.Std in 
+    let open Core in 
     (*Only column_type gives us the acceptable values of an enum type if present, 
       unsigned; use the column_comment to input per field directives for ppx 
       extensions...way down the road, such as key or default for json ppx extension. 
@@ -85,7 +85,7 @@ module Model = struct
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
   let make_regexp s =
-    let open Core.Std in 
+    let open Core in 
     match s with
     | Some sr ->
        (try
@@ -98,7 +98,7 @@ module Model = struct
     | None -> None;;
     
   let parse_list s =
-    let open Core.Std in 
+    let open Core in 
     try
       match s with
       | Some sl ->
@@ -118,7 +118,7 @@ module Model = struct
     | _ -> None;;
     
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
-    let open Core.Std in
+    let open Core in
     let open Core.Result in 
     let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
@@ -149,7 +149,7 @@ module Model = struct
 	   (**---filter on regexp or list here, if present at all---*)
 	   (match regexp_opt, table_list_opt with
 	    | None, Some l ->
-	       if List.mem l h.Table.table_name then
+	       if List.mem l h.Table.table_name ~equal:String.equal then
 		 let newmap = update_map ~table_name:h.Table.table_name in
 		 helper t newmap
 	       else
@@ -191,9 +191,9 @@ module Model = struct
      in the output.*)
   let construct_sql_query_function ~table_name ~map ~host
 				   ~user ~password ~database =
-    let open Core.Std in 
+    let open Core in 
     let preamble =
-      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core.Std in \n    let conn = Utilities.getcon ";
+      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon ";
 		     "~host:\"";host;"\" ~user:\"";user;"\" \n                               ~password:\"";password;"\" ~database:\"";database;"\" in \n"] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
@@ -229,12 +229,12 @@ module Model = struct
       
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database =
-    let open Core.Std in 
+    let open Core in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
-    let module_name = String.copy table_name in
-    let () = String.set module_name 0 uppercased_first_char in 
-    let start_module = "module " ^ module_name ^ " = struct\n" in
+    let module_name = Bytes.of_string table_name in
+    let () = Bytes.set module_name 0 uppercased_first_char in 
+    let start_module = String.concat ["module ";(Bytes.to_string module_name);" = struct\n"] in
     let other_modules =
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 			       "module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp";
@@ -275,19 +275,19 @@ module Model = struct
 	"\" \n\n  let get_tablename () = tablename;;\n" in
     (*General purpose query...client code can create others*)
     let sql_query_function =
-      "  let get_sql_query () = \n    let open Core.Std in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
+      "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
     let query_function = construct_sql_query_function ~table_name ~map ~host
 						      ~user ~password ~database in 
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\nend"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators =
-    let open Core.Std in 
+    let open Core in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
-    let module_name = String.copy table_name in
-    let () = String.set module_name 0 uppercased_first_char in 
-    let start_module = "module " ^ module_name ^ " : sig \n" in 
+    let module_name = Bytes.of_string table_name in
+    let () = Bytes.set module_name 0 uppercased_first_char in 
+    let start_module = String.concat ["module ";(Bytes.to_string module_name);" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
     (*Supply only keys that exist else find_exn will fail.*)
@@ -332,14 +332,14 @@ module Model = struct
       with _ ->
 	mkdir ~perm:0o644 dir in
     try
-      let () = check_of_create_dir ~dir:outputdir in 
+      let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o644 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 
   let copy_utilities ~destinationdir =
-    let open Core.Std in 
+    let open Core in 
     let open Core.Unix in
     (*--how to specify the (opam install) path to utilities.ml?---*)
     let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in

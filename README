@@ -276,3 +276,15 @@ let ml2renum x  = real_escape x
 #define FIELD_TYPE_GEOMETRY    MYSQL_TYPE_GEOMETRY
 #define FIELD_TYPE_BIT         MYSQL_TYPE_BIT
 
+
+
+
+
+USAGE with OCAMLBUILD:
+Within a makefile, use as such with a target named tables that depends on nothing and generates one module per table and wraps them all in one module too (this presumes the project is already installed via opam or available somewhere on the local filesystem:
+tables:
+	ocaml_mysql_model.native -host <hostip> -user <user> -password <password> -db <dbname> -table-regexp <ifAnyRestrictionsNeeded>
+	ocamlbuild -classic-display -use-ocamlfind -j 1 -tag debug -tag thread -tag principal -r -package 'core pcre mysql ppx_deriving ppx_deriving.show ppx_deriving_yojson ppx_sexp_conv ppx_fields_conv ppx_deriving.eq ppx_deriving.ord uint ppx_type_conv sexplib ocaml_db_model' -build-dir build -I src/lib src/tables/tables.<yourtargethere>
+
+
+USAGE WITH DUNE:

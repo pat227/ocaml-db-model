@@ -38,16 +38,16 @@ module Types_we_emit = struct
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | Bignum -> "Bignum.t option"
-      | CoreInt64 -> "Core.Std.Int64.t option"
-      | CoreInt32 -> "Core.Std.Int32.t option"
+      | CoreInt64 -> "Core.Int64.t option"
+      | CoreInt32 -> "Core.Int32.t option"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
       | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
       | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
-      | Float -> "Core.Std.Float.t option"
-      | Date -> "Core.Std.Date.t option"
-      | Time -> "Core.Std.Time.t option"
-      | String -> "Core.Std.String.t option"
+      | Float -> "Core.Float.t option"
+      | Date -> "Core.Date.t option"
+      | Time -> "Core.Time.t option"
+      | String -> "Core.String.t option"
       | Bool -> "bool option"
     else 
       match t with
@@ -55,16 +55,16 @@ module Types_we_emit = struct
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | Bignum -> "Bignum.t"
-      | CoreInt64 -> "Core.Std.Int64.t"
-      | CoreInt32 -> "Core.Std.Int32.t"
+      | CoreInt64 -> "Core.Int64.t"
+      | CoreInt32 -> "Core.Int32.t"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
       | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
       | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
       | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
-      | Float -> "Core.Std.Float.t"
-      | Date -> "Core.Std.Date.t"
-      | Time -> "Core.Std.Time.t"
-      | String -> "Core.Std.String.t"
+      | Float -> "Core.Float.t"
+      | Date -> "Core.Date.t"
+      | Time -> "Core.Time.t"
+      | String -> "Core.String.t"
       | Bool -> "bool";;
 		
   (**
@@ -72,7 +72,7 @@ module Types_we_emit = struct
    t - the type of the field
    *)
   let converter_of_string_of_type ~is_optional ~t ~fieldname =
-    let open Core.Std in 
+    let open Core in 
     match is_optional, t with
       false, String ->
       String.concat ["Utilities.extract_field_as_string_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
@@ -105,7 +105,7 @@ module Types_we_emit = struct
     | false, Uint64_w_sexp_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Uint64_w_sexp_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Bignum -> String.concat ["Utilities.parse_optional_bignum_field ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false Bignum -> String.concat ["Utilities.parse_bignum_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Bignum -> String.concat ["Utilities.parse_bignum_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
