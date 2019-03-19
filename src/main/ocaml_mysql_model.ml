@@ -1,6 +1,6 @@
-module Utilities = Utilities.Utilities
-module Model = Model.Model
-module Sql_supported_types = Sql_supported_types.Sql_supported_types
+module Utilities = Ocaml_db_model.Utilities
+module Model = Ocaml_db_model.Model
+module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
   let execute regexp_opt table_list_opt host user password database () =
