@@ -1,5 +1,6 @@
 module Types_we_emit : sig
   type t =
+    | Bignum
     | CoreInt64
     | CoreInt32
     | Uint8_w_sexp_t

@@ -10,6 +10,9 @@ module Types_we_emit = struct
     (*  Int
     | Int64
     | Int32*)
+    (*Note that bignum type can handle signed and unsigned numbers; no need to 
+      distinguish between the two with a type for each*)
+    | Bignum
     | CoreInt64
     | CoreInt32
     (*| Int8 ===TODO===support this type *)
@@ -23,16 +26,18 @@ module Types_we_emit = struct
     | String
     | Bool
 	[@@deriving show]
-(*Return a string we can use in writing a module that is a type. Cannot return a Uint8.t for example
-NOTE THAT Unfortunately there is no way to distinguish a field created with bool from a field created 
-with tinyint--except by some naming convention, which we do--otherwise bool wouldn't be supported at all.
-Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
+(*Return a string we can use in writing a module that is a type. Cannot return a 
+  Uint8.t for example NOTE THAT Unfortunately there is no way to distinguish a 
+  field created with bool from a field created with tinyint--except by some 
+  naming convention, which we do--otherwise bool wouldn't be supported at all. 
+  Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
   let to_string ~t ~is_nullable =
     if is_nullable then
       match t with
       (*  Int -> "int"
       | Int64 -> "int64"
       | Int32 -> "int32"*)
+      | Bignum -> "Bignum.t option"
       | CoreInt64 -> "Core.Std.Int64.t option"
       | CoreInt32 -> "Core.Std.Int32.t option"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
@@ -49,6 +54,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
       (*  Int -> "int"
       | Int64 -> "int64"
       | Int32 -> "int32"*)
+      | Bignum -> "Bignum.t"
       | CoreInt64 -> "Core.Std.Int64.t"
       | CoreInt32 -> "Core.Std.Int32.t"
       | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
@@ -98,6 +104,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.*)
     | true, Uint32_w_sexp_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Uint64_w_sexp_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Uint64_w_sexp_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Bignum -> String.concat ["Utilities.parse_optional_bignum_field ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false Bignum -> String.concat ["Utilities.parse_bignum_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]

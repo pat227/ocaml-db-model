@@ -14,18 +14,18 @@ module Model : sig
 
   val get_fields_map_for_all_tables :
     regexp_opt:string option -> table_list_opt:string option ->
-    conn:Mysql.dbd -> schema:string -> t list Core.Std.String.Map.t 
+    conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 
   val get_fields_for_given_table :
     ?conn:Mysql.dbd ->
-    table_name:Core.Std.String.Map.Key.t ->
-    (t list Core.Std.String.Map.t, string) Core.Std.Result.t 
-  val construct_body : table_name:string -> map:t list Core.Std.String.Map.t ->
+    table_name:Core.String.Map.Key.t ->
+    (t list Core.String.Map.t, string) Core.Result.t 
+  val construct_body : table_name:string -> map:t list Core.String.Map.t ->
 		       ppx_decorators:string list -> host:string -> user:string ->
 		       password:string -> database:string -> string
-  val construct_mli : table_name:string -> map:t list Core.Std.String.Map.t ->
+  val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string list -> string
   val write_module : outputdir:string -> fname:string -> body:string -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
-  val construct_modules : tables_and_fields:string * t list Core.Std.String.Map.t -> string list*)
+  val construct_modules : tables_and_fields:string * t list Core.String.Map.t -> string list*)
   val copy_utilities : destinationdir:string -> unit
 end 

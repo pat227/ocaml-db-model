@@ -104,8 +104,8 @@ module Model = struct
       | Some sl ->
 	 (try
 	     let () = Utilities.print_n_flush ("parse_list() from " ^ sl) in
-	     let l = Core.Std.String.split sl ~on:',' in
-	     let len = Core.Std.List.count l ~f:(fun x -> true) in
+	     let l = Core.String.split sl ~on:',' in
+	     let len = Core.List.count l ~f:(fun x -> true) in
 	     if len > 1 then Some l else None
 	   with
 	   | err ->
@@ -119,7 +119,7 @@ module Model = struct
     
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
     let open Core.Std in
-    let open Core.Std.Result in 
+    let open Core.Result in 
     let table_list_result = Table.get_tables ~conn ~schema in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
@@ -193,7 +193,7 @@ module Model = struct
 				   ~user ~password ~database =
     let open Core.Std in 
     let preamble =
-      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Std.Result in \n    let open Core.Std in \n    let conn = Utilities.getcon ";
+      String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core.Std in \n    let conn = Utilities.getcon ";
 		     "~host:\"";host;"\" ~user:\"";user;"\" \n                               ~password:\"";password;"\" ~database:\"";database;"\" in \n"] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
@@ -256,12 +256,12 @@ module Model = struct
 	 let string_of_data_type =
 	   Types_we_emit.to_string h.data_type h.is_nullable in 
 	 let tbody_new =
-	   Core.Std.String.concat [tbody;"\n    ";h.col_name;" : ";
+	   Core.String.concat [tbody;"\n    ";h.col_name;" : ";
 				   string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done =
-      Core.Std.String.concat [other_modules;start_module;start_type_t;
+      Core.String.concat [other_modules;start_module;start_type_t;
 			      tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
@@ -301,7 +301,7 @@ module Model = struct
       | h :: t ->
 	 let string_of_data_type =
 	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	 let tbody_new = Core.Std.String.concat
+	 let tbody_new = Core.String.concat
 			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
@@ -317,14 +317,14 @@ module Model = struct
 	~sep:"\n"
 	["  val get_tablename : unit -> string";
 	 "  val get_sql_query : unit -> string";
-	 "  val get_from_db : query:string -> (t list, string) Core.Std.Result.t";
+	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
-  (*Intention is for invokcation from root dir of a project from Make file. 
+  (*Intention is for invocation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
-    let open Core.Std.Unix in
+    let open Core.Unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     let check_or_create_dir ~dir =
       try 
@@ -340,10 +340,10 @@ module Model = struct
 
   let copy_utilities ~destinationdir =
     let open Core.Std in 
-    let open Core.Std.Unix in
+    let open Core.Unix in
     (*--how to specify the (opam install) path to utilities.ml?---*)
     let r = system ("cp src/lib/utilities.ml " ^ destinationdir) in
-    let result = Core.Std.Unix.Exit_or_signal.to_string_hum r in 
+    let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush result in 
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."

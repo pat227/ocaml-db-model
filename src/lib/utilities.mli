@@ -71,6 +71,12 @@ module Utilities : sig
   val parse_optional_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint64_w_sexp.t option
+  val parse_optional_bignum_field :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Bignum.t option
+  val parse_bignum_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Bignum.t
   (*---bool---*)					   
   val parse_bool_field_exn :
     fieldname:string -> results:Mysql.result ->

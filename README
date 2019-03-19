@@ -135,12 +135,12 @@ Actually the information schema table shows int!?!
 			   create rouding errors; a string-to-number conversion involves no such intermediate
 			   step using the Double type.
    DECIMAL
-   DEC
+   DEC    -> FOR NOW USE STRING tpye until we can get zarith or bignum support in the ppx_xml_conv or csvfields 
    FIXED
    FLOAT
  | DOUBLE -> float
 
-   DECIMAL UNSIGNED  
+   DECIMAL UNSIGNED  -> FOR NOW USE STRING tpye until we can get zarith or bignum support in the ppx_xml_conv or csvfields 
    FLOAT UNSIGNED
  | DOUBLE UNSIGNED -> UNSUPPORTED    NOTE: Unsigned floating point types in Mysql does not alter the upper range of these types.
 

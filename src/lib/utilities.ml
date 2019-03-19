@@ -193,6 +193,16 @@ module Utilities = struct
     match s_opt with
     | Some s -> let i = Uint64_w_sexp.of_string s in Some i
     | None -> None;;
+
+  let parse_bignum_field_exn ~fieldname ~results ~arrayofstring =
+    let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
+    Bignum.of_string s;;
+
+  let parse_optional_bignum_field ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Bignum.of_string s in Some i
+    | None -> None;;
     
   (*-----booleans------*)
   let parse_bool_field_exn ~fieldname ~results ~arrayofstring = 
