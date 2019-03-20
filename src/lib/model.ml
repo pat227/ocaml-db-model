@@ -249,10 +249,10 @@ module Model = struct
       (*==TODO==copy all these modules into local directory, or refer to this 
         project's implementation of them.*)
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
-			       "module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp";
-			       "module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp";
-			       "module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp";
-			       "module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp";
+			       "module Uint64_extended = Uint64_extended.Uint64_extended";
+			       "module Uint32_extended = Uint32_extended.Uint32_extended";
+			       "module Uint16_extended = Uint16_extended.Uint16_extended";
+			       "module Uint8_extended = Uint8_extended.Uint8_extended";
 			       "open Sexplib.Std\n"] in
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in

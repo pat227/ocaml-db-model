@@ -1,5 +1,5 @@
 (*Unfortunately Uint16 module does not define sexp converters, so we have to.*)
-module Uint16_w_sexp :
+module Uint16_extended :
 sig
   type t = Uint16.t
   type uint16 = t

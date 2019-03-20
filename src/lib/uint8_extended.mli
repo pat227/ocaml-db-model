@@ -1,5 +1,5 @@
 (*Unfortunately Uint8 module does not define sexp converters, so we have to.*)
-module Uint8_w_sexp :
+module Uint8_extended :
 sig
   type t = Uint8.t
   type uint8 = t

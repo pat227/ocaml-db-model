@@ -1,7 +1,8 @@
-module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp
-module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp
-module Uint16_w_sexp = Uint16_w_sexp.Uint16_w_sexp
-module Uint8_w_sexp = Uint8_w_sexp.Uint8_w_sexp
+module Uint64_extended = Uint64_extended.Uint64_extended
+module Uint32_extended = Uint32_extended.Uint32_extended
+module Uint24_extended = Uint24_extended.Uint24_extended
+module Uint16_extended = Uint16_extended.Uint16_extended
+module Uint8_extended = Uint8_extended.Uint8_extended
 (*Upon further reflection--use specific int types, as specific as possible, such as 
   Int64 from Core or Int32 over plain ints. In future we might write a version that
   is sans Core in case anyone cares.*)
@@ -16,10 +17,11 @@ module Types_we_emit = struct
     | CoreInt64
     | CoreInt32
     (*| Int8 ===TODO===support this type *)
-    | Uint8_w_sexp_t
-    | Uint16_w_sexp_t
-    | Uint32_w_sexp_t
-    | Uint64_w_sexp_t
+    | Uint8_extended_t
+    | Uint16_extended_t
+    | Uint24_extended_t
+    | Uint32_extended_t
+    | Uint64_extended_t
     | Float
     | Date
     | Time 
@@ -40,10 +42,10 @@ module Types_we_emit = struct
       | Bignum -> "Bignum.t option"
       | CoreInt64 -> "Core.Int64.t option"
       | CoreInt32 -> "Core.Int32.t option"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t option"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t option"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t option"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t option"
+      | Uint8_extended_t -> "Uint8_extended.t option"
+      | Uint16_extended_t -> "Uint16_extended.t option"
+      | Uint32_extended_t -> "Uint32_extended.t option"
+      | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
       | Date -> "Core.Date.t option"
       | Time -> "Core.Time.t option"
@@ -57,10 +59,10 @@ module Types_we_emit = struct
       | Bignum -> "Bignum.t"
       | CoreInt64 -> "Core.Int64.t"
       | CoreInt32 -> "Core.Int32.t"
-      | Uint8_w_sexp_t -> "Uint8_w_sexp.t"
-      | Uint16_w_sexp_t -> "Uint16_w_sexp.t"
-      | Uint32_w_sexp_t -> "Uint32_w_sexp.t"
-      | Uint64_w_sexp_t -> "Uint64_w_sexp.t"
+      | Uint8_extended_t -> "Uint8_extended.t"
+      | Uint16_extended_t -> "Uint16_extended.t"
+      | Uint32_extended_t -> "Uint32_extended.t"
+      | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
       | Date -> "Core.Date.t"
       | Time -> "Core.Time.t"
@@ -96,14 +98,14 @@ module Types_we_emit = struct
     | true, Int32 ->
     | false, Int32 -> 
     | true, Int64 ->*) 
-    | false, Uint8_w_sexp_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint8_w_sexp_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint16_w_sexp_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint16_w_sexp_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint32_w_sexp_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint32_w_sexp_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Uint64_w_sexp_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Uint64_w_sexp_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint8_extended_t -> String.concat ["Utilities.parse_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint8_extended_t -> String.concat ["Utilities.parse_optional_uint8_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint16_extended_t -> String.concat ["Utilities.parse_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint16_extended_t -> String.concat ["Utilities.parse_optional_uint16_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint32_extended_t -> String.concat ["Utilities.parse_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint32_extended_t -> String.concat ["Utilities.parse_optional_uint32_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Uint64_extended_t -> String.concat ["Utilities.parse_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Uint64_extended_t -> String.concat ["Utilities.parse_optional_uint64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Bignum -> String.concat ["Utilities.parse_optional_bignum_field ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Bignum -> String.concat ["Utilities.parse_bignum_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Float -> String.concat ["Utilities.parse_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]

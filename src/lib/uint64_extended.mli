@@ -1,5 +1,5 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to.*)
-module Uint64_w_sexp :
+module Uint64_extended :
 sig
   type t = Uint64.t
   type uint64 = t

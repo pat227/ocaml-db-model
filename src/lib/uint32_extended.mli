@@ -1,5 +1,5 @@
 (*Unfortunately Uint32 module does not define sexp converters, so we have to.*)
-module Uint32_w_sexp :
+module Uint32_extended :
 sig
   type t = Uint32.t
   type uint32 = t
