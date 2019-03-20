@@ -34,9 +34,10 @@ module Command = struct
     this went off the rails.*)
   let main_command =
     let usage_msg = "Connect to a mysql db, get schema, write modules and \
-		   (primitive) types out of thin air with ppx extensions and a \
-		   utility module for parsing mysql strings into present directory. \
-		   Use basic regexp, or a list, to filter table names." in 
+		     (mostly primitive) types out of thin air with ppx extensions and a \
+		     utility module for parsing mysql strings. Output modules will reside \
+                     within src/tables relative to root of project. \
+		     Use basic regexp, or a list, to filter table names." in 
     let host = ref "" in
     let user = ref "" in
     let password = ref "" in

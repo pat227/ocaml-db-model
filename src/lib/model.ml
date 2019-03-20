@@ -106,7 +106,7 @@ module Model = struct
       match s with
       | Some sl ->
 	 (try
-	     let () = Utilities.print_n_flush (String.concat ["parse_list() from "sl]) in
+	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
 	     let len = Core.List.count l ~f:(fun x -> true) in
 	     if len > 1 then Some l else None
@@ -335,12 +335,12 @@ module Model = struct
       try 
 	let _stats = stat dir in ()	
       with _ ->
-	mkdir ~perm:0o644 dir in
+	mkdir ~perm:0o774 dir in
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
 	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
-		  ~perm:0o644 ~f:(myf body) in ()
+		  ~perm:0o664 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 
   let copy_utilities ~destinationdir =
