@@ -217,7 +217,7 @@ module Model = struct
 	 for_each_field ~flist:t ~accum:(output::accum) in
     let rec make_fields_create_line ~flist ~accum =
       match flist with
-      | [] -> let fields = String.concat accum in
+      | [] -> let fields = String.concat ~sep:" " accum in
 	      String.concat ["            let new_t = Fields.create ";fields;" in "]
       | h :: t ->
 	 let onef = String.concat ["~";h.col_name] in
@@ -339,7 +339,7 @@ module Model = struct
     try
       let () = check_or_create_dir ~dir:outputdir in 
       let _bytes_written =
-	with_file fname ~mode:[O_RDWR;O_CREAT;O_TRUNC]
+	with_file (Core.String.concat [outputdir;fname]) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o664 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 

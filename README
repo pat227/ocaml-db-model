@@ -278,7 +278,8 @@ let ml2renum x  = real_escape x
 
 
 
-
+NOTE:
+Take precautions with special chars in passwords or any other user supplied input, ie, single quote it or else the command line shell will screw you up. Double quotes still permit shell expansion.
 
 USAGE with OCAMLBUILD:
 Within a makefile, use as such with a target named tables that depends on nothing and generates one module per table and wraps them all in one module too (this presumes the project is already installed via opam or available somewhere on the local filesystem:

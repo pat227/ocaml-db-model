@@ -41,7 +41,7 @@ module Sql_supported_types = struct
     | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
     | BIGINT -> Ok Types_we_emit.CoreInt64
     | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_w_sexp_t
-    | DECIMAL
+    | DECIMAL -> Ok Types_we_emit.Bignum
     | FLOAT 
     | DOUBLE -> Ok Types_we_emit.Float
     | DATE -> Ok Types_we_emit.Date
@@ -73,7 +73,10 @@ module Sql_supported_types = struct
       | false, "int" 
       | false, "integer" -> INTEGER
       | false, "bigint" -> BIGINT
-      | false, "decimal" 
+      (*Decimals might be signed in mysql, but the bignum type is not; can handle
+        signed and unsigned equally well without making distinction between the 
+        two*)
+      | _, "decimal" -> DECIMAL
       | _, "float"
       | _, "double" -> FLOAT
       | false, "date" -> DATE 
