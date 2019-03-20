@@ -343,10 +343,12 @@ module Model = struct
 		  ~perm:0o664 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 
+  (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.*)
   let copy_utilities ~destinationdir =
     let open Core in 
     let open Core.Unix in
-    (*--how to specify the (opam install) path to utilities.ml?---*)
+    (*--how to specify the (opam install) path to utilities.ml---most likely 
+     would need to use ocamlfind query <thispackagename> just to get the directory.*)
     let r = system (String.concat ["cp src/lib/utilities.ml ";destinationdir]) in
     let result = Core.Unix.Exit_or_signal.to_string_hum r in 
     let () = Utilities.print_n_flush result in 

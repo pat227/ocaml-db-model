@@ -3,7 +3,7 @@ module Model = Ocaml_db_model.Model
 module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
-  let execute regexp_opt table_list_opt host user password database () =
+  let execute regexp_opt table_list_opt ppx_list_opt host user password database () =
     let open Core in 
     let open Core.Result in
     try
@@ -16,7 +16,13 @@ module Command = struct
 	match klist with
 	| [] -> ()
 	| h::t ->
-	   let ppx_decorators = ["fields";"eq";"make";"ord";"sexp";"show";"yojson";"xml"] in 
+	   let ppx_decorators =
+	     match ppx_list_opt with
+	     (*default ppx extensions--not always are they all desired or useful or supported*)
+	     | None -> ["fields";"eq";"make";"ord";"sexp";"show";"yojson";"xml"]
+	     | Some ppx_list ->
+		(*===TODO===check the list for sanity? Validitiy too: that each is supported?*)
+		ppx_list in 
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
 	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
@@ -44,6 +50,7 @@ module Command = struct
     let database = ref "" in
     let table_regexp = ref "" in
     let table_list = ref "" in
+    let ppx_list = ref "" in 
     let options = [("-host",Arg.Set_string host,"Required IP of db host");
 		   ("-user",Arg.Set_string user,"Required DB username");
 		   ("-password",Arg.Set_string password,"Required DB user password");
@@ -55,7 +62,10 @@ module Command = struct
 		   ("-table-list", Arg.Set_string table_list,
 		    "Optional explicit list of tables; this option is mutually \
 		     exclusive of using a regexp, and without either option all \
-		     tables are selected.")
+		     tables are selected.");
+		     ("-ppx-decorators", Arg.Set_string ppx_list,
+		    "Optional list of ppx extensions to append to each type definition \
+		     per module; use only commas or only semicolons.")
 		  ] in 
     let () = Arg.parse options (fun _x -> ()) usage_msg in
     let regexp_opt =
@@ -65,7 +75,19 @@ module Command = struct
     let table_list_opt =
       match String.length (!table_list) with
       | 0 -> None
-      | _ -> Some !table_list in 
-    execute regexp_opt table_list_opt !host !user !password !database ()
+      | _ -> Some !table_list in
+    let ppx_list_opt =
+      match String.length (!ppx_list) with
+      | 0   (*unaware at present of any single letter ppx extensions, so a list of 
+              one 2 letter extension is minimum we can expect.*)
+      | 1 -> None 
+      | _ -> (*this could be have more robust checking for sanity*)
+	 if (Core.String.contains !ppx_list ',') then 
+	   Some (Core.split !ppx_list ~on:',')
+	 else if (Core.String.contains !ppx_list ';') then
+	   Some (Core.split !ppx_list ~on:';')
+	 else 
+	   Some [!ppx_list]
+    execute regexp_opt table_list_opt ppx_list_opt !host !user !password !database ()
 end
       
