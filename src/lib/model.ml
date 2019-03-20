@@ -236,9 +236,18 @@ module Model = struct
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
-    let () = Bytes.set module_name 0 uppercased_first_char in 
-    let start_module = String.concat ["module ";(Bytes.to_string module_name);" = struct\n"] in
+    let () = Bytes.set module_name 0 uppercased_first_char in
+    let prefix_notice =
+      "(*Auto-generated module; any edits would be overwritten and lost at build \
+       time without revision control or without disabling the generation of this \
+       code at build time. It might be better to include this module in another \
+       in a different directory. *)" in 
+    let start_module =
+      String.concat [prefix_notice;"module ";(Bytes.to_string module_name);
+		     " = struct\n"] in
     let other_modules =
+      (*==TODO==copy all these modules into local directory, or refer to this 
+        project's implementation of them.*)
       String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 			       "module Uint64_w_sexp = Uint64_w_sexp.Uint64_w_sexp";
 			       "module Uint32_w_sexp = Uint32_w_sexp.Uint32_w_sexp";

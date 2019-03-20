@@ -1,2 +1,5 @@
 USE ZARITH for DECIMAL type,
-OR Core.Bignum for the core branch and switch to use of dune for core branch
+OR Core.BIGNUM for the core branch and switch to use of dune for core branch
+
+Actually copy the Utilities file.
+And copy all the required types only found in this project at preset, such as uint64_w_sexp.ml, etc, and perhaps others soon to join them.
