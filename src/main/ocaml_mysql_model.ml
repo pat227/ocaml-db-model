@@ -83,11 +83,11 @@ module Command = struct
       | 1 -> None 
       | _ -> (*this could be have more robust checking for sanity*)
 	 if (Core.String.contains !ppx_list ',') then 
-	   Some (Core.split !ppx_list ~on:',')
+	   Some (Core.String.split !ppx_list ~on:',')
 	 else if (Core.String.contains !ppx_list ';') then
-	   Some (Core.split !ppx_list ~on:';')
+	   Some (Core.String.split !ppx_list ~on:';')
 	 else 
-	   Some [!ppx_list]
+	   Some [!ppx_list] in 
     execute regexp_opt table_list_opt ppx_list_opt !host !user !password !database ()
 end
       
