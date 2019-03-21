@@ -379,5 +379,22 @@ module Model = struct
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
     | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
+
+  let write_appending_module ~outputdir ~fname ~body =
+    let open Unix in
+    let myf sbuf fd = single_write fd (Bytes.of_string sbuf) 0 (Core.String.length sbuf) in
+    let check_or_create_dir ~dir =
+      try 
+        let _stats = stat dir in ()     
+      with _ ->
+        mkdir dir 0o770 in
+    try
+      let () = check_or_create_dir ~dir:outputdir in
+      let name = (Core.String.concat [outputdir;fname]) in
+      let f = openfile name [O_RDWR;O_CREAT;O_APPEND] 0o664 in
+      let _bytes_written = myf body f in
+      close f
+    with _ -> Utilities.print_n_flush (Core.String.concat ["\nFailed to write (appending) to file:";fname])
+
        
 end

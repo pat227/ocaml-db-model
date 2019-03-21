@@ -4,14 +4,12 @@ module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
   let execute regexp_opt table_list_opt ppx_list_opt host user password database () =
-    let open Core in 
-    let open Core.Result in
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
 	Model.get_fields_map_for_all_tables
 	  ~regexp_opt ~table_list_opt ~conn ~schema:database in
-      let keys = Map.keys fields_map in 
+      let keys = Core.Map.keys fields_map in 
       let rec helper klist map =
 	match klist with
 	| [] -> ()
@@ -25,8 +23,12 @@ module Command = struct
 		ppx_list in 
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
-	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
+	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
 	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
+           let title_cased_h = String.capitalize_ascii h in
+	   let () = Model.write_appending_module
+		      ~outputdir:"src/tables/" ~fname:"tables.ml"
+		      ~body:(Core.String.concat ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   helper t map in
       helper keys fields_map
