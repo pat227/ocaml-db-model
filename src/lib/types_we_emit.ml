@@ -49,9 +49,9 @@ module Types_we_emit = struct
       | Uint32_extended_t -> "Uint32_extended.t option"
       | Uint64_extended_t -> "Uint64_extended.t option"
       | Float -> "Core.Float.t option"
-      | Date -> "Core.Date.t option"
+      | Date -> "Date_extended.t option"
       | Time -> "Core.Time.t option"
-      | String -> "Core.String.t option"
+      | String -> "string option"
       | Bool -> "bool option"
     else 
       match t with
@@ -66,9 +66,9 @@ module Types_we_emit = struct
       | Uint32_extended_t -> "Uint32_extended.t"
       | Uint64_extended_t -> "Uint64_extended.t"
       | Float -> "Core.Float.t"
-      | Date -> "Core.Date.t"
+      | Date -> "Date_extended.t"
       | Time -> "Core.Time.t"
-      | String -> "Core.String.t"
+      | String -> "string"
       | Bool -> "bool";;
 		
   (**

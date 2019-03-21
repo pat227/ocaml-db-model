@@ -9,8 +9,8 @@ Look at no core branch and replicate: creating a toplevel ml file that contains 
 Support dune: write dune file into src/tables
 
 Write ALL the extended module types into the generated modules
-Use string not Core.String even in core branch for compatability with some ppx rewriters
+Use string not Core.String even in core branch for compatability with some ppx rewriters - DONE
 
 Copy not just utilities2copy but also all the extended modules into src/tables/extendedtypes and create an extendedtypes.ml file to bundle them.
 
-Use the extended types ... still writing Core.Date.t instead of Date_extended.t
+Use the extended types ... still writing Core.Date.t instead of Date_extended.t - partly done
