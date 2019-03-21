@@ -197,7 +197,7 @@ module Model = struct
     let open Core in 
     let preamble =
       String.concat ["  let get_from_db ~query =\n    let open Mysql in \n    let open Core.Result in \n    let open Core in \n    let conn = Utilities.getcon ";
-		     "~host:\"";host;"\" ~user:\"";user;"\" \n                               ~password:\"";password;"\" ~database:\"";database;"\" in \n"] in
+		     "~host:\"";host;"\" ~user:\"";user;"\" \n                               ~password:\"";password;"\" ~database:\"";database;"\" in"] in
     let helper_preamble =
       "    let rec helper accum results nextrow = \n      (match nextrow with \n       | None -> Ok accum \n       | Some arrayofstring ->\n          try " in
     let suffix =
@@ -238,10 +238,10 @@ module Model = struct
     let module_name = Bytes.of_string table_name in
     let () = Bytes.set module_name 0 uppercased_first_char in
     let prefix_notice =
-      "(*Auto-generated module; any edits would be overwritten and lost at build \
-       time without revision control or without disabling the generation of this \
-       code at build time. It might be better to include this module in another \
-       in a different directory. *)" in 
+      "(*Auto-generated module; any edits would be overwritten and lost at build time \n \
+       without revision control or without disabling the generation of this code at \n \
+       build time. It might be better to include this module in another in a different \n \
+       directory. *)\n" in 
     let start_module =
       String.concat [prefix_notice;"module ";(Bytes.to_string module_name);
 		     " = struct\n"] in
@@ -269,8 +269,15 @@ module Model = struct
 	 let string_of_data_type =
 	   Types_we_emit.to_string h.data_type h.is_nullable in 
 	 let tbody_new =
-	   Core.String.concat [tbody;"\n    ";h.col_name;" : ";
-				   string_of_data_type;";"] in
+	   (*add ppx directives on a per field basis in ml file HERE*)
+	   (*make the use of make easier with default None for all optional fields*)
+	   if h.is_nullable && 
+		(Core.List.mem ppx_decorators "make" ~equal:String.equal) then
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;" [@default None]";";"]
+	   else 
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done =
@@ -315,8 +322,16 @@ module Model = struct
       | h :: t ->
 	 let string_of_data_type =
 	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
-	 let tbody_new = Core.String.concat
-			   [tbody;"\n    ";h.col_name;" : ";string_of_data_type;";"] in	 
+	 let tbody_new =
+	   (*add ppx directives on a per field basis in ml file HERE*)
+	   (*make the use of make easier with default None for all optional fields*)
+	   if h.is_nullable && 
+		(Core.List.mem ppx_decorators "make" ~equal:String.equal) then
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;" [@default None]";";"]
+	   else 
+	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+				 string_of_data_type;";"] in
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done = String.concat [start_module;start_type_t;tbody;"\n";end_type_t] in
