@@ -1,9 +1,9 @@
-(*===TODO===make this work with Core...use Core.Int64, etc*)
 module Date_time_extended = Date_time_extended.Date_time_extended
 module Date_extended = Date_extended.Date_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
-module Uint24_extended = Uint24_extended.Uint24_extended
+(*Need to switch to use of stdint over uint library to support 24 bit type
+module Uint24_extended = Uint24_extended.Uint24_extended*)
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Mysql = Mysql
@@ -126,7 +126,7 @@ module Utilities = struct
   let parse_int64_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Int64_extended.of_string s
+      Core.Int64.of_string s
     with err ->
 	 let () = print_n_flush "\nutilities::parse_int64_field_exn() failed" in
 	 raise err;;
@@ -134,7 +134,7 @@ module Utilities = struct
   let parse_int32_field_exn ~fieldname ~results ~arrayofstring =
     try
       let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-      Int32_extended.of_string s
+      Core.Int32.of_string s
     with err ->
       let () = print_n_flush "\nutilities::parse_int32_field_exn() failed" in
       raise err;;
@@ -148,13 +148,13 @@ module Utilities = struct
   let parse_optional_int64_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Int64.of_string s in Some i
+    | Some s -> let i = Core.Int64.of_string s in Some i
     | None -> None;;
 
   let parse_optional_int32_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Int32.of_string s in Some i
+    | Some s -> let i = Core.Int32.of_string s in Some i
     | None -> None;;
     
   let parse_uint8_field_exn ~fieldname ~results ~arrayofstring =
@@ -176,7 +176,7 @@ module Utilities = struct
     match s_opt with
     | Some s -> let i = Uint16_extended.of_string s in Some i
     | None -> None;;
-
+(*
   let parse_uint24_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
     Uint24_extended.of_string s;;
@@ -186,7 +186,7 @@ module Utilities = struct
     match s_opt with
     | Some s -> let i = Uint24_extended.of_string s in Some i
     | None -> None;;
-
+ *)
   let parse_uint32_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in 
     Uint32_extended.of_string s;;

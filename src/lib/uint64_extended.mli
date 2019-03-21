@@ -1,4 +1,5 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to.*)
+module Uint64 = Uint64
 module Uint64_extended :
 sig
   type t = Uint64.t
@@ -36,7 +37,7 @@ sig
   val printer_bin : Format.formatter -> uint64 -> unit
   val printer_oct : Format.formatter -> uint64 -> unit
   val printer_hex : Format.formatter -> uint64 -> unit
-						    
+					    
   val sexp_of_t : t -> Sexplib.Sexp.t
   val t_of_sexp : Sexplib.Sexp.t -> t
   val sexp_of_uint64 : Uint64.t -> Sexplib.Sexp.t

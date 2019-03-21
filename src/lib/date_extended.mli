@@ -1,5 +1,5 @@
 module Date_extended : sig
-  type t = Unix.tm
+  type t = Core.Date.t
   
   val show : t -> Ppx_deriving_runtime.string
   val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit

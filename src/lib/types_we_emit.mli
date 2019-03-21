@@ -5,7 +5,7 @@ module Types_we_emit : sig
     | CoreInt32
     | Uint8_extended_t
     | Uint16_extended_t
-    | Uint24_extended_t
+    (*| Uint24_extended_t ===TODO=== when switch to stdint *)
     | Uint32_extended_t
     | Uint64_extended_t
     | Float

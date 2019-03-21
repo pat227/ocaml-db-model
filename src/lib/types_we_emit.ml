@@ -1,6 +1,8 @@
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
-module Uint24_extended = Uint24_extended.Uint24_extended
+(* In order to provide the uint24 bit type, need to stop using uint and use stdint library instead. 
+   Save it for later.			   
+module Uint24_extended = Uint24_extended.Uint24_extended*)
 module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint8_extended = Uint8_extended.Uint8_extended
 (*Upon further reflection--use specific int types, as specific as possible, such as 
@@ -16,10 +18,10 @@ module Types_we_emit = struct
     | Bignum
     | CoreInt64
     | CoreInt32
-    (*| Int8 ===TODO===support this type *)
+    (*| Int8 ===TODO===support this type when switch to stdint *)
     | Uint8_extended_t
     | Uint16_extended_t
-    | Uint24_extended_t
+    (*| Uint24_extended_t    ===todo=== when switch to stdint *)
     | Uint32_extended_t
     | Uint64_extended_t
     | Float
