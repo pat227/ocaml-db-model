@@ -116,4 +116,51 @@ module Types_we_emit = struct
     | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Time -> String.concat ["Utilities.parse_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Time -> String.concat ["Utilities.parse_optional_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+
+  (**
+   is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
+   t - the type of the field
+   *)
+  let converter_to_string_of_type ~is_optional ~t ~fieldname =
+    let open Core in 
+    match is_optional, t with
+      false, String ->
+      String.concat ["(conv:(fun x -> \"'\" ^ (Mysql.real_escape conn x) ^ \"'\"))"]
+    | true, String ->
+       String.concat ["(conv:(fun x -> Utilities.serialize_optional_field ~field:x ~conn))"]
+    | false, Bool ->
+       String.concat ["(conv:(fun x -> if x then \"TRUE\" else \"FALSE\"))"]
+    | true, Bool ->
+       String.concat ["(conv:(fun x -> Utilities.serialize_optional_bool_field ~field:x ~conn))"]
+    (*| false, Int -> "Utilities.parse_int_field_exn ~fieldname ~results ~arrayofstring"
+    | true, Int -> "Utilities.parse_optional_int_field_exn ~fieldname ~results ~arrayofstring"*)
+    | false, CoreInt64 ->
+       String.concat ["(conv:(fun x -> Core.Int64.to_string x))"]
+    | true, CoreInt64 ->
+       String.concat ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Core.Int64.to_string i)))"]
+    | false, CoreInt32 ->
+       String.concat ["(conv:(fun x -> Core.Int32.to_string x))"]
+    | true, CoreInt32 ->
+       String.concat ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Core.Int32.to_string i)))"]
+    (*| false, Int64 -> 
+    | true, Int32 ->
+    | false, Int32 -> 
+    | true, Int64 ->*) 
+    | false, Uint8_extended_t -> ["(conv:(fun x -> Uint8_extended.to_string x))"]
+    | true, Uint8_extended_t -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Uint8_extended.to_string i)))"]
+    | false, Uint16_extended_t -> ["(conv:(fun x -> Uint16_extended.to_string x))"]
+    | true, Uint16_extended_t -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Uint16_extended.to_string i)))"]
+    | false, Uint32_extended_t -> ["(conv:(fun x -> Uint32_extended.to_string x))"]
+    | true, Uint32_extended_t -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Uint32_extended.to_string i)))"]
+    | false, Uint64_extended_t -> ["(conv:(fun x -> Uint64_extended.to_string x))"]
+    | true, Uint64_extended_t -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Uint64_extended.to_string i)))"]
+    (*===TODO==extend bignum and change this to use new module*)
+    | false, Bignum -> ["(conv:(fun x -> Bignum.to_string_hum x))"]
+    | true, Bignum -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Bignum.to_string_hum i)))"]
+    | false, Float -> ["(conv:(fun x -> Float.to_string_round_trippable x))"]
+    | true, Float -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some i -> (Float.to_string_round_trippable i)))"]
+    | false, Date -> ["(conv:(fun x -> Date_extended.to_string x))"]
+    | true, Date -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some d -> (Date_extended.to_string d)))"]
+    | false, Time -> ["(conv:(fun x -> Date_time_extended.to_string x))"]
+    | true, Time -> ["(conv:(fun x -> match x with None -> \"NULL\" | Some dt -> (Date_time_extended.to_string dt)))"]
 end 

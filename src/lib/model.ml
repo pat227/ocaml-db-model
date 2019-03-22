@@ -229,7 +229,41 @@ module Model = struct
     String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
 			     recursive_call;"          with\n          | err ->";
 			     "             let () = Utilities.print_n_flush (String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping a record...\"]) in \n             helper accum results (fetch results)\n      ) in";suffix];;
-      
+
+  (**Construct an otherwise tedious function that creates SQL needed to save 
+     records of type t to a db.*)
+  let construct_sql_serialize_function ~table_name ~map ~host
+				       ~user ~password ~database =
+    let open Core in 
+    let preamble =
+      String.concat ["  let generateSQLvalues_for_insert t conn =\n";
+		     "    let open Core in \n";
+		     "    let serialize t =\n";
+		     "    let conv to_s = fun acc f ->\n";
+		     "      (sprintf \"%s\" (to_s (Field.get f t))) :: acc in\n";
+		     "      let fs = Fields.fold\n";
+		     "      ~init:[] (*conversion functions must single quote where needed*)"] in
+    let suffix =
+      String.concat 
+	["    let reversed = List.rev fs in\n";
+	 "    let onerecord = String.concat [\"(\";(String.concat reversed ~sep:\",\");\")\"]\n";
+	 "     onerecord in\n";
+	 "serialize t;;"] in
+    let rec for_each_field ~flist ~accum =
+      match flist with
+      | [] -> String.concat ~sep:"\n" accum
+      | h :: t ->
+	 let serialize_function_call =
+	   Types_we_emit.converter_to_string_of_type
+	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
+	 let output = String.concat ~sep:"\n"
+				    ["                ~";h.col_name;":";
+				     serialize_function_call;" in "] in
+	 for_each_field ~flist:t ~accum:(output::accum) in
+    let fields_list = Map.find_exn map table_name in
+    let fields_lines = for_each_field fields_list [] in
+    String.concat ~sep:"\n" [preamble;fields_lines;suffix];;
+
   let construct_body ~table_name ~map ~ppx_decorators
 		     ~host ~user ~password ~database =
     let open Core in 
@@ -297,9 +331,32 @@ module Model = struct
     let sql_query_function =
       "  let get_sql_query () = \n    let open Core in\n    let fs = Fields.names in \n    let fs_csv = String.concat ~sep:\",\" fs in \n    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n" in
     let query_function = construct_sql_query_function ~table_name ~map ~host
-						      ~user ~password ~database in 
+						      ~user ~password ~database in
+    (*Saving records to SQL would also be useful*)
+    let toSQLfunction =
+      construct_sql_serialize_function ~table_name ~map ~host
+				       ~user ~password ~database in
+    let insert_prefix =
+      String.concat
+	["  let get_sql_insert_prefix () =\n";
+	 "    let fs = Fields.names in\n";
+	 "    let csv_fields = Core.String.concat fs ~sep:\",\"\n";
+	 "    Core.String.concat [\"INSERT INTO \";tablename;\" (\";\n";
+	 "                        csv_fields;\") VALUES \"];;\n";
+	] in
+    let generate_values_of_list =
+      String.concat
+	["  let generate_values_for_sql_of_list ~records =\n";
+	 "    let rec helper l acc = \n";
+	 "      match l with\n";
+	 "      | [] -> Core.String.concat ~sep:\",\" acc\n";
+	 "      | h :: t -> \n";
+	 "         let one_record_values = generateSQLvalues_for_insert h in\n";
+	 "         helper t (one_record_values::acc) in\n";
+	 "     helper records [];;\n"
+	] in
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
-			     query_function;"\nend"];;
+			     query_function;insert_prefix;toSQLfunction;"\nend"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators =
     let open Core in 
@@ -347,6 +404,8 @@ module Model = struct
 	["  val get_tablename : unit -> string";
 	 "  val get_sql_query : unit -> string";
 	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
+	 "  val generateSQLvalue_for_insert : t -> Mysql.dbd -> string";
+	 "  val generate_values_for_sql_of_list : records:t list -> Core.Std.String.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
