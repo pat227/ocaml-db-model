@@ -5,6 +5,9 @@ module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
+module Bignum_extended = Bignum_extended.Bignum_extended
+module Date_extended = Date_extended.Date_extended
+module Date_time_extended = Date_time_extended.Date_time_extended
 module Mysql = Mysql
 open Core
 module Utilities = struct
@@ -196,12 +199,12 @@ module Utilities = struct
 
   let parse_bignum_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Bignum.of_string s;;
+    Bignum_extended.of_string s;;
 
   let parse_optional_bignum_field ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let i = Bignum.of_string s in Some i
+    | Some s -> let i = Bignum_extended.of_string s in Some i
     | None -> None;;
     
   (*-----booleans------*)
@@ -235,11 +238,11 @@ module Utilities = struct
     | Some s -> let dt = Core.Date.of_string s in Some dt
     | None -> None;;
 
-  let parse_time_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
     Core.Time.of_string s;;
 
-  let parse_optional_time_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_optional_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
     | Some s -> let dt = Core.Time.of_string s in Some dt

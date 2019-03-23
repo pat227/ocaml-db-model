@@ -6,6 +6,7 @@ module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint24_extended = Uint24_extended.Uint24_extended*)
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
+module Bignum_extended = Bignum_extended.Bignum_extended
 module Mysql = Mysql
 module Utilities = struct
   let print_n_flush s =
@@ -206,6 +207,17 @@ module Utilities = struct
     match s_opt with
     | Some s -> let i = Uint64_extended.of_string s in Some i
     | None -> None;;
+
+    
+  let parse_bignum_field_exn ~fieldname ~results ~arrayofstring =
+    let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
+    Bignum_extended.of_string s;;
+
+  let parse_optional_bignum_field_exn ~fieldname ~results ~arrayofstring =
+    let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
+    match s_opt with
+    | Some s -> let i = Bignum_extended.of_string s in Some i
+    | None -> None;;
     
   (*-----booleans------*)
   let parse_bool_field_exn ~fieldname ~results ~arrayofstring = 
@@ -240,12 +252,12 @@ module Utilities = struct
 
   let parse_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Date_time_extended.of_string_exn s;;
+    Date_time_extended.of_string s;;
 
   let parse_optional_datetime_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Date_time_extended.of_string_exn s in Some dt
+    | Some s -> let dt = Date_time_extended.of_string s in Some dt
     | None -> None;;
 
 end

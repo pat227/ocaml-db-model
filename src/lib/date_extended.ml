@@ -36,4 +36,23 @@ module Date_extended = struct
   (*Needed for eq and ord*)
   let equal = equal_date_extended
   let compare = compare_date_extended
+
+  let to_xml v =
+    [Csvfields.Xml.parse_string
+       (Core.String.concat ["<date>";(to_string v);"</date>"])]
+
+  let of_xml xml =
+    let sopt = Csvfields.Xml.contents xml in
+    match sopt with
+    | None -> raise (Failure "date_extended::of_xml() passed None as input")
+    | Some s -> of_string_exn s
+
+  let xsd_format =
+    let open Csvfields.Xml.Restriction.Format in
+    `string
+  let xsd_restrictions = []
+(*[(Xml_light.Xml.parse_string "<xs:minLength value=\"8\"")]*)
+(*THIS function is not exposed. Perhaps we should expose it?
+[(Csvfields.Xml.Restriction.restriction "minLength" 8)]*)
+  let xsd = []																   
 end

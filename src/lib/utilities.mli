@@ -98,10 +98,10 @@ module Utilities : sig
   val parse_optional_date_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Date.t option
-  val parse_time_field_exn :
+  val parse_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Time.t
-  val parse_optional_time_field_exn :
+  val parse_optional_datetime_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Core.Time.t option
 end 

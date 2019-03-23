@@ -49,4 +49,10 @@ sig
   val compare_uint32 : Uint32.t -> Uint32.t -> int
   val equal : t -> t -> bool
   val compare : t -> t -> int
+
+  val to_yojson : t -> Yojson.Safe.json
+  val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+  val to_xml : t -> Csvfields.Xml.xml list
+  val of_xml : Csvfields.Xml.xml -> t
+  val xsd : Csvfields.Xml.xml list
 end 

@@ -5,6 +5,7 @@ module Uint16_extended = Uint16_extended.Uint16_extended
 (*module Uint24_extended = Uint24_extended.Uint24_extended*)
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
+module Bignum_extended = Bignum_extended.Bignum_extended
 module Utilities : sig
   val closecon : Mysql.dbd ->  unit
   val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
@@ -84,6 +85,12 @@ module Utilities : sig
   val parse_optional_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint64_extended.t option
+  val parse_bignum_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Bignum_extended.t
+  val parse_optional_bignum_field_exn :
+    fieldname:string -> results:Mysql.result ->
+    arrayofstring:string option array -> Bignum_extended.t option
   (*---bool---*)					   
   val parse_bool_field_exn :
     fieldname:string -> results:Mysql.result ->
