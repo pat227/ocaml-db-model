@@ -1,6 +1,6 @@
 module Date_extended : sig
-  type t = Core.Date.t
-  
+  (*type t = Core.Date.t*)
+  include (module type of Core.Date)  
   val show : t -> Ppx_deriving_runtime.string
   val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
   val to_string : t -> string

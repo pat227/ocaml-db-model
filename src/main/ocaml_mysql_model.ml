@@ -3,7 +3,7 @@ module Model = Ocaml_db_model.Model
 module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
-  let execute regexp_opt table_list_opt ppx_list_opt host user password database () =
+  let execute regexp_opt table_list_opt ppx_list_opt fields2ignore host user password database () =
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
@@ -20,9 +20,9 @@ module Command = struct
 	     | None -> ["fields";"eq";"make";"ord";"sexp";"show";"yojson";"xml"]
 	     | Some ppx_list ->
 		(*===TODO===check the list for sanity? Validitiy too: that each is supported?*)
-		ppx_list in 
-	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~host ~user ~password ~database in
-	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators in
+		ppx_list in
+	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~fields2ignore ~host ~user ~password ~database in
+	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~fields2ignore in
 	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
 	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
            let title_cased_h = String.capitalize_ascii h in
@@ -52,7 +52,8 @@ module Command = struct
     let database = ref "" in
     let table_regexp = ref "" in
     let table_list = ref "" in
-    let ppx_list = ref "" in 
+    let ppx_list = ref "" in
+    let fields2ignore = ref "" in 
     let options = [("-host",Arg.Set_string host,"Required IP of db host");
 		   ("-user",Arg.Set_string user,"Required DB username");
 		   ("-password",Arg.Set_string password,"Required DB user password");
@@ -65,9 +66,15 @@ module Command = struct
 		    "Optional explicit list of tables; this option is mutually \
 		     exclusive of using a regexp, and without either option all \
 		     tables are selected.");
-		     ("-ppx-decorators", Arg.Set_string ppx_list,
+		   ("-ppx-decorators", Arg.Set_string ppx_list,
 		    "Optional list of ppx extensions to append to each type definition \
-		     per module; use only commas or only semicolons.")
+		     per module; use only commas or only semicolons.");
+		     (*Added this arg b/c foresee need to exclude non-optional (not nullable) 
+                       with default timestamp fields that might be present in tables that 
+                       might not be present or relevant in input data, etc.*)
+		   ("-fields2ignore", Arg.Set_string fields2ignore,
+		    "Optional list field names to ignore (ie, not include in the \
+		     generated modules) across all tables; use only commas or semicolons.")
 		  ] in 
     let () = Arg.parse options (fun _x -> ()) usage_msg in
     let regexp_opt =
@@ -89,7 +96,18 @@ module Command = struct
 	 else if (Core.String.contains !ppx_list ';') then
 	   Some (Core.String.split !ppx_list ~on:';')
 	 else 
-	   Some [!ppx_list] in 
-    execute regexp_opt table_list_opt ppx_list_opt !host !user !password !database ()
+	   Some [!ppx_list] in
+    let fields2ignore_opt =
+      match String.length (!fields2ignore) with
+      | 0   (*unaware at present of any single letter ppx extensions, so a list of 
+              one 2 letter extension is minimum we can expect.*)
+      | 1 -> None 
+      | _ -> (*this could be have more robust checking for sanity*)
+	 if (Core.String.contains !fields2ignore ',') then 
+	   Some (Core.String.split !fields2ignore ~on:',')
+	 else if (Core.String.contains !fields2ignore ';') then
+	   Some (Core.String.split !fields2ignore ~on:';')
+	 else 
+	   Some [!fields2ignore] in
+    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt !host !user !password !database ()
 end
-      

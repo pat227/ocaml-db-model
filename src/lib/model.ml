@@ -294,7 +294,7 @@ module Model = struct
 				  "module Bignum_extended = Bignum_extended.Bignum_extended";
 				  "open Sexplib.Std\n"];;
 
-  let construct_body ~table_name ~map ~ppx_decorators
+  let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore
 		     ~host ~user ~password ~database =
     let open Core in 
     let module_first_char = String.get table_name 0 in
@@ -312,16 +312,29 @@ module Model = struct
     let other_modules = list_other_modules () in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
+    let fields_to_omit =
+      match fields2ignore with
+      | None -> []
+      | Some l -> l in 
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
-    let tfields_list = List.rev tfields_list_reversed in 
+    (*filter the list of fields against any that user indicated should be excluded*)
+    let tfields_list =
+      let tfields_list_temp = List.rev tfields_list_reversed in
+      List.filter tfields_list_temp
+		  ~f:(fun x ->
+		      let matches =
+			List.count fields_to_omit
+				   ~f:(fun colname2omit -> String.equal x.col_name colname2omit) in 
+		      matches = 0 
+		     ) in 
     let () = Utilities.print_n_flush
 	       (String.concat ["\nList of fields found of length:";
 			       (Int.to_string (List.length tfields_list))]) in 
     let rec helper l tbody =
       match l with
       | [] -> tbody
-      | h :: t ->
+      | h :: t ->	 
 	 let string_of_data_type =
 	   Types_we_emit.to_string h.data_type h.is_nullable in 
 	 let tbody_new =
@@ -385,7 +398,7 @@ module Model = struct
 			     query_function;"\n";insert_prefix;toSQLfunction;
 			     generate_values_of_list;"end"];;
 
-  let construct_mli ~table_name ~map ~ppx_decorators =
+  let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore =
     let open Core in 
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
@@ -395,9 +408,22 @@ module Model = struct
     let start_module = String.concat ["module ";(Bytes.to_string module_name);" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in
+    let fields_to_omit =
+      match fields2ignore with
+      | None -> []
+      | Some l -> l in 
     (*Supply only keys that exist else find_exn will fail.*)
     let tfields_list_reversed = String.Map.find_exn map table_name in
-    let tfields_list = List.rev tfields_list_reversed in 
+    (*filter the list of fields against any that user indicated should be excluded*)
+    let tfields_list =
+      let tfields_list_temp = List.rev tfields_list_reversed in
+      List.filter tfields_list_temp
+		  ~f:(fun x ->
+		      let matches =
+			List.count fields_to_omit
+				   ~f:(fun colname2omit -> String.equal x.col_name colname2omit) in 
+		      matches = 0 
+		     ) in 
     let () = Utilities.print_n_flush
 	       (String.concat ["\nList of fields found of length:";
 			       (Int.to_string (List.length tfields_list))]) in 

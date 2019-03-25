@@ -19,11 +19,12 @@ module Model : sig
     ?conn:Mysql.dbd ->
     table_name:Core.String.Map.Key.t ->
     (t list Core.String.Map.t, string) Core.Result.t 
-  val construct_body : table_name:string -> map:t list Core.String.Map.t ->
-		       ppx_decorators:string list -> host:string -> user:string ->
-		       password:string -> database:string -> string
+  val construct_body : table_name:string -> map:t list Core.String.Map.t -> 
+		       ppx_decorators:string list -> fields2ignore: string list option ->
+		       host:string -> user:string -> password:string ->
+		       database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
-		      ppx_decorators:string list -> string
+		      ppx_decorators:string list -> fields2ignore: string list option -> string
   val write_appending_module : outputdir:string -> fname:string -> body:string -> unit
   val write_module : outputdir:string -> fname:string -> body:Core.Bytes.t -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
