@@ -192,7 +192,7 @@ module Model = struct
      accumulator after we have exhausted all the records returned by the query. 
      Cannot use long line continuation backslashes here; screws up the formatting 
      in the output.*)
-  let construct_sql_query_function ~table_name ~map ~host
+  let construct_sql_query_function ~table_name ~fields_list ~host
 				   ~user ~password ~database =
     let open Core in 
     let preamble =
@@ -238,7 +238,6 @@ module Model = struct
       | h :: t ->
 	 let onef = String.concat ["~";h.col_name] in
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
-    let fields_list = Map.find_exn map table_name in
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
     let parser_lines = for_each_field fields_list [] in
@@ -250,11 +249,11 @@ module Model = struct
 
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function ~table_name ~map ~host
+  let construct_sql_serialize_function ~table_name ~fields_list ~host
 				       ~user ~password ~database =
     let open Core in 
     let preamble =
-      String.concat ["  let generateSQLvalues_for_insert t conn =\n";
+      String.concat ["  let generateSQLvalue_for_insert t conn =\n";
 		     "    let open Core in \n";
 		     "    let serialize t =\n";
 		     "      let conv to_s = fun acc f ->\n";
@@ -277,7 +276,6 @@ module Model = struct
 	 let output = String.concat ["                 ~";h.col_name;":";
 				     serialize_function_call] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
-    let fields_list = Map.find_exn map table_name in
     let fields_lines = for_each_field fields_list [] in
     String.concat ~sep:"\n" [preamble;fields_lines;"      in";suffix];;
 
@@ -301,13 +299,13 @@ module Model = struct
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
     let () = Bytes.set module_name 0 uppercased_first_char in
-    let prefix_notice =
+    let _prefix_notice = (*do not yet include this*)
       "(*Auto-generated module; any edits would be overwritten and lost at build time \n \
        without revision control or without disabling the generation of this code at \n \
        build time. It might be better to include this module in another in a different \n \
        directory. *)\n" in 
     let start_module =
-      String.concat [prefix_notice;"module ";(Bytes.to_string module_name);
+      String.concat ["module ";(Bytes.to_string module_name);
 		     " = struct\n"] in
     let other_modules = list_other_modules () in 
     let start_type_t = "  type t = {" in
@@ -369,11 +367,11 @@ module Model = struct
 		     "    let fs = Fields.names in \n";
 		     "    let fs_csv = String.concat ~sep:\",\" fs in \n";
 		     "    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
-    let query_function = construct_sql_query_function ~table_name ~map ~host
+    let query_function = construct_sql_query_function ~table_name ~fields_list:tfields_list ~host
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function ~table_name ~map ~host
+      construct_sql_serialize_function ~table_name ~fields_list:tfields_list ~host
 				       ~user ~password ~database in
     let insert_prefix =
       String.concat
@@ -390,7 +388,7 @@ module Model = struct
 	 "      match l with\n";
 	 "      | [] -> Core.String.concat ~sep:\",\" acc\n";
 	 "      | h :: t -> \n";
-	 "         let one_record_values = generateSQLvalues_for_insert h conn in\n";
+	 "         let one_record_values = generateSQLvalue_for_insert h conn in\n";
 	 "         helper t (one_record_values::acc) in\n";
 	 "    helper records [];;"
 	] in

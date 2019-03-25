@@ -114,7 +114,7 @@ module Types_we_emit = struct
     | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Time -> String.concat ["Utilities.parse_time_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Time -> String.concat ["Utilities.parse_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Time -> String.concat ["Utilities.parse_optional_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
 
   (**
