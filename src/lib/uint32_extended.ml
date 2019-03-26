@@ -71,7 +71,7 @@ module Uint32_extended = struct
 
   let to_xml v =
     [Csvfields.Xml.parse_string
-       (Core.String.concat ["<bignum>";(to_string v);"</bignum>"])]
+       (Core.String.concat [(to_string v)])]
 
   let of_xml xml =
     let sopt = Csvfields.Xml.contents xml in

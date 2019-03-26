@@ -55,7 +55,7 @@ module Uint64_extended = struct
 
   let to_yojson t =
     let s = Uint64.to_string t in
-    let s = Core.String.concat ["{bignum:";s;"}"] in 
+    let s = Core.String.concat ["{uint64:";s;"}"] in 
     Yojson.Safe.from_string s;;
     
   let of_yojson j =
@@ -71,12 +71,12 @@ module Uint64_extended = struct
 
   let to_xml v =
     [Csvfields.Xml.parse_string
-       (Core.String.concat ["<bignum>";(to_string v);"</bignum>"])]
+       (Core.String.concat [(to_string v)])]
 
   let of_xml xml =
     let sopt = Csvfields.Xml.contents xml in
     match sopt with
-    | None -> raise (Failure "bignum_extended::of_xml() passed None as input")
+    | None -> raise (Failure "uint64_extended::of_xml() passed None as input")
     | Some s -> of_string s
     
   let xsd_format =
