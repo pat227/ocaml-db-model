@@ -342,7 +342,6 @@ module Model = struct
        "    (* If we need to delete any records, do so here...you'll have to write this ";
        "    non-existent function on your own to create the DELETE statement.";
        "    let prefix = get_sql_insert_command_prefix in *) ";
-       "    let infix = get_sql_insert_statement () in ";
        "    (*let values = generate_values_for_sql_of_list ~records ~conn in*)";
        "    let values_list, last_index = consume_records records 0 [] conn in";
        "    let values= Core.String.concat ~sep:\",\" values_list in ";
