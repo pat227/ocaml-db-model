@@ -219,7 +219,7 @@ module Model = struct
 	 "       Error \"get_from_db() Error in sql\"\n";
 	 "    | StatusOK -> \n";
 	 "       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n";
-	 "       helper [] queryresult (fetch queryresult);;"] in    
+	 "       helper [] queryresult (fetch queryresult);;\n"] in    
     let rec for_each_field ~flist ~accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
@@ -291,7 +291,7 @@ module Model = struct
 				  "module Date_time_extended = Date_time_extended.Date_time_extended";
 				  "module Bignum_extended = Bignum_extended.Bignum_extended";
 				  "open Sexplib.Std\n"];;
-  let duplicate_clause_function =
+  let duplicate_clause_function () =
     Core.String.concat
       ~sep:"\n"
       ["  (*This has to be MANUALLY MODIFIED -- depends on semantics of the fields and which ";
@@ -305,7 +305,7 @@ module Model = struct
        "	 let onefield = Core.String.concat ~sep:\"\" [h;\"=VALUES(\";h;\")\"] in";
        "         create_set_values t (onefield::clause) in";
        "    let set_clause = create_set_values fields_less_key [] in ";
-       "    Core.String.concat [\" ON DUPLICATE KEY UPDATE \";set_clause];;"]
+       "    Core.String.concat [\" ON DUPLICATE KEY UPDATE \";set_clause;\";\"];;\n"]
     
   let construct_save_function ~table_name =
     Core.String.concat
@@ -324,8 +324,8 @@ module Model = struct
        "    let on_update_clause = get_sql_insert_on_duplicate_clause () in ";
        "    let infix_w_values = String.concat [infix;values;on_update_clause] in ";
        "    let thecommand =";
-       "      String.concat [\"START TRANSACTION;\"(*;prefix*);infix_w_values;";";\"COMMIT;\"] in";
-       "    let () = Utilities.print_n_flush (String.concat [\"\n\";thecommand]) in";
+       "      String.concat [\"START TRANSACTION;\"(*;prefix*);infix_w_values;\"COMMIT;\"] in";
+       "    let () = Utilities.print_n_flush (String.concat [\"\\n\";thecommand]) in";
        "    let _ = exec conn \"START TRANSACTION;\" in";
        "    (*let _ = exec conn prefix in*)";
        "    let _ = exec conn infix_w_values in";
@@ -339,31 +339,31 @@ module Model = struct
        "           (*Returns a zero even if successful and inserts > 0 records...not ";
        "             sure why...need to read documentation, or source code.*)";
        "	   let () = Utilities.print_n_flush";
-       "           (\"\nSuccessfully inserted new records into \" ^";
+       "           (\"\\nSuccessfully inserted new records into \" ^";
        "		 tablename) in Ok () ";
        "	| None ->";
        "           let () = Utilities.print_n_flush";
-       "	              (String.concat [\"\nNone affected; failed to insert new \ ";
+       "	              (String.concat [\"\\nNone affected; failed to insert new \\ ";
        "		  			 records in \";tablename]) in";
        "	   let () = Utilities.closecon conn in";
-       "           Core.Error (String.concat [\"\nNone affected; failed to insert \ ";
+       "           Core.Error (String.concat [\"\\nNone affected; failed to insert \\ ";
        "				           new records in \";tablename])";
        "       )"; 
        "    | StatusEmpty";
        "    | StatusError _ ->";
        "       let () = Utilities.print_n_flush";
-       "	          (String.concat [\"\nEmpty result; failed to insert \ ";
+       "	          (String.concat [\"\\nEmpty result; failed to insert \\ ";
        "				     new records into \";tablename]) in";
        "       let () = Utilities.closecon conn in";
        "       Core.Error";
-       "	 (String.concat [\"\nEmpty result; failed to insert new \ ";
+       "	 (String.concat [\"\\nEmpty result; failed to insert new \\ ";
        "	  	           records into \";tablename])";
        "  else";
        "    (*--nothing to do with empty list here--*)";
        "    let () = Utilities.print_n_flush";
-       "              \"\n"^table_name^"::save2db() \ ";
+       "              \"\\n"^table_name^"::save2db() \\ ";
        "	       Empty list of type t; nothing to do; not saving anything to db.\" in ";
-       "    Ok ();;"];;
+       "    Ok ();;\n"];;
 
   let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore
 		     ~host ~user ~password ~database =
@@ -463,11 +463,12 @@ module Model = struct
 	 "      | h :: t -> \n";
 	 "         let one_record_values = generateSQLvalue_for_insert h conn in\n";
 	 "         helper t (one_record_values::acc) in\n";
-	 "    helper records [];;"
+	 "    helper records [];;\n"
 	] in
+    let duplicate_clause = duplicate_clause_function () in
     let save_function = construct_save_function ~table_name in
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
-			     query_function;"\n";insert_prefix;toSQLfunction;
+			     query_function;insert_prefix;duplicate_clause;toSQLfunction;
 			     generate_values_of_list;save_function;"end"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore =
@@ -534,7 +535,7 @@ module Model = struct
 	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	 "  val generateSQLvalue_for_insert : t -> Mysql.dbd -> string";
 	 "  val generate_values_for_sql_of_list : records:t list -> conn:Mysql.dbd -> Core.String.t";
-	 "  val save2db : record: t list -> (unit, string) Core.Result.t";
+	 "  val save2db : records: t list -> (unit, string) Core.Result.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
