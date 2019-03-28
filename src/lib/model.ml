@@ -292,6 +292,63 @@ module Model = struct
 				  "module Bignum_extended = Bignum_extended.Bignum_extended";
 				  "open Sexplib.Std\n"];;
 
+  let construct_save_function ~table_name =
+    Core.String.concat
+      ~sep:"\n"
+      ["let save2db ~records =";
+       "  let open Core.Result in ";
+       "  let open Core in ";
+       "  let open Mysql in ";
+       "  if List.count ~f:(fun x -> true) records > 0 then ";
+       "    let conn = Utilities.getcon_w_defaults () in ";
+       "    (* If we need to delete any records, do so here...you'll have to write this ";
+       "    non-existent function on your own to create the DELETE statement.";
+       "    let prefix = get_sql_insert_command_prefix in *) ";
+       "    let infix = get_sql_insert_statement () in ";
+       "    let values = generate_values_for_sql_of_list ~records ~conn in";
+       "    let infix_w_values = String.concat [infix;values] in ";
+       "    let thecommand =";
+       "      String.concat [\"START TRANSACTION;\"(*;prefix*);infix_w_values;";";\"COMMIT;\"] in";
+       "    let () = Utilities.print_n_flush (String.concat [\"\n\";thecommand]) in";
+       "    let _ = exec conn \"START TRANSACTION;\" in";
+       "    (*let _ = exec conn prefix in*)";
+       "    let _ = exec conn infix_w_values in";
+       "    let _ = exec conn \"COMMIT;\" in";
+       "    let isSuccess = status conn in";
+       "    match isSuccess with";
+       "    | StatusOK ->";
+       "       let i64opt = (Int64.to_int (affected conn)) in";
+       "       (match i64opt with";
+       "        | Some affected ->";
+       "           (*Returns a zero even if successful and inserts > 0 records...not ";
+       "             sure why...need to read documentation, or source code.*)";
+       "	   let () = Utilities.print_n_flush";
+       "           (\"\nSuccessfully inserted new records into \" ^";
+       "		 tablename) in Ok () ";
+       "	| None ->";
+       "           let () = Utilities.print_n_flush";
+       "	              (String.concat [\"\nNone affected; failed to insert new \ ";
+       "		  			 records in \";tablename]) in";
+       "	   let () = Utilities.closecon conn in";
+       "           Core.Error (String.concat [\"\nNone affected; failed to insert \ ";
+       "				           new records in \";tablename])";
+       "       )"; 
+       "    | StatusEmpty";
+       "    | StatusError _ ->";
+       "       let () = Utilities.print_n_flush";
+       "	          (String.concat [\"\nEmpty result; failed to insert \ ";
+       "				     new records into \";tablename]) in";
+       "       let () = Utilities.closecon conn in";
+       "       Core.Error";
+       "	 (String.concat [\"\nEmpty result; failed to insert new \ ";
+       "	  	           records into \";tablename])";
+       "  else";
+       "    (*--nothing to do with empty list here--*)";
+       "    let () = Utilities.print_n_flush";
+       "              \"\n"^table_name^"::save2db() \ ";
+       "	       Empty list of type t; nothing to do; not saving anything to db.\" in ";
+       "    Ok ();;"];;
+
   let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore
 		     ~host ~user ~password ~database =
     let open Core in 
@@ -375,7 +432,7 @@ module Model = struct
 				       ~user ~password ~database in
     let insert_prefix =
       String.concat
-	["  let get_sql_insert_prefix () =\n";
+	["  let get_sql_insert_statement () =\n";
 	 "    let fs = Fields.names in\n";
 	 "    let csv_fields = Core.String.concat fs ~sep:\",\" in\n";
 	 "    Core.String.concat [\"INSERT INTO \";tablename;\" (\";\n";
@@ -392,9 +449,10 @@ module Model = struct
 	 "         helper t (one_record_values::acc) in\n";
 	 "    helper records [];;"
 	] in
+    let save_function = construct_save_function ~table_name in
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;"\n";insert_prefix;toSQLfunction;
-			     generate_values_of_list;"end"];;
+			     generate_values_of_list;save_function;"end"];;
 
   let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore =
     let open Core in 
@@ -455,10 +513,11 @@ module Model = struct
 	~sep:"\n"
 	["  val get_tablename : unit -> string";
 	 "  val get_sql_query : unit -> string";
-	 "  val get_sql_insert_prefix : unit -> string";
+	 "  val get_sql_insert_statement : unit -> string";
 	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	 "  val generateSQLvalue_for_insert : t -> Mysql.dbd -> string";
 	 "  val generate_values_for_sql_of_list : records:t list -> conn:Mysql.dbd -> Core.String.t";
+	 "  val save2db : record: t list -> (unit, string) Core.Result.t";
 	 "end"] in
     String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
 
