@@ -291,7 +291,22 @@ module Model = struct
 				  "module Date_time_extended = Date_time_extended.Date_time_extended";
 				  "module Bignum_extended = Bignum_extended.Bignum_extended";
 				  "open Sexplib.Std\n"];;
-
+  let duplicate_clause_function =
+    Core.String.concat
+      ~sep:"\n"
+      ["  (*This has to be MANUALLY MODIFIED -- depends on semantics of the fields and which ";
+       "    we want to update if any and how and which is a key, or which are keys.*)";
+       "  let get_sql_insert_on_duplicate_clause () =";
+       "    let fields_less_key = Core.List.filter (Fields.names) ~f:(fun x -> not (x = TBD)) in";
+       "    let rec create_set_values fieldslist clause = ";
+       "      match fieldslist with";
+       "      | [] -> Core.String.concat ~sep:"," clause";
+       "      | h :: t ->";
+       "	 let onefield = Core.String.concat ~sep:\"\" [h;\"=VALUES(\";h;\")\"] in";
+       "         create_set_values t (onefield::clause) in";
+       "    let set_clause = create_set_values fields_less_key [] in ";
+       "    Core.String.concat [\" ON DUPLICATE KEY UPDATE \";set_clause];;"]
+    
   let construct_save_function ~table_name =
     Core.String.concat
       ~sep:"\n"
@@ -306,7 +321,8 @@ module Model = struct
        "    let prefix = get_sql_insert_command_prefix in *) ";
        "    let infix = get_sql_insert_statement () in ";
        "    let values = generate_values_for_sql_of_list ~records ~conn in";
-       "    let infix_w_values = String.concat [infix;values] in ";
+       "    let on_update_clause = get_sql_insert_on_duplicate_clause () in ";
+       "    let infix_w_values = String.concat [infix;values;on_update_clause] in ";
        "    let thecommand =";
        "      String.concat [\"START TRANSACTION;\"(*;prefix*);infix_w_values;";";\"COMMIT;\"] in";
        "    let () = Utilities.print_n_flush (String.concat [\"\n\";thecommand]) in";
@@ -514,6 +530,7 @@ module Model = struct
 	["  val get_tablename : unit -> string";
 	 "  val get_sql_query : unit -> string";
 	 "  val get_sql_insert_statement : unit -> string";
+	 "  val get_sql_insert_on_duplicate_clause : unit -> string";
 	 "  val get_from_db : query:string -> (t list, string) Core.Result.t";
 	 "  val generateSQLvalue_for_insert : t -> Mysql.dbd -> string";
 	 "  val generate_values_for_sql_of_list : records:t list -> conn:Mysql.dbd -> Core.String.t";
