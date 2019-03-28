@@ -300,7 +300,7 @@ module Model = struct
        "    let fields_less_key = Core.List.filter (Fields.names) ~f:(fun x -> not (x = TBD)) in";
        "    let rec create_set_values fieldslist clause = ";
        "      match fieldslist with";
-       "      | [] -> Core.String.concat ~sep:"," clause";
+       "      | [] -> Core.String.concat ~sep:\",\" clause";
        "      | h :: t ->";
        "	 let onefield = Core.String.concat ~sep:\"\" [h;\"=VALUES(\";h;\")\"] in";
        "         create_set_values t (onefield::clause) in";
