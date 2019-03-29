@@ -323,6 +323,9 @@ module Model = struct
        "  let overhead = Core.String.length insert_statement_start in";
        "  let max_packet_size = ((1024 * 1024 * 16) - overhead) in";
        "  let count = List.length records in";
+       "  let () = Utilities.print_n_flush";
+       "             (String.concat [\"\n\";tablename;\"::save2db() invoked with \";";
+       "			     (string_of_int count);\" records remaining...\"]) in";
        "  (*helper function that incrementally builds the VALUES() portion of ";
        "    INSERT statement and returns the partial statement and the index into the list";
        "    of the last record included, which is where we should pickup again*)";
