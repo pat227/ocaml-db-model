@@ -159,8 +159,8 @@ module Types_we_emit = struct
     | true, Bignum -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Bignum_extended.to_string_hum i)))"
     | false, Float -> "(conv (fun x -> Float.to_string_round_trippable x))"
     | true, Float -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Float.to_string_round_trippable i)))"
-    | false, Date -> "(conv (fun x -> Date_extended.to_string x))"
-    | true, Date -> "(conv (fun x -> match x with None -> \"NULL\" | Some d -> (Date_extended.to_string d)))"
-    | false, Time -> "(conv (fun x -> Date_time_extended.to_string x))"
-    | true, Time -> "(conv (fun x -> match x with None -> \"NULL\" | Some dt -> (Date_time_extended.to_string dt)))"
-end 
+    | false, Date -> "(conv (fun x -> (\"'\" ^ (Date_extended.to_string x) ^ \"'\")))"
+    | true, Date -> "(conv (fun x -> Utilities.serialize_optional_date_field ~field:x))"
+    | false, Time -> "(conv (fun x -> (\"'\" ^ (Date_time_extended.to_string x) ^ \"'\")))"
+    | true, Time -> "(conv (fun x -> Utilities.serialize_optional_date_time_field ~field:x))"
+end

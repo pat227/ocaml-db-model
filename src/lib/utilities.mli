@@ -2,6 +2,8 @@ module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
+module Date_extended = Date_extended.Date_extended
+module Date_time_extended = Date_time_extended.Date_time_extended
 module Utilities : sig
   val print_n_flush : string -> unit 
   val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
@@ -15,7 +17,8 @@ module Utilities : sig
   val serialize_optional_bool_field : field:bool option -> string
   val serialize_optional_float_field_as_int : field:float option -> string
   val serialize_float_field_as_int : field:float -> string
-
+  val serialize_optional_date_field : field:Date_extended.t option -> string
+  val serialize_optional_date_time_field : field:Date_time_extended.t option -> string
   (*val parse_boolean_field_exn : field:string -> bool
   val parse_optional_boolean_field_exn : field:string option -> bool option
    *)							    

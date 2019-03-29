@@ -58,7 +58,14 @@ module Utilities = struct
   let serialize_float_field_as_int ~field =
     let open Core in 
     Int.to_string (Float.to_int (field *. 100.0));;
-
+  let serialize_optional_date_field ~field =
+    match field with
+    | Some d -> "'" ^ (Date_extended.to_string d) ^ "'"
+    | None -> "NULL";;
+  let serialize_optional_date_time_field ~field =
+    match field with
+    | Some dt -> "'" ^ (Date_time_extended.to_string dt) ^ "'"
+    | None -> "NULL";;
   (*===========parsers=============*)
   let parse_boolean_field_exn ~field =
     match field with

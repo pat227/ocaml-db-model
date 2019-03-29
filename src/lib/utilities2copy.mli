@@ -23,7 +23,8 @@ module Utilities : sig
   val serialize_optional_bool_field : field:bool option -> string
   val serialize_optional_float_field_as_int : field:float option -> string
   val serialize_float_field_as_int : field:float -> string
-
+  val serialize_optional_date_field : field:Date_extended.t option -> string
+  val serialize_optional_date_time_field : field:Date_time_extended.t option -> string
   (*val parse_boolean_field_exn : field:string -> bool
   val parse_optional_boolean_field_exn : field:string option -> bool option
    *)							    
