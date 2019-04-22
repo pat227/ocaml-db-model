@@ -474,7 +474,7 @@ module Model = struct
 		     "    let open Core in\n";
 		     "    let fs = Fields.names in \n";
 		     "    let fs_csv = String.concat ~sep:\",\" fs in \n";
-		     "    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
+		     "    String.concat [\"SELECT \";fs_csv;\" FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
     let query_function = construct_sql_query_function ~table_name ~fields_list:tfields_list ~host
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
