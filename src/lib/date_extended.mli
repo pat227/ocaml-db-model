@@ -13,15 +13,10 @@ module Date_extended : sig
   val sexp_of_t : t -> Sexplib.Sexp.t
   val t_of_sexp : Sexplib.Sexp.t -> t
 
-  (*MUST use these*)
+  (*
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
   val xsd : Csvfields.Xml.xml list
-
-(*  CANNOT USE THESE
-
->   val to_xml : t -> Xml_light.Xml.xml list
->   val of_xml : Xml_light.Xml.xml -> t
->   val xsd : Xml_light.Xml.xml list*)
+   *)
 
 end

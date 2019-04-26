@@ -38,8 +38,6 @@ module Command = struct
     with
     | Failure s -> Utilities.print_n_flush s
 
-  (*===TODO===switch to using the non-core command parsing. Core's command parsing after 
-    this went off the rails.*)
   let main_command =
     let usage_msg = "Connect to a mysql db, get schema, write modules and \
 		     (mostly primitive) types out of thin air with ppx extensions and a \
@@ -71,7 +69,8 @@ module Command = struct
 		     per module; use only commas or only semicolons.");
 		     (*Added this arg b/c foresee need to exclude non-optional (not nullable) 
                        with default timestamp fields that might be present in tables that 
-                       might not be present or relevant in input data, etc.*)
+                       might not be present or relevant in input data if we also use these 
+                       modules for parsing json, for example, etc.*)
 		   ("-fields2ignore", Arg.Set_string fields2ignore,
 		    "Optional list field names to ignore (ie, not include in the \
 		     generated modules) across all tables; use only commas or semicolons.")

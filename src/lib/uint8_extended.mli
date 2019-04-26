@@ -54,5 +54,5 @@ sig
   val equal_uint8 : Uint8.t -> Uint8.t -> bool
   val compare_uint8 : Uint8.t -> Uint8.t -> int
   val equal : t -> t -> bool
-  val compare : t -> t -> int
+
 end 

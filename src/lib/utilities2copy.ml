@@ -89,14 +89,14 @@ module Utilities = struct
     | "YES" -> true 
     | "NO" -> false 
     | _ -> raise (Failure "Utilities::parse_boolean_field unrecognized value")
-    
+(*    
   let parse_optional_boolean_field_exn ~field =
     match field with
     | None -> None
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
-
+    *)
   let is_digit c =
     let codepoint = Char.code c in 
     codepoint > 47 && codepoint < 58

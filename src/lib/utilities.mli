@@ -9,7 +9,6 @@ module Utilities : sig
   val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
   val getcon_defaults : unit -> Mysql.dbd
   val closecon : Mysql.dbd ->  unit
-  val print_n_flush : string -> unit
   val serialize_optional_field : field:string option -> conn:Mysql.dbd -> string
   val serialize_optional_field_with_default :
     field:string option -> conn:Mysql.dbd -> default:string -> string

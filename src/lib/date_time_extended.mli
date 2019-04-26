@@ -13,8 +13,8 @@ module Date_time_extended : sig
 			  
   val to_yojson : t -> Yojson.Safe.json
   val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
-  (*MUST use these*)
+(*
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
-  val xsd : Csvfields.Xml.xml list
+  val xsd : Csvfields.Xml.xml list*)
 end

@@ -44,13 +44,13 @@ module Date_time_extended = struct
       let value = String.sub value_half 0 rbracket_i in
       let t = of_string value in
       Ok t
-    with err -> Error "date_time_extended::of_yojson() failed.";;
+    with _err -> Error "date_time_extended::of_yojson() failed.";;
    
   let equal t1 t2 = not (is_earlier t1 ~than:t2) && not (is_earlier t2 ~than:t1)
   let compare t1 t2 = if is_earlier t1 ~than:t2 then 1
 		      else if is_earlier t2 ~than:t1 then -1
 		      else 0
-
+(*
   let to_xml v =
     [Csvfields.Xml.parse_string
        (Core.String.concat [(to_string v)])]
@@ -66,4 +66,5 @@ module Date_time_extended = struct
     `string
   let xsd_restrictions = []
   let xsd = []
+            *)
 end

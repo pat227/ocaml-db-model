@@ -1,7 +1,7 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to. 
   See below. Needed for ppx sexp extension.*)
 module Uint64 = Uint64
-open Sexplib.Std
+(*open Sexplib.Std*)
 open Sexplib
 module Uint64_extended = struct
   include Uint64
@@ -67,8 +67,8 @@ module Uint64_extended = struct
       let value = String.sub value_half 0 rbracket_i in
       let i = Uint64.of_string value in
       Ok i   
-    with err -> Error "uint64_extended::of_yojson() failed.";;
-
+    with _err -> Error "uint64_extended::of_yojson() failed.";;
+(*
   let to_xml v =
     [Csvfields.Xml.parse_string
        (Core.String.concat [(to_string v)])]
@@ -84,5 +84,5 @@ module Uint64_extended = struct
     `string     
   let xsd_restrictions = []
   let xsd = []
-
+            *)
 end 

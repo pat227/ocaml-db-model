@@ -48,5 +48,4 @@ sig
   val equal_uint16 : Uint16.t -> Uint16.t -> bool
   val compare_uint16 : Uint16.t -> Uint16.t -> int
   val equal : t -> t -> bool
-  val compare : t -> t -> int
 end 

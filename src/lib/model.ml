@@ -61,7 +61,7 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     let newmap = String.Map.add_multi accum table_name new_field_record in 
+	     let newmap = String.Map.add_multi accum ~key:table_name ~data:new_field_record in 
 	     helper newmap results (fetch results)
 	    )
 	  with err ->
@@ -108,7 +108,7 @@ module Model = struct
 	 (try
 	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.count l ~f:(fun x -> true) in
+	     let len = Core.List.length l in
 	     if len > 1 then Some l else None
 	   with
 	   | err ->
@@ -141,7 +141,7 @@ module Model = struct
 		  match vals with
 		  | `Left v1 -> Some v1
 		  | `Right v2 -> Some v2
-		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
+		  | `Both (_,_) -> raise (Failure "Duplicate table name!?!") 
 		 ) in  
 	     combinedmaps
 	  else  
@@ -166,7 +166,7 @@ module Model = struct
 		 with
 		 | _ -> helper t map
 	       )
-	    | Some r, Some l -> (*--presume regexp over list---*)
+	    | Some r, Some _l -> (*--presume regexp over list---*)
 	       (try
 		   let _intarray =
 		     Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
@@ -240,7 +240,7 @@ module Model = struct
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
-    let parser_lines = for_each_field fields_list [] in
+    let parser_lines = for_each_field ~flist:fields_list ~accum:[] in
     String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
 			     recursive_call;"          with\n          | err ->";
 			     "             let () = Utilities.print_n_flush (String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping a record...\"]) in \n";
@@ -249,8 +249,7 @@ module Model = struct
 
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function ~table_name ~fields_list ~host
-				       ~user ~password ~database =
+  let construct_sql_serialize_function (*~table_name*) ~fields_list (*~host ~user ~password ~database*) =
     let open Core in 
     let preamble =
       String.concat ["  let generateSQLvalue_for_insert t conn =\n";
@@ -272,11 +271,11 @@ module Model = struct
       | h :: t ->
 	 let serialize_function_call =
 	   Types_we_emit.converter_to_string_of_type
-	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
+	     ~is_optional:h.is_nullable ~t:h.data_type (*~fieldname:h.col_name*) in
 	 let output = String.concat ["                 ~";h.col_name;":";
 				     serialize_function_call] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
-    let fields_lines = for_each_field fields_list [] in
+    let fields_lines = for_each_field ~flist:fields_list ~accum:[] in
     String.concat ~sep:"\n" [preamble;fields_lines;"      in";suffix];;
 
   let list_other_modules () =
@@ -442,7 +441,7 @@ module Model = struct
       | [] -> tbody
       | h :: t ->	 
 	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in 
+	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in 
 	 let tbody_new =
 	   (*add ppx directives on a per field basis in ml file HERE*)
 	   (*make the use of make easier with default None for all optional fields*)
@@ -461,7 +460,7 @@ module Model = struct
     let finished_type_t =
       match ppx_decorators with
       | [] -> String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     (*Insert a few functions and variables.*)
@@ -479,8 +478,8 @@ module Model = struct
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function ~table_name ~fields_list:tfields_list ~host
-				       ~user ~password ~database in
+      construct_sql_serialize_function (*~table_name*) ~fields_list:tfields_list (*~host
+				       ~user ~password ~database*) in
     let insert_prefix =
       String.concat
 	["  let get_sql_insert_statement () =\n";
@@ -557,7 +556,7 @@ module Model = struct
     let with_ppx_decorators = 
       match ppx_decorators with
       | [] -> String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
@@ -602,7 +601,7 @@ module Model = struct
     let () = Utilities.print_n_flush result in 
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
-    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
+    | Error _e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
 
   let write_appending_module ~outputdir ~fname ~body =
     let open Unix in
