@@ -69,7 +69,7 @@ module Uint32_extended = struct
 	let i = Uint32.of_string value in
 	Ok i   
       with err -> Error "uint32_extended::of_yojson() failed.";;
-
+(*  Only works with a hacked version of csvfields
     let to_xml v =
       [Csvfields.Xml.parse_string
 	 (Core.String.concat [(to_string v)])]
@@ -85,6 +85,7 @@ module Uint32_extended = struct
       `string     
     let xsd_restrictions = []
     let xsd = []
+ *)
   end 
 
   include T

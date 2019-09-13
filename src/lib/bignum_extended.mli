@@ -14,8 +14,8 @@ module Bignum_extended : sig
   (*val sexp_of_t : t -> Sexplib.Sexp.t
   val t_of_sexp : Sexplib.Sexp.t -> t*)
 
-  (*MUST use these if using xml ppx*)
+  (* Only usefule with a local hacked version of csvfields
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
-  val xsd : Csvfields.Xml.xml list
+  val xsd : Csvfields.Xml.xml list*)
 end

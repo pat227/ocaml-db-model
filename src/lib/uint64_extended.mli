@@ -53,9 +53,10 @@ sig
   (*the .json type gets changed to .t sometime after 4.06.0*)
   val to_yojson : t -> Yojson.Safe.json
   val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+(* Only works with a hacked version of csvfields
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
-  val xsd : Csvfields.Xml.xml list
+  val xsd : Csvfields.Xml.xml list *)
   module T2 : sig
     include Core.Comparable.S with type t := t
   end

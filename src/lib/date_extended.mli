@@ -15,15 +15,9 @@ module Date_extended : sig
 				      
   val to_string_iso8601_basic_with_dashes : t -> string
 				      
-  (*MUST use these*)
+  (*Only useful if we have a hacked version of csvfields
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
-  val xsd : Csvfields.Xml.xml list
-
-(*  CANNOT USE THESE
-
->   val to_xml : t -> Xml_light.Xml.xml list
->   val of_xml : Xml_light.Xml.xml -> t
->   val xsd : Xml_light.Xml.xml list*)
+  val xsd : Csvfields.Xml.xml list*)
 
 end

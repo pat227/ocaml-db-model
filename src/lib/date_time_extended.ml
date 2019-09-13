@@ -50,7 +50,7 @@ module Date_time_extended = struct
   let compare t1 t2 = if is_earlier t1 ~than:t2 then 1
 		      else if is_earlier t2 ~than:t1 then -1
 		      else 0
-
+(*Not useful unless have local hacked version of csvfields
   let to_xml v =
     [Csvfields.Xml.parse_string
        (Core.String.concat [(to_string v)])]
@@ -65,5 +65,5 @@ module Date_time_extended = struct
     let open Csvfields.Xml.Restriction.Format in
     `string
   let xsd_restrictions = []
-  let xsd = []
+  let xsd = [] *)
 end

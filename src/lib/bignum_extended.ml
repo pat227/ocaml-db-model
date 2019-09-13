@@ -25,6 +25,7 @@ module Bignum_extended = struct
       Ok bignum   
     with err -> Error "bignum_extended::of_yojson() failed.";;
 
+(* Only usefule with a local hacked version of csvfields
   let to_xml v =
     [Csvfields.Xml.parse_string
        (Core.String.concat [(to_string_hum v)])]
@@ -39,6 +40,5 @@ module Bignum_extended = struct
     let open Csvfields.Xml.Restriction.Format in
     `string     
   let xsd_restrictions = []
-  let xsd = []
-    
+  let xsd = [] *)    
 end 

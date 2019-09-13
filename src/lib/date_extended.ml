@@ -42,7 +42,7 @@ module Date_extended = struct
     Core.String.concat [(string_of_int (year t));"-";
 			(string_of_int (Core.Month.to_int (month t)));"-";
 			(string_of_int (day t))]
-
+(* Only useful if we have a hacked version of csvfields
   let to_xml v =
     [Csvfields.Xml.parse_string
        (Core.String.concat [(to_string v)])]
@@ -56,7 +56,7 @@ module Date_extended = struct
   let xsd_format =
     let open Csvfields.Xml.Restriction.Format in
     `string
-  let xsd_restrictions = []
+  let xsd_restrictions = [] *)
 (*[(Xml_light.Xml.parse_string "<xs:minLength value=\"8\"")]*)
 (*THIS function is not exposed. Perhaps we should expose it?
 [(Csvfields.Xml.Restriction.restriction "minLength" 8)]*)

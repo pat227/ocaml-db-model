@@ -69,7 +69,7 @@ module Uint16_extended = struct
     let compare_uint16 t1 t2 = Uint16.compare t1 t2
     let equal = equal_uint16
     let compare = compare_uint16
-
+(* Only works with a hacked version of csvfields
     let to_xml v =
       [Csvfields.Xml.parse_string
 	 (Core.String.concat [(to_string v)])]
@@ -84,7 +84,7 @@ module Uint16_extended = struct
       let open Csvfields.Xml.Restriction.Format in
       `string     
     let xsd_restrictions = []
-    let xsd = []
+    let xsd = [] *)
   end
 
   include T
