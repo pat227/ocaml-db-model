@@ -1,6 +1,3 @@
-(*Note:Any project that uses this one to generate modules will need to reference 
-this file. OR we need to copy this file into the projects src/lib directory, 
-which has the advantage of allowing user to tinker with it.*)
 module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
@@ -33,6 +30,12 @@ module Utilities = struct
   let print_n_flush s =
     Core.Out_channel.output_string oc s;
     Core.Out_channel.flush oc;;
+
+  let rec print_n_flush_alist ~sep l =
+    match l with
+    | [] -> ()
+    | h :: t -> let () = print_n_flush (h ^ sep) in
+		print_n_flush_alist ~sep t;;
 
   let serialize_optional_field ~field ~conn =
     match field with
@@ -73,16 +76,16 @@ module Utilities = struct
 			"\nutilities::parse_boolean_field_exn() 1 returning true" in true
     | "0" -> let () = print_n_flush 
 			"\nutilities::parse_boolean_field_exn() 0 returning false" in false*)
-    | "YES" -> let () = print_n_flush 
-			  "\nutilities::parse_boolean_field_exn() YES returning true" in true 
+    | "YES" -> (*let () = print_n_flush 
+			  "\nutilities::parse_boolean_field_exn() YES returning true" in *) true 
 (*    | "yes" -> let () = print_n_flush 
 			  "\nutilities::parse_boolean_field_exn() yes returning true" in true 
     | "true" -> let () = print_n_flush 
 			   "\nutilities::parse_boolean_field_exn() true returning true" in true 
     | "TRUE" -> let () = print_n_flush 
 			   "\nutilities::parse_boolean_field_exn() TRUE returning true" in true*)
-    | "NO" -> let () = print_n_flush 
-               "\nutilities::parse_boolean_field_exn() NO returning false" in false 
+    | "NO" -> (*let () = print_n_flush 
+			 "\nutilities::parse_boolean_field_exn() NO returning false" in *) false 
 (*    | "no" -> let () = print_n_flush 
                "\nutilities::parse_boolean_field_exn() no returning false" in false 
     | "false" -> let () = print_n_flush 
@@ -208,7 +211,7 @@ module Utilities = struct
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
     Bignum_extended.of_string s;;
 
-  let parse_optional_bignum_field ~fieldname ~results ~arrayofstring =
+  let parse_optional_bignum_field_exn ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
     | Some s -> let i = Bignum_extended.of_string s in Some i

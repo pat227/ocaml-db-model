@@ -10,6 +10,7 @@ module Utilities : sig
   val getcon_defaults : unit -> Mysql.dbd
   val closecon : Mysql.dbd ->  unit
   val print_n_flush : string -> unit
+  val print_n_flush_alist : sep:string -> string list -> unit
   val serialize_optional_field : field:string option -> conn:Mysql.dbd -> string
   val serialize_optional_field_with_default :
     field:string option -> conn:Mysql.dbd -> default:string -> string
@@ -74,7 +75,7 @@ module Utilities : sig
   val parse_optional_uint64_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Uint64_extended.t option
-  val parse_optional_bignum_field :
+  val parse_optional_bignum_field_exn :
     fieldname:string -> results:Mysql.result ->
     arrayofstring:string option array -> Bignum.t option
   val parse_bignum_field_exn :
