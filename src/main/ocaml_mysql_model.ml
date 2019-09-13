@@ -17,7 +17,7 @@ module Command = struct
 	   let ppx_decorators =
 	     match ppx_list_opt with
 	     (*default ppx extensions--not always are they all desired or useful or supported*)
-	     | None -> ["fields";"eq";"make";"ord";"sexp";"show";"yojson";"xml"]
+	     | None -> ["fields";"eq";"make";"ord";"sexp";"show";"yojson"]
 	     | Some ppx_list ->
 		(*===TODO===check the list for sanity? Validity too: that each is supported? 
                   Else user could specify non-existent or not yet installed ppx rewriters?*)
