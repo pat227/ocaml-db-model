@@ -113,7 +113,7 @@ module Model = struct
 	   with
 	   | err ->
 	      let () = Utilities.print_n_flush
-			 "\nFailed parsing table name list..." in
+			 "\nFailed parsing optional list..." in
 	      raise err
 	 )
       | None -> None
@@ -321,9 +321,10 @@ module Model = struct
     String.concat ~sep:"\n" [preamble;fields_lines;"      in";suffix];;
 
   let list_other_modules () =
-    (*==TODO==copy all these modules into local directory, or refer to this 
-        project's implementation of them.*)
-    Core.String.concat ~sep:"\n" ["module Utilities = Ocaml_db_model.Utilities";
+    (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
+      statement and customized over-ridden versions of the connections establishment functions that require db 
+      credentials, plus any additional functions a user may want.*)
+    Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 				  "module Uint16_extended = Ocaml_db_model.Uint16_extended";
@@ -450,12 +451,15 @@ module Model = struct
        "	         Empty list of type t; nothing to do; not saving anything to db.\" in ";
        "      Ok ();;\n"];;
 
-  let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore
+  let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable
 		     ~host ~user ~password ~database =
-    let open Core in 
+    let open Core in
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
+    let make_module_comparable =
+      (allcomparable || (Core.List.mem comparable_modules ~equal:Core.String.equal table_name)) in
+    let are_using_make_ppx = Core.List.mem ppx_decorators "make" ~equal:String.equal in
     let () = Bytes.set module_name 0 uppercased_first_char in
     let prefix_notice =
       "(*Auto-generated module; any edits would be overwritten and lost at build time \n \
@@ -464,10 +468,19 @@ module Model = struct
        directory. *)\n\n" in 
     let start_module =
       String.concat [prefix_notice;"module ";(Bytes.to_string module_name);
-		     " = struct\n"] in
-    let other_modules = list_other_modules () in 
-    let start_type_t = "  type t = {" in
-    let end_type_t = "  }" in
+		       " = struct\n"] in
+    let other_modules = list_other_modules () in
+    let indentation = "  " in 
+    let start_type_t =
+      if make_module_comparable then
+	Core.String.concat [indentation;"module T = struct\n";indentation;indentation;"type t = {"]
+      else 
+	Core.String.concat [indentation;"type t = {"] in
+    let end_type_t =
+      if make_module_comparable then
+	Core.String.concat [indentation;indentation;"}"]
+      else 
+	Core.String.concat [indentation;"}"] in
     let fields_to_omit =
       match fields2ignore with
       | None -> []
@@ -492,17 +505,48 @@ module Model = struct
       | [] -> tbody
       | h :: t ->	 
 	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in 
+	   Types_we_emit.to_string h.data_type h.is_nullable in
+	 let total_indent =
+	   if make_module_comparable then
+	     Core.String.concat [indentation;indentation;indentation]
+	   else Core.String.concat [indentation;indentation] in 
 	 let tbody_new =
 	   (*add ppx directives on a per field basis in ml file HERE*)
-	   (*make the use of make easier with default None for all optional fields*)
-	   if h.is_nullable && 
+	   (*make the use of ppx make easier with default None for all optional fields*)
+	   (*If Comparable, add [@compare fun x y -> 0] for all fields
+             that are NOT the table key.*)
+	   (match h.is_nullable, are_using_make_ppx, make_module_comparable, h.is_primary_key with 
+	    | true, true, false, _ ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;" [@default None]";";"]
+	    | true, true, true, false ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;" [@compare fun x y -> 0][@default None]";";"]
+	    | true, true, true, true ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;" [@default None]";";"]
+	    | true, false, true, false ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;" [@compare fun x y -> 0]";";"]
+	    | true, false, true, true 
+	    | true, false, false, _ 
+	    | false, _, false, _ ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;";"]
+	    | false, _, true, false ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;" [@compare fun x y -> 0]";";"]
+	    | false, _, true, true ->
+	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				   string_of_data_type;";"]
+	   ) in 
+	   (*if h.is_nullable &&
 		(Core.List.mem ppx_decorators "make" ~equal:String.equal) then
-	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
+	     Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
 				 string_of_data_type;" [@default None]";";"]
 	   else 
-	     Core.String.concat [tbody;"\n    ";h.col_name;" : ";
-				 string_of_data_type;";"] in
+	     Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
+				 string_of_data_type;";"] in*)
 	 helper t tbody_new in 
     let tbody = helper tfields_list "" in
     let almost_done =
@@ -510,10 +554,18 @@ module Model = struct
 			      tbody;"\n";end_type_t] in
     let finished_type_t =
       match ppx_decorators with
-      | [] -> String.concat [almost_done;"end"]
+      | [] ->
+	 if make_module_comparable then
+	   String.concat [almost_done;"end";"  include T";"  module T2 = Core.Comparable.Make(T)"]
+	 else
+	   String.concat [almost_done;"end"]
       | h :: t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
-	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
+	 if make_module_comparable then
+	   String.concat [almost_done;" [@@deriving ";ppx_extensions;"]";"\n  end\n";
+			  "\n  include T";"\n  module T2 = Core.Comparable.Make(T)\n"]
+	 else 
+	   String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     (*Insert a few functions and variables.*)
     let table_related_lines =
       String.concat ["  let tablename=\"";table_name;
@@ -555,9 +607,9 @@ module Model = struct
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;insert_prefix;duplicate_clause;toSQLfunction;
 			     generate_values_of_list;save_function;"end"];;
-
-  let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore =
-    let open Core in 
+    
+  let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable =
+    let open Core in
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
@@ -622,7 +674,11 @@ module Model = struct
 	 "  val generate_values_for_sql_of_list : records:t list -> conn:Mysql.dbd -> Core.String.t";
 	 "  val save2db : records: t list -> (unit, string) Core.Result.t";
 	 "end"] in
-    String.concat ~sep:"\n" [with_ppx_decorators;function_lines];;
+    if (allcomparable || (Core.List.mem comparable_modules ~equal:Core.String.equal table_name)) then 
+      String.concat ~sep:"\n" [with_ppx_decorators;"  module T2 : sig ";
+			       "    include Core.Comparable.S with type t := t";"  end\n";function_lines]
+    else
+      String.concat ~sep:"\n" [with_ppx_decorators;function_lines]
 
   (*Intention is for invocation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)

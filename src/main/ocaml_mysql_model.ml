@@ -3,7 +3,8 @@ module Model = Ocaml_db_model.Model
 module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
-  let execute regexp_opt table_list_opt ppx_list_opt fields2ignore host user password database destination () =
+  let execute regexp_opt table_list_opt ppx_list_opt fields2ignore comparable_modules
+	      allcomparable host user password database destination () =
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
@@ -22,8 +23,9 @@ module Command = struct
 		(*===TODO===check the list for sanity? Validity too: that each is supported? 
                   Else user could specify non-existent or not yet installed ppx rewriters?*)
 		ppx_list in
-	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~fields2ignore ~host ~user ~password ~database in
-	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~fields2ignore in
+	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~fields2ignore ~comparable_modules
+					   ~allcomparable ~host ~user ~password ~database in
+	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable in
 	   let () = Model.write_module ~outputdir:destination ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
 	   let () = Model.write_module ~outputdir:destination ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
            let title_cased_h = String.capitalize_ascii h in
@@ -51,7 +53,9 @@ module Command = struct
     let table_regexp = ref "" in
     let table_list = ref "" in
     let ppx_list = ref "" in
-    let fields2ignore = ref "" in 
+    let fields2ignore = ref "" in
+    let tables2makecomparable = ref "" in
+    let allcomparable = ref false in 
     let options = [("-host",Arg.Set_string host,"Required IP of db host");
 		   ("-user",Arg.Set_string user,"Required DB username");
 		   ("-password",Arg.Set_string password,"Required DB user password");
@@ -67,13 +71,16 @@ module Command = struct
 		     tables are selected.");
 		   ("-ppx-decorators", Arg.Set_string ppx_list,
 		    "Optional list of ppx extensions to append to each type definition \
-		     per module; use only commas or only semicolons.");
+		     per module; use only comma or semicolon delimiter.");
 		     (*Added this arg b/c foresee need to exclude non-optional (not nullable) 
                        with default timestamp fields that might be present in tables that 
                        might not be present or relevant in input data, etc.*)
-		   ("-fields2ignore", Arg.Set_string fields2ignore,
+		   ("-ignore-fields", Arg.Set_string fields2ignore,
 		    "Optional list field names to ignore (ie, not include in the \
-		     generated modules) across all tables; use only commas or semicolons.")
+		     generated modules) across all tables; use only comma or semicolon delimiter.");
+		   ("-comparable-tables", Arg.Set_string tables2makecomparable,
+		    "Optional list of modules that shall include the Core.Comparable interface.");
+		   ("-allcomparable", Arg.Bool (fun x -> allcomparable := x), "Set all modules to include Core.Comparable interface.");
 		  ] in 
     let () = Arg.parse options (fun _x -> ()) usage_msg in
     let regexp_opt =
@@ -108,5 +115,15 @@ module Command = struct
 	   Some (Core.String.split !fields2ignore ~on:';')
 	 else 
 	   Some [!fields2ignore] in
-    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt !host !user !password !database !destination ()
+    let comparable_modules =
+      match String.length (!tables2makecomparable) with
+      | 0 -> []
+      | _ -> 
+	 if (Core.String.contains !tables2makecomparable ',') then 
+	   (Core.String.split !tables2makecomparable ~on:',')
+	 else if (Core.String.contains !tables2makecomparable ';') then
+	   (Core.String.split !tables2makecomparable ~on:';')
+	 else 
+	   [!tables2makecomparable] in
+    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt comparable_modules !allcomparable !host !user !password !database !destination ()
 end

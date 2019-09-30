@@ -21,10 +21,12 @@ module Model : sig
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t -> 
 		       ppx_decorators:string list -> fields2ignore: string list option ->
+		       comparable_modules:string list -> allcomparable:bool ->
 		       host:string -> user:string -> password:string ->
 		       database:string -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
-		      ppx_decorators:string list -> fields2ignore: string list option -> string
+		      ppx_decorators:string list -> fields2ignore: string list option ->
+		      comparable_modules:string list -> allcomparable:bool -> string
   val write_appending_module : outputdir:string -> fname:string -> body:string -> unit
   val write_module : outputdir:string -> fname:string -> body:Core.Bytes.t -> unit
   (*For each key in the multi-map, construct the body of an Ocaml module
