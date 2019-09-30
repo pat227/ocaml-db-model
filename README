@@ -5,7 +5,8 @@ fast way to generate modules and correct types that match the tables and fields,
 thus sparing us from having to manually create each and assign correct types.
 Other libraries exist in other languages to accomplish similar goals, such as
 JOOQ for java, and ODB for C++. Some call this endeavor "object mapping", and
-ODB for C++ even performs "migration", which is not here supported. This library
+ODB for C++ even performs "migration" by which hand written code is used to create
+tables and fields in a database, which is not here supported (yet?). This library
 seeks only to create valid Ocaml modules to describe existing tables, not the
 other way around.
 
@@ -41,6 +42,14 @@ module Foo : sig
   } [@@deriving fields,show,sexp,eq,ord,yojson]
   ...
 end
+
+Command line arguments also control which modules, or all or none, should have type t
+defined as part of a sub-module T for inclusion by way of an "include T" statement in the
+ml file, and furthermore running sub-module T through Core.Comprable.Make(T).
+
+Boiler plate functions are also provided to run queries and return Sets of type t, wrapped
+in Core.Result.t, as well as function for creating some of the SQL needed to insert or update
+records in a table.
 
 The modules created by this project as output should be correct and ready to serve
 as inputs to the Ocaml compiler. If used with many tables or tables with many
@@ -108,9 +117,6 @@ fields, show, sexp, eq, ord, and yojson.
 
 MYSQL:
 
-NOTE: M is the max display width for int types and unrelated to the range of values a type can contain.
-For floating and fixed point types M is the max-number of digits that can be stored.
-
 We use the uint package in opam that provides Ocaml with unsigned integer types, specifically
 8, 16, 32, and 64 bit unsigned integers. We also extend these to play nicely with ppx
 when desired. Since MySQl provides some integer types that don't map perfectly to any
@@ -119,7 +125,6 @@ including but not limited to the medium integer mysql data type.
 --------------------------------------------------------------------------------
 SERIAL is alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE ...  ->
   uint64   (Ocaml-Mysql parses to and from signed Int64?)
-Actually the information schema table shows int!?! 
 
 
   TINY_INT (8 bit values) -> uint8 when unsigned, else unsupported
@@ -140,7 +145,7 @@ Actually the information schema table shows int!?!
 			   create rouding errors; a string-to-number conversion involves no such intermediate
 			   step using the Double type.
    DECIMAL
-   DEC    -> FOR NOW USE STRING tpye until we can get zarith or bignum support in the ppx_xml_conv or csvfields 
+   DEC    -> FOR NOW USE STRING tpye until we can get zarith or bignum (DONE) support in the ppx_xml_conv or csvfields 
    FIXED
    FLOAT
  | DOUBLE -> float
@@ -150,9 +155,8 @@ Actually the information schema table shows int!?!
  | DOUBLE UNSIGNED -> UNSUPPORTED    NOTE: Unsigned floating point types in Mysql does not alter the upper range of these types.
 
 
-  DATE -> Core.Std.Date
-
-   DATETIME
+ | DATE -> Core.Std.Date
+ | DATETIME
  | TIMESTAMP -> Core.Std.Time
 
 TIME -> Core.Std.Time.Span??? UNSUPPORTED
@@ -294,3 +298,4 @@ tables:
 
 
 USAGE WITH DUNE:
+It works...just need to document it here...still need to experiment with dune a bit more to get it to overwrite existing files and report success.
