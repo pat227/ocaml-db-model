@@ -56,8 +56,8 @@ sig
   val equal : t -> t -> bool
   val compare : t -> t -> int
   (*the .json type gets changed to .t sometime after 4.06.0*)
-  val to_yojson : t -> Yojson.Safe.json
-  val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+  val to_yojson : t -> Yojson.Safe.t
+  val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
   val xsd : Csvfields.Xml.xml list

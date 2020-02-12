@@ -699,7 +699,7 @@ module Model = struct
 
   (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.
     ON SECOND THOUGHT -- NO NEED TO ever do this...once this is an installed package, just
-    use the package maintainged utilities file or else include and extend it.
+    use the package maintained utilities file or else include and extend it.
   let copy_utilities ~destinationdir =
     let open Core in 
     let open Core.Unix in
