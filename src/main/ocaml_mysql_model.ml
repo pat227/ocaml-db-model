@@ -6,6 +6,7 @@ module Command = struct
   let execute regexp_opt table_list_opt ppx_list_opt fields2ignore comparable_modules
 	      allcomparable host user password database destination () =
     try
+      (*--TODO--do not invoke getcon here, and stop passing it around*)
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
 	Model.get_fields_map_for_all_tables

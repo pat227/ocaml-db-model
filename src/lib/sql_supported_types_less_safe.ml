@@ -18,6 +18,7 @@ module Sql_supported_types = struct
     | TIMESTAMP
     | BINARY
     | VARBINARY
+    | TINYTEXT
     | MEDIUMTEXT
     | VARCHAR
     | BLOB
@@ -46,6 +47,7 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
     | TIMESTAMP -> Ok "Core.Time.t"
     | BINARY
     | BLOB
+    | TINYTEXT
     | MEDIUMTEXT
     | VARBINARY
     | VARCHAR -> Ok "string"
@@ -80,7 +82,8 @@ Also recall that BOOL cannot be combined with UNSIGNED in mysql.
       | false, "blob"
       | false, "binary"
       | false, "varbinary"
-      | false, "mediumtext" 
+      | false, "mediumtext"
+      | false, "tinytext" 
       | false, "varchar" -> VARCHAR
       | _, _ -> UNSUPPORTED in
     the_col_type data_type is_unsigned;;

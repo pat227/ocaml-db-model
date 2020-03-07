@@ -10,10 +10,11 @@ module Date_time_extended : sig
 	  
   val compare : t -> t -> Ppx_deriving_runtime.int
   val equal : t -> t -> Ppx_deriving_runtime.bool
-			  
-  val to_yojson : t -> Yojson.Safe.json
-  val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+  (*Type json changed to type t sometime after 4.06.0*)		  
+  val to_yojson : t -> Yojson.Safe.t
+  val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
 (*Not useful unless have local hacked version of csvfields
+ MUST use these
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
   val xsd : Csvfields.Xml.xml list*)
