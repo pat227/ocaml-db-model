@@ -29,6 +29,10 @@ module Model = struct
 			    WHERE table_name='";table_name;"';"] in
     (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
+    let conn = (fun c -> if is_none c then
+			   Utilities.getcon_defaults ()
+			 else
+			   Option.value_exn c) conn in 
     let rec helper accum results nextrow =
       (match nextrow with
        | None -> Ok accum
@@ -71,10 +75,6 @@ module Model = struct
             let () = Utilities.closecon conn in
 	    Error "Failed to get tables from db."
       ) in
-    let conn = (fun c -> if is_none c then
-			   Utilities.getcon_defaults ()
-			 else
-			   Option.value_exn c) conn in 
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
