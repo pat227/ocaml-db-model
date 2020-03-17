@@ -7,8 +7,8 @@ module Date_extended : sig
   val of_string_exn : string -> t
   val compare : t -> t -> Ppx_deriving_runtime.int
   val equal : t -> t -> Ppx_deriving_runtime.bool
-  val to_yojson : t -> Yojson.Safe.json
-  val of_yojson : Yojson.Safe.json -> t Ppx_deriving_yojson_runtime.error_or
+  val to_yojson : t -> Yojson.Safe.t
+  val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
 
   val sexp_of_t : t -> Sexplib.Sexp.t
   val t_of_sexp : Sexplib.Sexp.t -> t

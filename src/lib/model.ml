@@ -68,6 +68,7 @@ module Model = struct
 	    let () = Utilities.print_n_flush
 		       (String.concat ["\nError ";(Exn.to_string err);
 				       " getting tables from db."]) in
+            let () = Utilities.closecon conn in
 	    Error "Failed to get tables from db."
       ) in
     let conn = (fun c -> if is_none c then
@@ -219,6 +220,7 @@ module Model = struct
 	 "       Error \"get_from_db() Error in sql\"\n";
 	 "    | StatusOK -> \n";
 	 "       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n";
+         "       let () = Utilities.closecon conn in\n";
 	 "       helper [] queryresult (fetch queryresult);;\n"] in
 (*    let rec build_a_line_from_a_list_wrap_at_x_columns parts maxwidth length_of_growingline
 						       indentation acc =
@@ -357,7 +359,7 @@ module Model = struct
        "         create_set_values t (onefield::clause) in";
        "    let set_clause = create_set_values fields_less_key [] in ";
        "    Core.String.concat [\" ON DUPLICATE KEY UPDATE \";set_clause;\";\"];;\n"]
-    
+
   let construct_save_function ~table_name =
     Core.String.concat
       ~sep:"\n"
@@ -699,7 +701,7 @@ module Model = struct
 
   (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.
     ON SECOND THOUGHT -- NO NEED TO ever do this...once this is an installed package, just
-    use the package maintainged utilities file or else include and extend it.
+    use the package maintained utilities file or else include and extend it.
   let copy_utilities ~destinationdir =
     let open Core in 
     let open Core.Unix in

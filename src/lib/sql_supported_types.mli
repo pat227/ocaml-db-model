@@ -17,6 +17,7 @@ module Sql_supported_types : sig
     | TIMESTAMP
     | BINARY
     | VARBINARY
+    | TINYTEXT
     | MEDIUMTEXT
     | VARCHAR
     | BLOB
