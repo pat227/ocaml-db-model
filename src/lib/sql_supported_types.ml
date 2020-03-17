@@ -25,6 +25,7 @@ module Sql_supported_types = struct
     | BINARY
     | VARBINARY
     | TINYTEXT
+    | TEXT
     | MEDIUMTEXT
     | VARCHAR
     | BLOB
@@ -52,6 +53,7 @@ module Sql_supported_types = struct
     | BLOB
       (*without checking length of strings we are open to runtime errors or truncation of stored values==TODO==offer a length checked String type*)
     | TINYTEXT
+    | TEXT
     | MEDIUMTEXT
     | VARBINARY
     | VARCHAR -> Ok Types_we_emit.String
@@ -89,6 +91,7 @@ module Sql_supported_types = struct
       | false, "binary"
       | false, "varbinary"
       | false, "tinytext"
+      | false, "text"
       | false, "mediumtext" 
       | false, "varchar" -> VARCHAR
       | _, _ -> let () = Utilities.print_n_flush (String.concat [col_name;" with type ";col_type;" is not supported."])
