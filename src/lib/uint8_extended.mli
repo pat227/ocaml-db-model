@@ -65,5 +65,4 @@ sig
   module T2 : sig
     include Core.Comparable.S with type t := t
   end
-		
 end 

@@ -123,7 +123,7 @@ module Types_we_emit = struct
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
    t - the type of the field
    *)
-  let converter_to_string_of_type ~is_optional ~t ~fieldname =
+  let converter_to_string_of_type ~is_optional ~t =
     let open Core in 
     match is_optional, t with
       false, String ->
@@ -134,8 +134,6 @@ module Types_we_emit = struct
        String.concat ["(conv (fun x -> if x then \"TRUE\" else \"FALSE\"))"]
     | true, Bool ->
        String.concat ["(conv (fun x -> Utilities.serialize_optional_bool_field ~field:x ~conn))"]
-    (*| false, Int -> "Utilities.parse_int_field_exn ~fieldname ~results ~arrayofstring"
-    | true, Int -> "Utilities.parse_optional_int_field_exn ~fieldname ~results ~arrayofstring"*)
     | false, CoreInt64 ->
        String.concat ["(conv (fun x -> Core.Int64.to_string x))"]
     | true, CoreInt64 ->
@@ -144,10 +142,6 @@ module Types_we_emit = struct
        String.concat ["(conv (fun x -> Core.Int32.to_string x))"]
     | true, CoreInt32 ->
        String.concat ["(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Core.Int32.to_string i)))"]
-    (*| false, Int64 -> 
-    | true, Int32 ->
-    | false, Int32 -> 
-    | true, Int64 ->*) 
     | false, Uint8_extended_t -> "(conv (fun x -> Uint8_extended.to_string x))"
     | true, Uint8_extended_t -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Uint8_extended.to_string i)))"
     | false, Uint16_extended_t -> "(conv (fun x -> Uint16_extended.to_string x))"

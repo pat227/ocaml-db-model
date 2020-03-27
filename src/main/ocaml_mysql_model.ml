@@ -75,8 +75,9 @@ module Command = struct
 		     per module; use only comma or semicolon delimiter.");
 		     (*Added this arg b/c foresee need to exclude non-optional (not nullable) 
                        with default timestamp fields that might be present in tables that 
-                       might not be present or relevant in input data, etc.*)
-		   ("-ignore-fields", Arg.Set_string fields2ignore,
+                       might not be present or relevant in input data if we also use these 
+                       modules for parsing json, for example, etc.*)
+		   ("-fields2ignore", Arg.Set_string fields2ignore,
 		    "Optional list field names to ignore (ie, not include in the \
 		     generated modules) across all tables; use only comma or semicolon delimiter.");
 		   ("-comparable-tables", Arg.Set_string tables2makecomparable,

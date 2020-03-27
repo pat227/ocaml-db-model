@@ -101,7 +101,7 @@ module Sql_supported_types = struct
     if is_ok name_result then
       (fun x -> match x with
 	       | Ok name -> name
-	       | Error s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
+	       | Error _s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
     else 
       raise (Failure "Unsupported sql type.")
 end 

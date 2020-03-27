@@ -10,6 +10,7 @@ module Date_time_extended : sig
 	  
   val compare : t -> t -> Ppx_deriving_runtime.int
   val equal : t -> t -> Ppx_deriving_runtime.bool
+
   (*Type json changed to type t sometime after 4.06.0*)		  
   val to_yojson : t -> Yojson.Safe.t
   val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or

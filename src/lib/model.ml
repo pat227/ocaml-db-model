@@ -31,7 +31,7 @@ module Model = struct
     character_octet_length, numeric_precision,*)
     let rec helper accum results nextrow =
       (match nextrow with
-       | None -> Ok accum
+       | None -> Core.Result.Ok accum
        | Some arrayofstring ->
 	  try
 	    (let col_name =
@@ -61,14 +61,14 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     let newmap = String.Map.add_multi accum table_name new_field_record in 
+	     let newmap = String.Map.add_multi accum ~key:table_name ~data:new_field_record in 
 	     helper newmap results (fetch results)
 	    )
 	  with err ->
 	    let () = Utilities.print_n_flush
 		       (String.concat ["\nError ";(Exn.to_string err);
 				       " getting tables from db."]) in
-	    Error "Failed to get tables from db."
+	    Core.Result.Error "Failed to get tables from db."
       ) in
     let conn = (fun c -> if is_none c then
 			   Utilities.getcon_defaults ()
@@ -77,12 +77,12 @@ module Model = struct
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
-    | StatusEmpty ->  Ok String.Map.empty
+    | StatusEmpty ->  Core.Result.Ok String.Map.empty
     | StatusError _ -> 
        let () = Utilities.print_n_flush
 		  ("Query for table names returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
-       Error "model.ml::get_fields_for_given_table() Error in sql"
+       Core.Result.Error "model.ml::get_fields_for_given_table() Error in sql"
     | StatusOK -> (*let () = Utilities.print_n_flush "\nGot fields for table." in *)
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
@@ -108,8 +108,8 @@ module Model = struct
 	 (try
 	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.count l ~f:(fun x -> true) in
-	     if len > 0 then Some l else None
+	     let len = Core.List.length l in
+	     if len > 1 then Some l else None
 	   with
 	   | err ->
 	      let () = Utilities.print_n_flush
@@ -141,7 +141,7 @@ module Model = struct
 		  match vals with
 		  | `Left v1 -> Some v1
 		  | `Right v2 -> Some v2
-		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
+		  | `Both (_,_) -> raise (Failure "Duplicate table name!?!") 
 		 ) in  
 	     combinedmaps
 	  else  
@@ -166,7 +166,7 @@ module Model = struct
 		 with
 		 | _ -> helper t map
 	       )
-	    | Some r, Some l -> (*--presume regexp over list---*)
+	    | Some r, Some _l -> (*--presume regexp over list---*)
 	       (try
 		   let _intarray =
 		     Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
@@ -198,7 +198,6 @@ module Model = struct
     let preamble =
       String.concat ["  let get_from_db ~query =\n";
 		     "    let open Mysql in \n";
-		     "    let open Core.Result in \n";
 		     "    let open Core in \n";
 		     "    let conn = Utilities.getcon ~host:\"";host;"\" ~user:\"";user;"\" \n";
 		     "                               ~password:\"";password;"\" ~database:\"";database;"\" in"] in
@@ -206,17 +205,17 @@ module Model = struct
       Core.String.concat
 	["    let rec helper accum results nextrow = \n";
 	 "      (match nextrow with \n";
-	 "       | None -> Ok accum \n       | Some arrayofstring ->\n";
+	 "       | None -> Core.Result.Ok accum \n       | Some arrayofstring ->\n";
 	 "          try "] in
     let suffix =
       String.concat 
 	["    let queryresult = exec conn query in\n";
 	 "    let isSuccess = status conn in\n";
-	 "    match isSuccess with\n    | StatusEmpty ->  Ok [] \n";
+	 "    match isSuccess with\n    | StatusEmpty ->  Core.Result.Ok [] \n";
 	 "    | StatusError _ -> \n";
 	 "       let () = Utilities.print_n_flush (\"Error during query of table ";table_name;"...\") in\n";
 	 "       let () = Utilities.closecon conn in\n";
-	 "       Error \"get_from_db() Error in sql\"\n";
+	 "       Core.Result.Error \"get_from_db() Error in sql\"\n";
 	 "    | StatusOK -> \n";
 	 "       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n";
          "       let () = Utilities.closecon conn in\n";
@@ -278,21 +277,16 @@ module Model = struct
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
-    let parser_lines = for_each_field fields_list [] in
-    String.concat
-      ~sep:"\n"
-      [preamble;helper_preamble;parser_lines;creation_line;
-       recursive_call;"          with\n          | err ->";
-       "             let () = Utilities.print_n_flush \
-	(String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping \
-	a record...\"]) in \n";
-       "             helper accum results (fetch results)\n";
-       "      ) in";suffix];;
-    
+    let parser_lines = for_each_field ~flist:fields_list ~accum:[] in
+    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
+			     recursive_call;"          with\n          | err ->";
+			     "             let () = Utilities.print_n_flush (String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping a record...\"]) in";
+			     "             helper accum results (fetch results)\n";
+			     "      ) in";suffix];;
+
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function ~table_name ~fields_list ~host
-				       ~user ~password ~database =
+  let construct_sql_serialize_function (*~table_name*) ~fields_list (*~host ~user ~password ~database*) =
     let open Core in 
     let preamble =
       String.concat ["  let generateSQLvalue_for_insert t conn =\n";
@@ -314,11 +308,11 @@ module Model = struct
       | h :: t ->
 	 let serialize_function_call =
 	   Types_we_emit.converter_to_string_of_type
-	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
+	     ~is_optional:h.is_nullable ~t:h.data_type (*~fieldname:h.col_name*) in
 	 let output = String.concat ["                 ~";h.col_name;":";
 				     serialize_function_call] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
-    let fields_lines = for_each_field fields_list [] in
+    let fields_lines = for_each_field ~flist:fields_list ~accum:[] in
     String.concat ~sep:"\n" [preamble;fields_lines;"      in";suffix];;
 
   let list_other_modules () =
@@ -334,6 +328,18 @@ module Model = struct
 				  "module Date_time_extended = Ocaml_db_model.Date_time_extended";
 				  "module Bignum_extended = Ocaml_db_model.Bignum_extended";
 				  "open Sexplib.Std\n"];;
+    let list_other_modules_for_mli () =
+    (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
+      statement and customized over-ridden versions of the connections establishment functions that require db 
+      credentials, plus any additional functions a user may want.*)
+    Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
+				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+				  "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+				  "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+				  "module Date_extended = Ocaml_db_model.Date_extended";
+				  "module Date_time_extended = Ocaml_db_model.Date_time_extended";
+				  "module Bignum_extended = Ocaml_db_model.Bignum_extended\n"];;
   let duplicate_clause_function ~fields () =
     let rec find_primary_key_field_name fs =
       match fs with
@@ -363,7 +369,6 @@ module Model = struct
     Core.String.concat
       ~sep:"\n"
       ["  let rec save2db ~records =";
-       "    let open Core.Result in ";
        "    let open Core in ";
        "    let open Mysql in ";
        "    (*====MANUALLY ALTER MAX PACKET SIZE====";
@@ -423,7 +428,7 @@ module Model = struct
        "  		                  tablename]) in ";
        "             let () = Utilities.closecon conn in";
        "             (match last_index with";
-       "              | None -> Ok ()";
+       "              | None -> Core.Result.Ok ()";
        "              | Some i ->";
        "                 let balance_of_records = Core.List.sub records ~pos:i ~len:(count-i) in";
        "                 save2db ~records:balance_of_records";
@@ -433,7 +438,7 @@ module Model = struct
        "	                (String.concat [\"\\nNone affected; failed to insert new \\ ";
        "                                        records in \";tablename]) in";
        "	     let () = Utilities.closecon conn in";
-       "             Core.Error (String.concat [\"\\nNone affected; failed to insert \\ ";
+       "             Core.Result.Error (String.concat [\"\\nNone affected; failed to insert \\ ";
        "				           new records in \";tablename])";
        "         )"; 
        "      | StatusEmpty";
@@ -442,7 +447,7 @@ module Model = struct
        "	            (String.concat [\"\\nEmpty result; failed to insert \\ ";
        "				     new records into \";tablename]) in";
        "         let () = Utilities.closecon conn in";
-       "         Core.Error";
+       "         Core.Result.Error";
        "	   (String.concat [\"\\nEmpty result; failed to insert new \\ ";
        "	  	           records into \";tablename])";
        "    else";
@@ -450,7 +455,7 @@ module Model = struct
        "      let () = Utilities.print_n_flush";
        "                \"\\n"^table_name^"::save2db() \\ ";
        "	         Empty list of type t; nothing to do; not saving anything to db.\" in ";
-       "      Ok ();;\n"];;
+       "      Core.Result.Ok ();;\n"];;
 
   let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable
 		     ~host ~user ~password ~database =
@@ -522,13 +527,13 @@ module Model = struct
 				   string_of_data_type;" [@default None]";";"]
 	    | true, true, true, false ->
 	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
-				   string_of_data_type;" [@compare fun x y -> 0][@default None]";";"]
+				   string_of_data_type;" [@compare fun _x _y -> 0][@default None]";";"]
 	    | true, true, true, true ->
 	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
 				   string_of_data_type;" [@default None]";";"]
 	    | true, false, true, false ->
 	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
-				   string_of_data_type;" [@compare fun x y -> 0]";";"]
+				   string_of_data_type;" [@compare fun _x _y -> 0]";";"]
 	    | true, false, true, true 
 	    | true, false, false, _ 
 	    | false, _, false, _ ->
@@ -536,7 +541,7 @@ module Model = struct
 				   string_of_data_type;";"]
 	    | false, _, true, false ->
 	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
-				   string_of_data_type;" [@compare fun x y -> 0]";";"]
+				   string_of_data_type;" [@compare fun _x _y -> 0]";";"]
 	    | false, _, true, true ->
 	       Core.String.concat [tbody;"\n";total_indent;h.col_name;" : ";
 				   string_of_data_type;";"]
@@ -582,8 +587,8 @@ module Model = struct
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function ~table_name ~fields_list:tfields_list ~host
-				       ~user ~password ~database in
+      construct_sql_serialize_function (*~table_name*) ~fields_list:tfields_list (*~host
+				       ~user ~password ~database*) in
     let insert_prefix =
       String.concat
 	["  let get_sql_insert_statement () =\n";
@@ -660,7 +665,7 @@ module Model = struct
     let with_ppx_decorators = 
       match ppx_decorators with
       | [] -> String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =
@@ -711,7 +716,7 @@ module Model = struct
     let () = Utilities.print_n_flush result in 
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
-    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file." *)
+    | Error _e -> Utilities.print_n_flush "\nFailed to copy the utilities file." *)
 
   let write_appending_module ~outputdir ~fname ~body =
     let open Unix in
@@ -728,6 +733,5 @@ module Model = struct
       let _bytes_written = myf body f in
       close f
     with _ -> Utilities.print_n_flush (Core.String.concat ["\nFailed to write (appending) to file:";fname])
-
-       
+      
 end

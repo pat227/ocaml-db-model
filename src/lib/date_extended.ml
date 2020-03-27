@@ -18,7 +18,7 @@ module Date_extended = struct
       let value = String.sub value_half 0 rbracket_i in
       let date = of_string_iso8601_basic ~pos:0 value in
       Ok date      
-    with err -> Error "date_extended::of_yojson() failed.";;
+    with _err -> Error "date_extended::of_yojson() failed.";;
 
   let to_string t = to_string_iso8601_basic t;;
   let show t = to_string_iso8601_basic t;;
@@ -59,6 +59,6 @@ module Date_extended = struct
   let xsd_restrictions = [] *)
 (*[(Xml_light.Xml.parse_string "<xs:minLength value=\"8\"")]*)
 (*THIS function is not exposed. Perhaps we should expose it?
-[(Csvfields.Xml.Restriction.restriction "minLength" 8)]*)
-  let xsd = []																   
+[(Csvfields.Xml.Restriction.restriction "minLength" 8)]
+  let xsd = []*)
 end

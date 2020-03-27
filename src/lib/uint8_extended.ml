@@ -1,7 +1,7 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to. 
   See below. Needed for ppx sexp extension.*)
 module Uint8 = Uint8
-open Sexplib.Std
+(*open Sexplib.Std*)
 open Sexplib
 module Uint8_extended = struct
   module T = struct

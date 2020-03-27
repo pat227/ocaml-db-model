@@ -9,12 +9,6 @@ module Mysql = Mysql
 open Core
 module Utilities = struct
 
-  let oc = Core.Out_channel.stdout;;    
-  let print_n_flush s =
-    let open Core in 
-    Out_channel.output_string oc s;
-    Out_channel.flush oc;;
-
   let getcon ?(host="127.0.0.1") ~database ~password ~user =
     let open Mysql in 
     quick_connect
@@ -94,12 +88,13 @@ module Utilities = struct
                    "\nutilities::parse_boolean_field_exn() FALSE returning false" in false*)
     | _ -> raise (Failure "Utilities::parse_boolean_field unrecognized value")
     
-  let parse_optional_boolean_field_exn ~field =
+(*  let parse_optional_boolean_field_exn ~field =
     match field with
     | None -> None
     | Some s ->
        let b = parse_boolean_field_exn ~field:s in
        Some b;;
+ *)
 (*		  
   let parse_64bit_int_field_exn ~field =
     Core.Int64.of_string field
