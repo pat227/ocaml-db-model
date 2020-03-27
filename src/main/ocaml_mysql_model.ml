@@ -2,6 +2,14 @@ module Utilities = Ocaml_db_model.Utilities
 module Model = Ocaml_db_model.Model
 module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
+(*===TODO===
+      1) Extend string type to be length aware and avoid truncation with mysql varchar and text field limits 
+      2) Seperate the credentials to the db from the utilities file; thereby no need to copy the utilities 
+      file into the user's project; just need to copy the credentials and know where to find them.
+      3) Present user with ppx options and reject any not currently supported
+      4) Add an option to use only primitive types and none of the extended types created in this project in case
+      a user only wishes to take advantage of the creation of modules and doesn't care so much about field types
+   *)
 
   let execute regexp_opt table_list_opt ppx_list_opt fields2ignore comparable_modules
 	      allcomparable host user password database destination () =
