@@ -29,6 +29,10 @@ module Model = struct
 			    WHERE table_name='";table_name;"';"] in
     (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
+    let conn = (fun c -> if is_none c then
+			   Utilities.getcon_defaults ()
+			 else
+			   Option.value_exn c) conn in 
     let rec helper accum results nextrow =
       (match nextrow with
        | None -> Core.Result.Ok accum
@@ -70,10 +74,6 @@ module Model = struct
 				       " getting tables from db."]) in
 	    Core.Result.Error "Failed to get tables from db."
       ) in
-    let conn = (fun c -> if is_none c then
-			   Utilities.getcon_defaults ()
-			 else
-			   Option.value_exn c) conn in 
     let queryresult = exec conn fields_query in
     let isSuccess = status conn in
     match isSuccess with
@@ -108,8 +108,8 @@ module Model = struct
 	 (try
 	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.length l in
-	     if len > 1 then Some l else None
+	     let len = Core.List.length l in 
+	     if len > 0 then Some l else None
 	   with
 	   | err ->
 	      let () = Utilities.print_n_flush
@@ -137,7 +137,7 @@ module Model = struct
 	       Map.merge
 		 map newmap
 		 ~f:
-		 (fun ~key vals ->
+		 (fun ~key:_key vals ->
 		  match vals with
 		  | `Left v1 -> Some v1
 		  | `Right v2 -> Some v2
@@ -286,7 +286,7 @@ module Model = struct
 
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function (*~table_name*) ~fields_list (*~host ~user ~password ~database*) =
+  let construct_sql_serialize_function ~fields_list =
     let open Core in 
     let preamble =
       String.concat ["  let generateSQLvalue_for_insert t conn =\n";
@@ -317,8 +317,8 @@ module Model = struct
 
   let list_other_modules () =
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
-      statement and customized over-ridden versions of the connections establishment functions that require db 
-      credentials, plus any additional functions a user may want.*)
+      statement (include Ocaml_db_model.Utilities) and customized over-ridden versions of the connections 
+      establishment functions that require db  credentials, plus any additional functions a user may want.*)
     Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
@@ -511,7 +511,7 @@ module Model = struct
       | [] -> tbody
       | h :: t ->	 
 	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in
+	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in
 	 let total_indent =
 	   if make_module_comparable then
 	     Core.String.concat [indentation;indentation;indentation]
@@ -565,7 +565,7 @@ module Model = struct
 	   String.concat [almost_done;"end";"  include T";"  module T2 = Core.Comparable.Make(T)"]
 	 else
 	   String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 if make_module_comparable then
 	   String.concat [almost_done;" [@@deriving ";ppx_extensions;"]";"\n  end\n";
@@ -587,8 +587,7 @@ module Model = struct
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function (*~table_name*) ~fields_list:tfields_list (*~host
-				       ~user ~password ~database*) in
+      construct_sql_serialize_function ~fields_list:tfields_list in
     let insert_prefix =
       String.concat
 	["  let get_sql_insert_statement () =\n";
@@ -620,7 +619,7 @@ module Model = struct
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
     let () = Bytes.set module_name 0 uppercased_first_char in
-    let other_modules = list_other_modules () in 
+    let other_modules = list_other_modules_for_mli () in 
     let start_module = String.concat ["module ";(Bytes.to_string module_name);" : sig \n"] in 
     let start_type_t = "  type t = {" in
     let end_type_t = "  }" in

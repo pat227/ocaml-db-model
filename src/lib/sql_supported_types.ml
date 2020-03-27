@@ -25,6 +25,7 @@ module Sql_supported_types = struct
     | BINARY
     | VARBINARY
     | TINYTEXT
+    | TEXT
     | MEDIUMTEXT
     | VARCHAR
     | BLOB
@@ -34,29 +35,30 @@ module Sql_supported_types = struct
   (*--by default just use core int 64 type...*)
   let ml_type_of_supported_sql_type t =
     match t with
-    | TINYINT -> Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
-    | TINYINT_UNSIGNED -> Ok Types_we_emit.Uint8_extended_t
-    | TINYINT_BOOL -> Ok Types_we_emit.Bool
-    | SMALLINT_UNSIGNED -> Ok Types_we_emit.Uint16_extended_t
-    | INTEGER -> Ok Types_we_emit.CoreInt64
-    | INTEGER_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
-    | BIGINT -> Ok Types_we_emit.CoreInt64
-    | BIGINT_UNSIGNED -> Ok Types_we_emit.Uint64_extended_t
-    | DECIMAL -> Ok Types_we_emit.Bignum
+    | TINYINT -> Core.Result.Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
+    | TINYINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint8_extended_t
+    | TINYINT_BOOL -> Core.Result.Ok Types_we_emit.Bool
+    | SMALLINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint16_extended_t
+    | INTEGER -> Core.Result.Ok Types_we_emit.CoreInt64
+    | INTEGER_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint64_extended_t
+    | BIGINT -> Core.Result.Ok Types_we_emit.CoreInt64
+    | BIGINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint64_extended_t
+    | DECIMAL -> Core.Result.Ok Types_we_emit.Bignum
     | FLOAT 
-    | DOUBLE -> Ok Types_we_emit.Float
-    | DATE -> Ok Types_we_emit.Date
+    | DOUBLE -> Core.Result.Ok Types_we_emit.Float
+    | DATE -> Core.Result.Ok Types_we_emit.Date
     | DATETIME 
-    | TIMESTAMP -> Ok Types_we_emit.Time
+    | TIMESTAMP -> Core.Result.Ok Types_we_emit.Time
     | BINARY
     | BLOB
       (*without checking length of strings we are open to runtime errors or truncation of stored values==TODO==offer a length checked String type*)
     | TINYTEXT
+    | TEXT
     | MEDIUMTEXT
     | VARBINARY
-    | VARCHAR -> Ok Types_we_emit.String
+    | VARCHAR -> Core.Result.Ok Types_we_emit.String
     (*| ENUM*)
-    | UNSUPPORTED -> Error "to_ml_type::UNSUPPORTED_TYPE" 
+    | UNSUPPORTED -> Core.Result.Error "to_ml_type::UNSUPPORTED_TYPE" 
 	
   (*Given the data_type and column_type fields from info schema, determine if the mysql 
     type is supported or not, and if so which type; the data_type field is very easy to 
@@ -89,6 +91,7 @@ module Sql_supported_types = struct
       | false, "binary"
       | false, "varbinary"
       | false, "tinytext"
+      | false, "text"
       | false, "mediumtext" 
       | false, "varchar" -> VARCHAR
       | _, _ -> let () = Utilities.print_n_flush (String.concat [col_name;" with type ";col_type;" is not supported."])
@@ -100,8 +103,8 @@ module Sql_supported_types = struct
     let name_result = ml_type_of_supported_sql_type supported_t in
     if is_ok name_result then
       (fun x -> match x with
-	       | Ok name -> name
-	       | Error _s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
+	       | Core.Result.Ok name -> name
+	       | Core.Result.Error _s -> raise (Failure "sql_supported_types::one_step() Unsupported type")) name_result
     else 
       raise (Failure "Unsupported sql type.")
 end 

@@ -22,14 +22,16 @@ module Utilities = struct
 
   let oc = Core.Out_channel.stdout;;    
   let print_n_flush s =
-    Core.Out_channel.output_string oc s;
-    Core.Out_channel.flush oc;;
-
+    let open Core in 
+    Out_channel.output_string oc s;
+    Out_channel.flush oc;;
+    
   let rec print_n_flush_alist ~sep l =
     match l with
     | [] -> ()
-    | h :: t -> let () = print_n_flush (h ^ sep) in
-		print_n_flush_alist ~sep t;;
+    | h :: t ->
+       let () = print_n_flush (Core.String.concat [h;sep]) in
+       print_n_flush_alist ~sep t;;
 
   let serialize_optional_field ~field ~conn =
     match field with

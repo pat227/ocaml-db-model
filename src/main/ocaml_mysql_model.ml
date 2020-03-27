@@ -117,6 +117,7 @@ module Command = struct
 	   Some (Core.String.split !fields2ignore ~on:';')
 	 else 
 	   Some [!fields2ignore] in
+
     let comparable_modules =
       match String.length (!tables2makecomparable) with
       | 0 -> []
@@ -128,4 +129,5 @@ module Command = struct
 	 else 
 	   [!tables2makecomparable] in
     execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt comparable_modules !allcomparable !host !user !password !database !destination ()
+
 end
