@@ -1,6 +1,4 @@
 module Bignum = Bignum
-open Sexplib.Std
-open Sexplib
 module Bignum_extended = struct
   include Bignum
 
@@ -23,7 +21,7 @@ module Bignum_extended = struct
       let value = String.sub value_half 0 rbracket_i in
       let bignum = of_string value in
       Ok bignum   
-    with err -> Error "bignum_extended::of_yojson() failed.";;
+    with _err -> Error "bignum_extended::of_yojson() failed.";;
 
 (* Only usefule with a local hacked version of csvfields
   let to_xml v =
