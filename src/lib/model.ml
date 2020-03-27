@@ -420,7 +420,7 @@ module Model = struct
        "      | StatusOK ->";
        "         let i64opt = (Int64.to_int (affected conn)) in";
        "         (match i64opt with";
-       "          | Some affected ->";
+       "          | Some _affected ->";
        "             (*Returns a zero even if successful and inserts > 0 records...not ";
        "               sure why...need to read documentation, or source code.*)";
        "  	   let () = Utilities.print_n_flush";
@@ -700,7 +700,7 @@ module Model = struct
       let _bytes_written =
 	with_file (Core.String.concat [outputdir;fname]) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o664 ~f:(myf body) in ()
-    with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
+    with err -> Utilities.print_n_flush (Core.String.concat ["\nFailed to write to file:";(Core.Exn.to_string err)])
 
   (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.
     ON SECOND THOUGHT -- NO NEED TO ever do this...once this is an installed package, just
