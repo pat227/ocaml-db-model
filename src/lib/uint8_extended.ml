@@ -1,7 +1,6 @@
 (*Unfortunately Uint64 module does not define sexp converters, so we have to. 
   See below. Needed for ppx sexp extension.*)
 module Uint8 = Uint8
-open Sexplib.Std
 open Sexplib
 module Uint8_extended = struct
   module T = struct
@@ -68,7 +67,7 @@ module Uint8_extended = struct
 	let value = String.sub value_half 0 rbracket_i in
 	let i = Uint8.of_string value in
 	Ok i   
-      with err -> Error "uint8_extended::of_yojson() failed.";;
+      with _err -> Error "uint8_extended::of_yojson() failed.";;
 (* Only works with a hacked version of csvfields
     let to_xml v =
       [Csvfields.Xml.parse_string

@@ -1,7 +1,6 @@
 (*Unfortunately Uint16 module does not define sexp converters, so we have to. 
   See below. Needed for ppx sexp extension.*)
 module Uint16 = Uint16
-open Sexplib.Std
 open Sexplib
 module Uint16_extended = struct
   module T = struct
@@ -53,7 +52,7 @@ module Uint16_extended = struct
 	let value = String.sub value_half 0 rbracket_i in
 	let i = Uint16.of_string value in
 	Ok i   
-      with err -> Error "uint16_extended::of_yojson() failed.";;
+      with _err -> Error "uint16_extended::of_yojson() failed.";;
 
     let sexp_of_uint16 = sexp_of_t
 			   

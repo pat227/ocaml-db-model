@@ -26,11 +26,6 @@ module Utilities = struct
     
   let closecon c = Mysql.disconnect c;;
 
-  let oc = Core.Out_channel.stdout;;    
-  let print_n_flush s =
-    Core.Out_channel.output_string oc s;
-    Core.Out_channel.flush oc;;
-
   let rec print_n_flush_alist ~sep l =
     match l with
     | [] -> ()

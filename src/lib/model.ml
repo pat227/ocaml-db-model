@@ -65,7 +65,7 @@ module Model = struct
 		 ~data_type:type_for_module
 		 ~is_nullable
 		 ~is_primary_key in
-	     let newmap = String.Map.add_multi accum table_name new_field_record in 
+	     let newmap = String.Map.add_multi accum ~key:table_name ~data:new_field_record in 
 	     helper newmap results (fetch results)
 	    )
 	  with err ->
@@ -109,7 +109,7 @@ module Model = struct
 	 (try
 	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
-	     let len = Core.List.count l ~f:(fun x -> true) in
+	     let len = Core.List.length l in 
 	     if len > 0 then Some l else None
 	   with
 	   | err ->
@@ -138,11 +138,11 @@ module Model = struct
 	       Map.merge
 		 map newmap
 		 ~f:
-		 (fun ~key vals ->
+		 (fun ~key:_key vals ->
 		  match vals with
 		  | `Left v1 -> Some v1
 		  | `Right v2 -> Some v2
-		  | `Both (v1,v2) -> raise (Failure "Duplicate table name!?!") 
+		  | `Both (_,_) -> raise (Failure "Duplicate table name!?!") 
 		 ) in  
 	     combinedmaps
 	  else  
@@ -167,7 +167,7 @@ module Model = struct
 		 with
 		 | _ -> helper t map
 	       )
-	    | Some r, Some l -> (*--presume regexp over list---*)
+	    | Some r, Some _l -> (*--presume regexp over list---*)
 	       (try
 		   let _intarray =
 		     Pcre.pcre_exec ?rex:(Some r) h.Table.table_name in
@@ -279,7 +279,7 @@ module Model = struct
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
-    let parser_lines = for_each_field fields_list [] in
+    let parser_lines = for_each_field ~flist:fields_list ~accum:[] in
     String.concat
       ~sep:"\n"
       [preamble;helper_preamble;parser_lines;creation_line;
@@ -292,8 +292,7 @@ module Model = struct
     
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function ~table_name ~fields_list ~host
-				       ~user ~password ~database =
+  let construct_sql_serialize_function ~fields_list =
     let open Core in 
     let preamble =
       String.concat ["  let generateSQLvalue_for_insert t conn =\n";
@@ -315,17 +314,17 @@ module Model = struct
       | h :: t ->
 	 let serialize_function_call =
 	   Types_we_emit.converter_to_string_of_type
-	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
+	     ~is_optional:h.is_nullable ~t:h.data_type (*~fieldname:h.col_name*) in
 	 let output = String.concat ["                 ~";h.col_name;":";
 				     serialize_function_call] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
-    let fields_lines = for_each_field fields_list [] in
+    let fields_lines = for_each_field ~flist:fields_list ~accum:[] in
     String.concat ~sep:"\n" [preamble;fields_lines;"      in";suffix];;
 
   let list_other_modules () =
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
-      statement and customized over-ridden versions of the connections establishment functions that require db 
-      credentials, plus any additional functions a user may want.*)
+      statement (include Ocaml_db_model.Utilities) and customized over-ridden versions of the connections 
+      establishment functions that require db  credentials, plus any additional functions a user may want.*)
     Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
 				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
@@ -507,7 +506,7 @@ module Model = struct
       | [] -> tbody
       | h :: t ->	 
 	 let string_of_data_type =
-	   Types_we_emit.to_string h.data_type h.is_nullable in
+	   Types_we_emit.to_string ~t:h.data_type ~is_nullable:h.is_nullable in
 	 let total_indent =
 	   if make_module_comparable then
 	     Core.String.concat [indentation;indentation;indentation]
@@ -561,7 +560,7 @@ module Model = struct
 	   String.concat [almost_done;"end";"  include T";"  module T2 = Core.Comparable.Make(T)"]
 	 else
 	   String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 if make_module_comparable then
 	   String.concat [almost_done;" [@@deriving ";ppx_extensions;"]";"\n  end\n";
@@ -583,8 +582,7 @@ module Model = struct
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function ~table_name ~fields_list:tfields_list ~host
-				       ~user ~password ~database in
+      construct_sql_serialize_function ~fields_list:tfields_list in
     let insert_prefix =
       String.concat
 	["  let get_sql_insert_statement () =\n";
@@ -661,7 +659,7 @@ module Model = struct
     let with_ppx_decorators = 
       match ppx_decorators with
       | [] -> String.concat [almost_done;"end"]
-      | h :: t ->
+      | _h :: _t ->
 	 let ppx_extensions = String.concat ~sep:"," ppx_decorators in
 	 String.concat [almost_done;" [@@deriving ";ppx_extensions;"]\n"] in
     let function_lines =

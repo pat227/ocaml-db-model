@@ -123,7 +123,7 @@ module Types_we_emit = struct
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
    t - the type of the field
    *)
-  let converter_to_string_of_type ~is_optional ~t ~fieldname =
+  let converter_to_string_of_type ~is_optional ~t =
     let open Core in 
     match is_optional, t with
       false, String ->
