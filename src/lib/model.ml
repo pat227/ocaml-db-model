@@ -83,7 +83,7 @@ module Model = struct
 		  ("Query for table names returned nothing.  ... \n") in
        let () = Utilities.closecon conn in
        Error "model.ml::get_fields_for_given_table() Error in sql"
-    | StatusOK -> let () = Utilities.print_n_flush "\nGot fields for table." in 
+    | StatusOK -> (*let () = Utilities.print_n_flush "\nGot fields for table." in *)
 		  helper String.Map.empty queryresult (fetch queryresult);;
 
   let make_regexp s =
@@ -109,7 +109,7 @@ module Model = struct
 	     let () = Utilities.print_n_flush (String.concat ["parse_list() from ";sl]) in
 	     let l = Core.String.split sl ~on:',' in
 	     let len = Core.List.count l ~f:(fun x -> true) in
-	     if len > 1 then Some l else None
+	     if len > 0 then Some l else None
 	   with
 	   | err ->
 	      let () = Utilities.print_n_flush
@@ -219,7 +219,20 @@ module Model = struct
 	 "       Error \"get_from_db() Error in sql\"\n";
 	 "    | StatusOK -> \n";
 	 "       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n";
-	 "       helper [] queryresult (fetch queryresult);;\n"] in    
+	 "       helper [] queryresult (fetch queryresult);;\n"] in
+(*    let rec build_a_line_from_a_list_wrap_at_x_columns parts maxwidth length_of_growingline
+						       indentation acc =
+      match parts with
+      | [] -> String.concat ~sep:" " (List.rev acc)
+      | h :: t ->
+	 let newlength = ((String.length h) + length_of_growingline) in
+	 if newlength > maxwidth && ((String.length h) > 2) then
+	   let elem = (Core.String.concat [h;"\n";indentation]) in 
+	   build_a_line_from_a_list_wrap_at_x_columns
+	     t maxwidth (String.length indentation) indentation (elem::acc)
+	 else
+	   build_a_line_from_a_list_wrap_at_x_columns
+	     t maxwidth newlength indentation (h::acc) in *)
     let rec for_each_field ~flist ~accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
@@ -227,26 +240,54 @@ module Model = struct
 	 let parser_function_call =
 	   Types_we_emit.converter_of_string_of_type
 	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
-	 let output = String.concat
-			["            let ";h.col_name;" = ";
-			 parser_function_call;" in "] in
-	 for_each_field ~flist:t ~accum:(output::accum) in
+	 (*support breaking line at least into 2 parts if too long
+	 let parser_function_call_split_on_spaces =
+	   String.split ~on:' ' parser_function_call in*)
+	 (*let len_so_far_of_line = 12 + (String.length h.col_name) + 7 in
+	 let tabs = len_so_far_of_line / 8 in
+	 let spaces = len_so_far_of_line % 8 in
+	 let indentation = Core.String.concat
+			     [(Core.String.make tabs '\t');(Core.String.make spaces ' ')] in
+	 let output = build_a_line_from_a_list_wrap_at_x_columns
+			parser_function_call_split_on_spaces 110
+			(*These tabs are specific to the parser functions*)
+			len_so_far_of_line indentation [] in *)
+	 (*let output =
+	   if ((String.length (List.hd_exn parser_function_call_split_on_spaces))
+	       + len_so_far_of_line > 90) then
+	     String.concat
+	       ["            let ";h.col_name;" = \n";
+		(List.hd_exn parser_function_call_split_on_spaces);"\n";
+		(List.slice parser_function_call_split_on_spaces 1 0);" in "] else
+	     String.concat
+	       ["            let ";h.col_name;" = \n";
+		parser_function_call;" in "] in *)
+	 for_each_field
+	   ~flist:t
+	   ~accum:((String.concat
+		      ["            let ";h.col_name;" = \n              ";parser_function_call;" in "])::accum) in
     let rec make_fields_create_line ~flist ~accum =
       match flist with
       | [] -> let fields = String.concat ~sep:" " accum in
-	      String.concat ["            let new_t = Fields.create ";fields;" in "]
+	 (*let fields_w_newlines =
+	   build_a_line_from_a_list_wrap_at_x_columns accum 120 38 "\t\t\t\t     " accum in*)
+	 String.concat ["            let new_t = Fields.create ";fields;" in "]
       | h :: t ->
 	 let onef = String.concat ["~";h.col_name] in
 	 make_fields_create_line ~flist:t ~accum:(onef::accum) in 
     let creation_line = make_fields_create_line ~flist:fields_list ~accum:[] in
     let recursive_call = "            helper (new_t :: accum) results (fetch results) " in 
     let parser_lines = for_each_field fields_list [] in
-    String.concat ~sep:"\n" [preamble;helper_preamble;parser_lines;creation_line;
-			     recursive_call;"          with\n          | err ->";
-			     "             let () = Utilities.print_n_flush (String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping a record...\"]) in \n";
-			     "             helper accum results (fetch results)\n";
-			     "      ) in";suffix];;
-
+    String.concat
+      ~sep:"\n"
+      [preamble;helper_preamble;parser_lines;creation_line;
+       recursive_call;"          with\n          | err ->";
+       "             let () = Utilities.print_n_flush \
+	(String.concat [\"\\nError: \";(Exn.to_string err);\"Skipping \
+	a record...\"]) in \n";
+       "             helper accum results (fetch results)\n";
+       "      ) in";suffix];;
+    
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
   let construct_sql_serialize_function ~table_name ~fields_list ~host
@@ -282,22 +323,31 @@ module Model = struct
   let list_other_modules () =
     (*==TODO==copy all these modules into local directory, or refer to this 
         project's implementation of them.*)
-    Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
-				  "module Uint64_extended = Uint64_extended.Uint64_extended";
-				  "module Uint32_extended = Uint32_extended.Uint32_extended";
-				  "module Uint16_extended = Uint16_extended.Uint16_extended";
-				  "module Uint8_extended = Uint8_extended.Uint8_extended";
-				  "module Date_extended = Date_extended.Date_extended";
-				  "module Date_time_extended = Date_time_extended.Date_time_extended";
-				  "module Bignum_extended = Bignum_extended.Bignum_extended";
+    Core.String.concat ~sep:"\n" ["module Utilities = Ocaml_db_model.Utilities";
+				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+				  "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+				  "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+				  "module Date_extended = Ocaml_db_model.Date_extended";
+				  "module Date_time_extended = Ocaml_db_model.Date_time_extended";
+				  "module Bignum_extended = Ocaml_db_model.Bignum_extended";
 				  "open Sexplib.Std\n"];;
-  let duplicate_clause_function () =
+  let duplicate_clause_function ~fields () =
+    let rec find_primary_key_field_name fs =
+      match fs with
+      | h :: t ->
+	 if h.is_primary_key then h.col_name
+	 else find_primary_key_field_name t
+      (*if we get here it's b/c there is no primary key on the table...warn the user but use 
+        any old even imaginary name...*)
+      | [] -> "id" in
+    let primary_key_name = find_primary_key_field_name fields in 
     Core.String.concat
       ~sep:"\n"
       ["  (*This has to be MANUALLY MODIFIED -- depends on semantics of the fields and which ";
        "    we want to update if any and how and which is a key, or which are keys.*)";
        "  let get_sql_insert_on_duplicate_clause () =";
-       "    let fields_less_key = Core.List.filter (Fields.names) ~f:(fun x -> not (x = TBD)) in";
+       (Core.String.concat ["    let fields_less_key = Core.List.filter (Fields.names) ~f:(fun x -> not (x = \"";primary_key_name;"\")) in"]);
        "    let rec create_set_values fieldslist clause = ";
        "      match fieldslist with";
        "      | [] -> Core.String.concat ~sep:\",\" clause";
@@ -310,95 +360,95 @@ module Model = struct
   let construct_save_function ~table_name =
     Core.String.concat
       ~sep:"\n"
-      ["let rec save2db ~records =";
-       "  let open Core.Result in ";
-       "  let open Core in ";
-       "  let open Mysql in ";
-       "  (*====MANUALLY ALTER MAX PACKET SIZE====";
-       "    If we have many records we're limited by smaller of either 1000 records OR ";
-       "    the max packet size, which is a configuration setting on the sql server; ";
-       "    here we hard code the max packet size and consume just enough records to ";
-       "    stay just under the limit and repeat until all have been saved.*)";
-       "  let insert_statement_start = get_sql_insert_statement () in";
-       "  let overhead = Core.String.length insert_statement_start in";
-       "  let max_packet_size = ((1024 * 1024 * 16) - overhead) in";
-       "  let count = List.length records in";
-       "  let () = Utilities.print_n_flush";
-       "             (String.concat [\"\n\";tablename;\"::save2db() invoked with \";";
-       "			     (string_of_int count);\" records remaining...\"]) in";
-       "  (*helper function that incrementally builds the VALUES() portion of ";
-       "    INSERT statement and returns the partial statement and the index into the list";
-       "    of the last record included, which is where we should pickup again*)";
-       "  let rec consume_records records index sqlvalues conn =";
-       "    match records with";
-       "    | [] -> sqlvalues, None";
-       "    | h :: t ->";
-       "       let nextvalue = generateSQLvalue_for_insert h conn in";
-       "       let len = Core.List.fold sqlvalues ~init:0 ~f:(fun len x -> (Core.String.length x) + len) in";
-       "       let marginal_len = Core.String.length nextvalue in";
-       "       if ((marginal_len + len) > max_packet_size) || index >= 999 then";
-       "         sqlvalues, Some (index)";
-       "       else ";
-       "         consume_records t (index+1) (nextvalue::sqlvalues) conn in ";
-       "  if count > 0 then ";
-       "    let conn = Utilities.getcon_w_defaults () in ";
-       "    (* If we need to delete any records, do so here...you'll have to write this ";
-       "    non-existent function on your own to create the DELETE statement.";
-       "    let prefix = get_sql_insert_command_prefix in *) ";
-       "    (*let values = generate_values_for_sql_of_list ~records ~conn in*)";
-       "    let values_list, last_index = consume_records records 0 [] conn in";
-       "    let values= Core.String.concat ~sep:\",\" values_list in ";
-       "    let on_update_clause = get_sql_insert_on_duplicate_clause () in ";
-       "    let insert_statement = String.concat [insert_statement_start;values;on_update_clause] in ";
-       "    (*Print to inspect the sql:";
-       "    let thecommand =";
-       "      String.concat [\"START TRANSACTION;\"(*;prefix*);insert_statement;\"COMMIT;\"] in";
-       "    let () = Utilities.print_n_flush (String.concat [\"\\n\";thecommand]) in*)";
-       "    let _ = exec conn \"START TRANSACTION;\" in";
-       "    (*let _ = exec conn prefix in*)";
-       "    let _ = exec conn insert_statement in";
-       "    let _ = exec conn \"COMMIT;\" in";
-       "    let isSuccess = status conn in";
-       "    match isSuccess with";
-       "    | StatusOK ->";
-       "       let i64opt = (Int64.to_int (affected conn)) in";
-       "       (match i64opt with";
-       "        | Some affected ->";
-       "           (*Returns a zero even if successful and inserts > 0 records...not ";
-       "             sure why...need to read documentation, or source code.*)";
-       "	   let () = Utilities.print_n_flush";
-       "           (Core.String.concat [\"\\nSuccessfully inserted new records into \";";
-       "		                tablename]) in ";
-       "           let () = Utilities.closecon conn in";
-       "           (match last_index with";
-       "	    | None -> Ok ()";
-       "            | Some i ->";
-       "               let balance_of_records = Core.List.sub records ~pos:i ~len:(count-i) in";
-       "               save2db ~records:balance_of_records";
-       "	   )";
-       "	| None ->";
-       "           let () = Utilities.print_n_flush";
-       "	              (String.concat [\"\\nNone affected; failed to insert new \\ ";
-       "		  			 records in \";tablename]) in";
-       "	   let () = Utilities.closecon conn in";
-       "           Core.Error (String.concat [\"\\nNone affected; failed to insert \\ ";
-       "				           new records in \";tablename])";
-       "       )"; 
-       "    | StatusEmpty";
-       "    | StatusError _ ->";
-       "       let () = Utilities.print_n_flush";
-       "	          (String.concat [\"\\nEmpty result; failed to insert \\ ";
-       "				     new records into \";tablename]) in";
-       "       let () = Utilities.closecon conn in";
-       "       Core.Error";
-       "	 (String.concat [\"\\nEmpty result; failed to insert new \\ ";
-       "	  	           records into \";tablename])";
-       "  else";
-       "    (*--nothing to do with empty list here--*)";
+      ["  let rec save2db ~records =";
+       "    let open Core.Result in ";
+       "    let open Core in ";
+       "    let open Mysql in ";
+       "    (*====MANUALLY ALTER MAX PACKET SIZE====";
+       "      If we have many records we're limited by smaller of either 1000 records OR ";
+       "      the max packet size, which is a configuration setting on the sql server; ";
+       "      here we hard code the max packet size and consume just enough records to ";
+       "      stay just under the limit and repeat until all have been saved.*)";
+       "    let insert_statement_start = get_sql_insert_statement () in";
+       "    let overhead = Core.String.length insert_statement_start in";
+       "    let max_packet_size = ((1024 * 1024 * 16) - overhead) in";
+       "    let count = List.length records in";
        "    let () = Utilities.print_n_flush";
-       "              \"\\n"^table_name^"::save2db() \\ ";
-       "	       Empty list of type t; nothing to do; not saving anything to db.\" in ";
-       "    Ok ();;\n"];;
+       "               (String.concat [\"\\n\";tablename;\"::save2db() invoked with \";";
+       "  			     (string_of_int count);\" records remaining...\"]) in";
+       "    (*helper function that incrementally builds the VALUES() portion of ";
+       "      INSERT statement and returns the partial statement and the index into the list";
+       "      of the last record included, which is where we should pickup again*)";
+       "    let rec consume_records records index sqlvalues conn =";
+       "      match records with";
+       "      | [] -> sqlvalues, None";
+       "      | h :: t ->";
+       "         let nextvalue = generateSQLvalue_for_insert h conn in";
+       "         let len = Core.List.fold sqlvalues ~init:0 ~f:(fun len x -> (Core.String.length x) + len) in";
+       "         let marginal_len = Core.String.length nextvalue in";
+       "         if ((marginal_len + len) > max_packet_size) || index >= 999 then";
+       "           sqlvalues, Some (index)";
+       "         else ";
+       "           consume_records t (index+1) (nextvalue::sqlvalues) conn in ";
+       "    if count > 0 then ";
+       "      let conn = Utilities.getcon_w_defaults () in ";
+       "      (* If we need to delete any records, do so here...you'll have to write this ";
+       "      non-existent function on your own to create the DELETE statement.";
+       "      let prefix = get_sql_insert_command_prefix in *) ";
+       "      (*let values = generate_values_for_sql_of_list ~records ~conn in*)";
+       "      let values_list, last_index = consume_records records 0 [] conn in";
+       "      let values= Core.String.concat ~sep:\",\"   values_list in ";
+       "      let on_update_clause = get_sql_insert_on_duplicate_clause () in ";
+       "      let insert_statement = String.concat [insert_statement_start;values;on_update_clause] in ";
+       "      (*Print to inspect the sql:";
+       "      let thecommand =";
+       "        String.concat [\"START TRANSACTION;\"(*;prefix*);insert_statement;\"COMMIT;\"] in";
+       "      let () = Utilities.print_n_flush (String.concat [\"\\n\";thecommand]) in*)";
+       "      let _ = exec conn \"START TRANSACTION;\" in";
+       "      (*let _ = exec conn prefix in*)";
+       "      let _ = exec conn insert_statement in";
+       "      let _ = exec conn \"COMMIT;\" in";
+       "      let isSuccess = status conn in";
+       "      match isSuccess with";
+       "      | StatusOK ->";
+       "         let i64opt = (Int64.to_int (affected conn)) in";
+       "         (match i64opt with";
+       "          | Some affected ->";
+       "             (*Returns a zero even if successful and inserts > 0 records...not ";
+       "               sure why...need to read documentation, or source code.*)";
+       "  	   let () = Utilities.print_n_flush";
+       "             (Core.String.concat [\"\\nSuccessfully inserted new records into \";";
+       "  		                  tablename]) in ";
+       "             let () = Utilities.closecon conn in";
+       "             (match last_index with";
+       "              | None -> Ok ()";
+       "              | Some i ->";
+       "                 let balance_of_records = Core.List.sub records ~pos:i ~len:(count-i) in";
+       "                 save2db ~records:balance_of_records";
+       "	     )";
+       "	  | None ->";
+       "             let () = Utilities.print_n_flush";
+       "	                (String.concat [\"\\nNone affected; failed to insert new \\ ";
+       "                                        records in \";tablename]) in";
+       "	     let () = Utilities.closecon conn in";
+       "             Core.Error (String.concat [\"\\nNone affected; failed to insert \\ ";
+       "				           new records in \";tablename])";
+       "         )"; 
+       "      | StatusEmpty";
+       "      | StatusError _ ->";
+       "         let () = Utilities.print_n_flush";
+       "	            (String.concat [\"\\nEmpty result; failed to insert \\ ";
+       "				     new records into \";tablename]) in";
+       "         let () = Utilities.closecon conn in";
+       "         Core.Error";
+       "	   (String.concat [\"\\nEmpty result; failed to insert new \\ ";
+       "	  	           records into \";tablename])";
+       "    else";
+       "      (*--nothing to do with empty list here--*)";
+       "      let () = Utilities.print_n_flush";
+       "                \"\\n"^table_name^"::save2db() \\ ";
+       "	         Empty list of type t; nothing to do; not saving anything to db.\" in ";
+       "      Ok ();;\n"];;
 
   let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore
 		     ~host ~user ~password ~database =
@@ -407,13 +457,13 @@ module Model = struct
     let uppercased_first_char = Char.uppercase module_first_char in
     let module_name = Bytes.of_string table_name in
     let () = Bytes.set module_name 0 uppercased_first_char in
-    let _prefix_notice = (*do not yet include this*)
+    let prefix_notice =
       "(*Auto-generated module; any edits would be overwritten and lost at build time \n \
        without revision control or without disabling the generation of this code at \n \
-       build time. It might be better to include this module in another in a different \n \
-       directory. *)\n" in 
+       build time. It might be better to include this module in another module in a different \n \
+       directory. *)\n\n" in 
     let start_module =
-      String.concat ["module ";(Bytes.to_string module_name);
+      String.concat [prefix_notice;"module ";(Bytes.to_string module_name);
 		     " = struct\n"] in
     let other_modules = list_other_modules () in 
     let start_type_t = "  type t = {" in
@@ -434,9 +484,9 @@ module Model = struct
 				   ~f:(fun colname2omit -> String.equal x.col_name colname2omit) in 
 		      matches = 0 
 		     ) in 
-    let () = Utilities.print_n_flush
+    (*let () = Utilities.print_n_flush
 	       (String.concat ["\nList of fields found of length:";
-			       (Int.to_string (List.length tfields_list))]) in 
+			       (Int.to_string (List.length tfields_list))]) in *)
     let rec helper l tbody =
       match l with
       | [] -> tbody
@@ -474,7 +524,7 @@ module Model = struct
 		     "    let open Core in\n";
 		     "    let fs = Fields.names in \n";
 		     "    let fs_csv = String.concat ~sep:\",\" fs in \n";
-		     "    String.concat [\"SELECT \";fs_csv;\"FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
+		     "    String.concat [\"SELECT \";fs_csv;\" FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
     let query_function = construct_sql_query_function ~table_name ~fields_list:tfields_list ~host
 						      ~user ~password ~database in
     (*Saving records to SQL would also be useful*)
@@ -500,7 +550,7 @@ module Model = struct
 	 "         helper t (one_record_values::acc) in\n";
 	 "    helper records [];;\n"
 	] in
-    let duplicate_clause = duplicate_clause_function () in
+    let duplicate_clause = duplicate_clause_function ~fields:tfields_list () in
     let save_function = construct_save_function ~table_name in
     String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
 			     query_function;insert_prefix;duplicate_clause;toSQLfunction;
@@ -532,9 +582,9 @@ module Model = struct
 				   ~f:(fun colname2omit -> String.equal x.col_name colname2omit) in 
 		      matches = 0 
 		     ) in 
-    let () = Utilities.print_n_flush
+(*    let () = Utilities.print_n_flush
 	       (String.concat ["\nList of fields found of length:";
-			       (Int.to_string (List.length tfields_list))]) in 
+			       (Int.to_string (List.length tfields_list))]) in *)
     let rec helper l tbody =
       match l with
       | [] -> tbody
@@ -591,7 +641,9 @@ module Model = struct
 		  ~perm:0o664 ~f:(myf body) in ()
     with _ -> Utilities.print_n_flush "\nFailed to write to file.\n"
 
-  (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.*)
+  (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.
+    ON SECOND THOUGHT -- NO NEED TO ever do this...once this is an installed package, just
+    use the package maintainged utilities file or else include and extend it.
   let copy_utilities ~destinationdir =
     let open Core in 
     let open Core.Unix in
@@ -602,7 +654,7 @@ module Model = struct
     let () = Utilities.print_n_flush result in 
     match r with
     | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
-    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file."
+    | Error e -> Utilities.print_n_flush "\nFailed to copy the utilities file." *)
 
   let write_appending_module ~outputdir ~fname ~body =
     let open Unix in

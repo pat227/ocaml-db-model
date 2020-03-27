@@ -3,7 +3,7 @@ module Model = Ocaml_db_model.Model
 module Sql_supported_types = Ocaml_db_model.Sql_supported_types
 module Command = struct
 
-  let execute regexp_opt table_list_opt ppx_list_opt fields2ignore host user password database () =
+  let execute regexp_opt table_list_opt ppx_list_opt fields2ignore host user password database destination () =
     try
       let conn = Utilities.getcon ~host ~user ~password ~database in
       let fields_map =
@@ -19,37 +19,35 @@ module Command = struct
 	     (*default ppx extensions--not always are they all desired or useful or supported*)
 	     | None -> ["fields";"eq";"make";"ord";"sexp";"show";"yojson";"xml"]
 	     | Some ppx_list ->
-		(*===TODO===check the list for sanity? Validitiy too: that each is supported?*)
+		(*===TODO===check the list for sanity? Validity too: that each is supported? 
+                  Else user could specify non-existent or not yet installed ppx rewriters?*)
 		ppx_list in
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~fields2ignore ~host ~user ~password ~database in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~fields2ignore in
-	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
-	   let () = Model.write_module ~outputdir:"src/tables/" ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
+	   let () = Model.write_module ~outputdir:destination ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
+	   let () = Model.write_module ~outputdir:destination ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
            let title_cased_h = String.capitalize_ascii h in
 	   let () = Model.write_appending_module
-		      ~outputdir:"src/tables/" ~fname:"tables.ml"
+		      ~outputdir:destination ~fname:"tables.ml"
 		      ~body:(Core.String.concat ["module ";title_cased_h;"=";title_cased_h;".";title_cased_h;"\n"]) in
 	   let () = Utilities.print_n_flush ("\nWrote ml and mli for table:" ^ h) in
 	   helper t map in
       helper keys fields_map
-      (*--copy the utilities.ml(i) files into the project; do not depend on this 
-          project for building, and allow user to tweak the utilities file.--*)
       
     with
     | Failure s -> Utilities.print_n_flush s
 
-  (*===TODO===switch to using the non-core command parsing. Core's command parsing after 
-    this went off the rails.*)
   let main_command =
     let usage_msg = "Connect to a mysql db, get schema, write modules and \
 		     (mostly primitive) types out of thin air with ppx extensions and a \
 		     utility module for parsing mysql strings. Output modules will reside \
-                     within src/tables relative to root of project. \
+                     within whatever destination directory you specify. \
 		     Use basic regexp, or a list, to filter table names." in 
     let host = ref "" in
     let user = ref "" in
     let password = ref "" in
     let database = ref "" in
+    let destination = ref "" in 
     let table_regexp = ref "" in
     let table_list = ref "" in
     let ppx_list = ref "" in
@@ -58,6 +56,7 @@ module Command = struct
 		   ("-user",Arg.Set_string user,"Required DB username");
 		   ("-password",Arg.Set_string password,"Required DB user password");
 		   ("-db",Arg.Set_string database,"Required DB name");
+		   ("-destination", Arg.Set_string destination, "Required directory into which generated Ocaml will be placed.");
 		   ("-table-regexp",Arg.Set_string table_regexp,
 		    "Optional Regular expression to be used to select only some \
 		     tables; mutually exclusive of a provided list of tables, and \
@@ -109,5 +108,5 @@ module Command = struct
 	   Some (Core.String.split !fields2ignore ~on:';')
 	 else 
 	   Some [!fields2ignore] in
-    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt !host !user !password !database ()
+    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt !host !user !password !database !destination ()
 end

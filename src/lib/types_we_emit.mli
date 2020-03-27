@@ -10,7 +10,9 @@ module Types_we_emit : sig
     | Uint64_extended_t
     | Float
     | Date
-    | Time 
+    | Time
+    (*===TODO===for the really paranoid; introduce a type that extends string and is length aware, 
+      and never permits truncation when storing to the db, although would have to handle runtime exceptions*)
     | String
     | Bool
 	[@@deriving show]

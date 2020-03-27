@@ -3,6 +3,11 @@ The purpose of this project is to provide a convenient manner to
 has a large number of tables and fields. This project seeks to provide a
 fast way to generate modules and correct types that match the tables and fields,
 thus sparing us from having to manually create each and assign correct types.
+Other libraries exist in other languages to accomplish similar goals, such as
+JOOQ for java, and ODB for C++. Some call this endeavor "object mapping", and
+ODB for C++ even performs "migration", which is not here supported. This library
+seeks only to create valid Ocaml modules to describe existing tables, not the
+other way around.
 
 By way of example:
 Let us presume we have a table Foo with the following fields and types:

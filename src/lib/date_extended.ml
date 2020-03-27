@@ -36,6 +36,12 @@ module Date_extended = struct
   (*Needed for eq and ord*)
   let equal = equal_date_extended
   let compare = compare_date_extended
+		  
+  let to_string_iso8601_basic_with_dashes t =
+    (*Range of Month.to_int is 1 through 12*)
+    Core.String.concat [(string_of_int (year t));"-";
+			(string_of_int (Core.Month.to_int (month t)));"-";
+			(string_of_int (day t))]
 
   let to_xml v =
     [Csvfields.Xml.parse_string

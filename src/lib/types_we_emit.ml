@@ -26,7 +26,9 @@ module Types_we_emit = struct
     | Uint64_extended_t
     | Float
     | Date
-    | Time 
+    | Time
+    (*===TODO===for the really paranoid; introduce a type that extends string and is length aware, 
+      and never permits truncation when storing to the db, although would have to handle runtime exceptions*)
     | String
     | Bool
 	[@@deriving show]
@@ -154,7 +156,6 @@ module Types_we_emit = struct
     | true, Uint32_extended_t -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Uint32_extended.to_string i)))"
     | false, Uint64_extended_t -> "(conv (fun x -> Uint64_extended.to_string x))"
     | true, Uint64_extended_t -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Uint64_extended.to_string i)))"
-    (*===TODO==extend bignum and change this to use new module*)
     | false, Bignum -> "(conv (fun x -> Bignum_extended.to_string_hum x))"
     | true, Bignum -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Bignum_extended.to_string_hum i)))"
     | false, Float -> "(conv (fun x -> Float.to_string_round_trippable x))"

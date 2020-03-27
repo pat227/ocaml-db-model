@@ -12,7 +12,9 @@ module Date_extended : sig
 
   val sexp_of_t : t -> Sexplib.Sexp.t
   val t_of_sexp : Sexplib.Sexp.t -> t
-
+				      
+  val to_string_iso8601_basic_with_dashes : t -> string
+				      
   (*MUST use these*)
   val to_xml : t -> Csvfields.Xml.xml list
   val of_xml : Csvfields.Xml.xml -> t
