@@ -2,6 +2,7 @@ module Uint8_extended = Uint8_extended.Uint8_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
+module Bignum_extended = Bignum_extended.Bignum_extended
 module Date_extended = Date_extended.Date_extended
 module Date_time_extended = Date_time_extended.Date_time_extended
 module Utilities : sig
@@ -76,10 +77,10 @@ module Utilities : sig
     arrayofstring:string option array -> Uint64_extended.t option
   val parse_optional_bignum_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Bignum.t option
+    arrayofstring:string option array -> Bignum_extended.t option
   val parse_bignum_field_exn :
     fieldname:string -> results:Mysql.result ->
-    arrayofstring:string option array -> Bignum.t
+    arrayofstring:string option array -> Bignum_extended.t
   (*---bool---*)					   
   val parse_bool_field_exn :
     fieldname:string -> results:Mysql.result ->

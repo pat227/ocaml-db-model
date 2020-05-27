@@ -30,8 +30,6 @@ sig
   val to_string_bin : uint64 -> string
   val to_string_oct : uint64 -> string
   val to_string_hex : uint64 -> string
-  val bits_of_float : float -> uint64
-  val float_of_bits : uint64 -> float
   val compare : t -> t -> int
   val printer : Format.formatter -> uint64 -> unit
   val printer_bin : Format.formatter -> uint64 -> unit
