@@ -1,3 +1,7 @@
+(*Until actually trying to use signed 32 and 64 bit types, didn't realize Core.IntXX modules
+  need to be extended for yojson at the very least...*)
+module CoreInt32_extended = Coreint32_extended.CoreInt32_extended
+module CoreInt64_extended = Coreint64_extended.CoreInt64_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 (* In order to provide the uint24 bit type, need to stop using uint and use stdint library instead. 
@@ -16,8 +20,8 @@ module Types_we_emit = struct
     (*Note that bignum type can handle signed and unsigned numbers; no need to 
       distinguish between the two with a type for each*)
     | Bignum
-    | CoreInt64
-    | CoreInt32
+    | CoreInt64_extended
+    | CoreInt32_extended
     (*| Int8 ===TODO===support this type when switch to stdint *)
     | Uint8_extended_t
     | Uint16_extended_t
@@ -44,8 +48,8 @@ module Types_we_emit = struct
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | Bignum -> "Bignum_extended.t option"
-      | CoreInt64 -> "Core.Int64.t option"
-      | CoreInt32 -> "Core.Int32.t option"
+      | CoreInt64_extended -> "CoreInt64_extended.t option"
+      | CoreInt32_extended -> "CoreInt32_extended.t option"
       | Uint8_extended_t -> "Uint8_extended.t option"
       | Uint16_extended_t -> "Uint16_extended.t option"
       | Uint32_extended_t -> "Uint32_extended.t option"
@@ -61,8 +65,8 @@ module Types_we_emit = struct
       | Int64 -> "int64"
       | Int32 -> "int32"*)
       | Bignum -> "Bignum_extended.t"
-      | CoreInt64 -> "Core.Int64.t"
-      | CoreInt32 -> "Core.Int32.t"
+      | CoreInt64_extended -> "CoreInt64_extended.t"
+      | CoreInt32_extended -> "CoreInt32_extended.t"
       | Uint8_extended_t -> "Uint8_extended.t"
       | Uint16_extended_t -> "Uint16_extended.t"
       | Uint32_extended_t -> "Uint32_extended.t"
@@ -90,13 +94,13 @@ module Types_we_emit = struct
        String.concat ["Utilities.parse_optional_bool_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     (*| false, Int -> "Utilities.parse_int_field_exn ~fieldname ~results ~arrayofstring"
     | true, Int -> "Utilities.parse_optional_int_field_exn ~fieldname ~results ~arrayofstring"*)
-    | false, CoreInt64 ->
+    | false, CoreInt64_extended ->
        String.concat ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, CoreInt64 ->
+    | true, CoreInt64_extended ->
        String.concat ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, CoreInt32 ->
+    | false, CoreInt32_extended ->
        String.concat ["Utilities.parse_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, CoreInt32 ->
+    | true, CoreInt32_extended ->
        String.concat ["Utilities.parse_optional_int64_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     (*| false, Int64 -> 
     | true, Int32 ->
@@ -134,14 +138,14 @@ module Types_we_emit = struct
        String.concat ["(conv (fun x -> if x then \"TRUE\" else \"FALSE\"))"]
     | true, Bool ->
        String.concat ["(conv (fun x -> Utilities.serialize_optional_bool_field ~field:x ~conn))"]
-    | false, CoreInt64 ->
-       String.concat ["(conv (fun x -> Core.Int64.to_string x))"]
-    | true, CoreInt64 ->
-       String.concat ["(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Core.Int64.to_string i)))"]
-    | false, CoreInt32 ->
-       String.concat ["(conv (fun x -> Core.Int32.to_string x))"]
-    | true, CoreInt32 ->
-       String.concat ["(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Core.Int32.to_string i)))"]
+    | false, CoreInt64_extended ->
+       String.concat ["(conv (fun x -> CoreInt64_extended.to_string x))"]
+    | true, CoreInt64_extended ->
+       String.concat ["(conv (fun x -> match x with None -> \"NULL\" | Some i -> (CoreInt64_extended.to_string i)))"]
+    | false, CoreInt32_extended ->
+       String.concat ["(conv (fun x -> CoreInt32_extended.to_string x))"]
+    | true, CoreInt32_extended ->
+       String.concat ["(conv (fun x -> match x with None -> \"NULL\" | Some i -> (CoreInt32_extended.to_string i)))"]
     | false, Uint8_extended_t -> "(conv (fun x -> Uint8_extended.to_string x))"
     | true, Uint8_extended_t -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Uint8_extended.to_string i)))"
     | false, Uint16_extended_t -> "(conv (fun x -> Uint16_extended.to_string x))"
