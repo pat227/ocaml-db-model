@@ -319,7 +319,11 @@ module Model = struct
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
       statement (include Ocaml_db_model.Utilities) and customized over-ridden versions of the connections 
       establishment functions that require db  credentials, plus any additional functions a user may want.*)
-    Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
+    Core.String.concat ~sep:"\n" ["(*DONT FORGET to create your own Utilities module and to 'include Ocaml_db_model.Utilities' alongside";
+                                  "any customized functions you may need*)";
+                                  "module Utilities = Utilities.Utilities";
+                                  "module CoreInt32_extended = Coreint32_extended.CoreInt32_extended";
+                                  "module CoreInt64_extended = Coreint64_extended.CoreInt64_extended";
 				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
 				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
 				  "module Uint16_extended = Ocaml_db_model.Uint16_extended";
@@ -328,18 +332,20 @@ module Model = struct
 				  "module Date_time_extended = Ocaml_db_model.Date_time_extended";
 				  "module Bignum_extended = Ocaml_db_model.Bignum_extended";
 				  "open Sexplib.Std\n"];;
-    let list_other_modules_for_mli () =
+  let list_other_modules_for_mli () =
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
       statement and customized over-ridden versions of the connections establishment functions that require db 
-      credentials, plus any additional functions a user may want.*)
-    Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
-				  "module Uint64_extended = Ocaml_db_model.Uint64_extended";
-				  "module Uint32_extended = Ocaml_db_model.Uint32_extended";
-				  "module Uint16_extended = Ocaml_db_model.Uint16_extended";
-				  "module Uint8_extended = Ocaml_db_model.Uint8_extended";
-				  "module Date_extended = Ocaml_db_model.Date_extended";
-				  "module Date_time_extended = Ocaml_db_model.Date_time_extended";
-				  "module Bignum_extended = Ocaml_db_model.Bignum_extended\n"];;
+      credentials, plus any additional functions a user may want.*)                  
+      Core.String.concat ~sep:"\n" ["module Utilities = Utilities.Utilities";
+                                    "module CoreInt32_extended = Coreint32_extended.CoreInt32_extended";
+                                    "module CoreInt64_extended = Coreint64_extended.CoreInt64_extended";
+				    "module Uint64_extended = Ocaml_db_model.Uint64_extended";
+				    "module Uint32_extended = Ocaml_db_model.Uint32_extended";
+				    "module Uint16_extended = Ocaml_db_model.Uint16_extended";
+				    "module Uint8_extended = Ocaml_db_model.Uint8_extended";
+				    "module Date_extended = Ocaml_db_model.Date_extended";
+				    "module Date_time_extended = Ocaml_db_model.Date_time_extended";
+				    "module Bignum_extended = Ocaml_db_model.Bignum_extended\n"];;
   let duplicate_clause_function ~fields () =
     let rec find_primary_key_field_name fs =
       match fs with
@@ -411,10 +417,10 @@ module Model = struct
        "      let thecommand =";
        "        String.concat [\"START TRANSACTION;\"(*;prefix*);insert_statement;\"COMMIT;\"] in";
        "      let () = Utilities.print_n_flush (String.concat [\"\\n\";thecommand]) in*)";
-       "      let _ = exec conn \"START TRANSACTION;\" in";
+       "      let _result = exec conn \"START TRANSACTION;\" in";
        "      (*let _ = exec conn prefix in*)";
-       "      let _ = exec conn insert_statement in";
-       "      let _ = exec conn \"COMMIT;\" in";
+       "      let _result2 = exec conn insert_statement in";
+       "      let _result3 = exec conn \"COMMIT;\" in";
        "      let isSuccess = status conn in";
        "      match isSuccess with";
        "      | StatusOK ->";

@@ -1,4 +1,6 @@
 open Core
+module CoreInt32_extended = Coreint32_extended.CoreInt32_extended
+module CoreInt64_extended = Coreint64_extended.CoreInt64_extended
 module Uint64_extended = Uint64_extended.Uint64_extended
 module Uint32_extended = Uint32_extended.Uint32_extended
 module Uint16_extended = Uint16_extended.Uint16_extended
@@ -35,13 +37,13 @@ module Sql_supported_types = struct
   (*--by default just use core int 64 type...*)
   let ml_type_of_supported_sql_type t =
     match t with
-    | TINYINT -> Core.Result.Ok Types_we_emit.CoreInt32  (*====TODO===find int8 type or make one *)
+    | TINYINT -> Core.Result.Ok Types_we_emit.CoreInt32_extended  (*====TODO===find int8 type or make one *)
     | TINYINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint8_extended_t
     | TINYINT_BOOL -> Core.Result.Ok Types_we_emit.Bool
     | SMALLINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint16_extended_t
-    | INTEGER -> Core.Result.Ok Types_we_emit.CoreInt64
+    | INTEGER -> Core.Result.Ok Types_we_emit.CoreInt32_extended
     | INTEGER_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint64_extended_t
-    | BIGINT -> Core.Result.Ok Types_we_emit.CoreInt64
+    | BIGINT -> Core.Result.Ok Types_we_emit.CoreInt64_extended
     | BIGINT_UNSIGNED -> Core.Result.Ok Types_we_emit.Uint64_extended_t
     | DECIMAL -> Core.Result.Ok Types_we_emit.Bignum
     | FLOAT 
