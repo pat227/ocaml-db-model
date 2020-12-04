@@ -11,8 +11,8 @@
 
 (package
   (name ocaml_db_model)
-  (synopsis "An Ocaml library and utility for creating modules out of thin air that describe database tables and types, with functions for running queries and commands. Aka database modelling.")
-  (description "In the style of ODB for C++ or JOOQ for Java, this project aims to get off the ground rudimentary support for the creation of code (Ocaml modules) that otherwise would have to be tediously hand written, and maintained to track changes, such as to field names and types, in a live database. The output modules can serve as inputs to other client projects. This project supports mysql. For postgresql support see the ocaml_pgsql_model project.")
+  (synopsis "An Ocaml library and utility for creating modules out of thin air that describe database tables and types, with functions for running queries and commands. Aka database modelling")
+  (description "In the style of ODB for C++ or JOOQ for Java, this project aims to get off the ground rudimentary support for the creation of code (Ocaml modules) that otherwise would have to be tediously hand written, and maintained to track changes, such as to field names and types, in a live database. The output modules can serve as inputs to other client projects. This project supports mysql. For postgresql support see the ocaml_pgsql_model project")
   (depends
     (ocaml (>= 4.08.1))
     (bignum (>= v0.14.0))
