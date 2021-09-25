@@ -9,7 +9,7 @@ module Mysql = Mysql
 open Core
 module Utilities = struct
 
-  let getcon ?(host="127.0.0.1") ~database ~password ~user =
+  let getcon ?(host="127.0.0.1") ~database ~password ~user () =
     let open Mysql in 
     quick_connect
       ~host ~database ~password ~user ();;

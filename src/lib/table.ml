@@ -7,7 +7,7 @@ module Table = struct
     engine : string;
   } [@@deriving fields]
    
-  let get_tables ?conn ~schema =
+  let get_tables ?conn ~schema () =
     let open Mysql in
     let open Core in
     let open Core.Result in 

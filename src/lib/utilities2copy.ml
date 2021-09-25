@@ -15,7 +15,7 @@ module Utilities = struct
   (*Client code makefile supplies credentials and uses this function; credentials in client
    projects are stored in credentials.ml; this file is copied with modifications
    to make of type () -> Mysql.dbd with credentials optional with default values.*)
-  let getcon ?(host="127.0.0.1") ~database ~password ~user =
+  let getcon ?(host="127.0.0.1") ~database ~password ~user () =
     let open Mysql in 
     quick_connect
       ~host ~database ~password ~user ();;

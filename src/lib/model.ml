@@ -13,7 +13,7 @@ module Model = struct
     is_primary_key : bool;
   } [@@deriving show, fields]
 
-  let get_fields_for_given_table ?conn ~table_name =
+  let get_fields_for_given_table ?conn ~table_name () =
     let open Mysql in
     let open Core in 
     (*Only column_type gives us the acceptable values of an enum type if present, 
@@ -123,14 +123,14 @@ module Model = struct
   let get_fields_map_for_all_tables ~regexp_opt ~table_list_opt ~conn ~schema =
     let open Core in
     let open Core.Result in 
-    let table_list_result = Table.get_tables ~conn ~schema in
+    let table_list_result = Table.get_tables ~conn ~schema () in
     if is_ok table_list_result then
       let tables = ok_or_failwith table_list_result in
       let regexp_opt = make_regexp regexp_opt in
       let table_list_opt = parse_list table_list_opt in 
       let rec helper ltables map =
 	let update_map ~table_name =
-	  let fs_result = get_fields_for_given_table ~conn ~table_name in
+	  let fs_result = get_fields_for_given_table ~conn ~table_name () in
 	  if is_ok fs_result then
 	    let newmap = ok_or_failwith fs_result in
 	     let combinedmaps =

@@ -15,7 +15,7 @@ module Command = struct
 	      allcomparable host user password database destination () =
     try
       (*--TODO--do not invoke getcon here, and stop passing it around*)
-      let conn = Utilities.getcon ~host ~user ~password ~database in
+      let conn = Utilities.getcon ~host ~user ~password ~database () in
       let fields_map =
 	Model.get_fields_map_for_all_tables
 	  ~regexp_opt ~table_list_opt ~conn ~schema:database in

@@ -17,7 +17,7 @@ module Model : sig
     conn:Mysql.dbd -> schema:string -> t list Core.String.Map.t 
   val get_fields_for_given_table :
     ?conn:Mysql.dbd ->
-    table_name:Core.String.Map.Key.t ->
+    table_name:Core.String.Map.Key.t -> unit ->
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t -> 
 		       ppx_decorators:string list -> fields2ignore: string list option ->

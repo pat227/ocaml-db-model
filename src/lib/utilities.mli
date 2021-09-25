@@ -8,7 +8,7 @@ module Date_time_extended = Date_time_extended.Date_time_extended
 module Utilities : sig
   val print_n_flush : string -> unit
   val print_n_flush_alist : sep:string -> string list -> unit
-  val getcon : ?host:string -> database:string -> password:string -> user:string -> Mysql.dbd
+  val getcon : ?host:string -> database:string -> password:string -> user:string -> unit -> Mysql.dbd
   val getcon_defaults : unit -> Mysql.dbd
   val closecon : Mysql.dbd ->  unit
   val serialize_optional_field : field:string option -> conn:Mysql.dbd -> string
