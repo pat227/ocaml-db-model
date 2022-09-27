@@ -13,7 +13,7 @@ module Model = struct
     is_primary_key : bool;
   } [@@deriving show, fields]
 
-  let get_fields_for_given_table ?conn ~table_name () =
+  let get_fields_for_given_table ?conn ~table_name ~schema () =
     let open Mysql in
     let open Core in 
     (*Only column_type gives us the acceptable values of an enum type if present, 
@@ -26,7 +26,7 @@ module Model = struct
 			   "SELECT column_name, is_nullable, column_comment,
 			    column_type, data_type, column_key, extra, column_comment FROM 
 			    information_schema.columns 
-			    WHERE table_name='";table_name;"';"] in
+			    WHERE schema='";schema;"' AND table_name='";table_name;"';"] in
     (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
     let conn = (fun c -> if is_none c then
@@ -130,7 +130,7 @@ module Model = struct
       let table_list_opt = parse_list table_list_opt in 
       let rec helper ltables map =
 	let update_map ~table_name =
-	  let fs_result = get_fields_for_given_table ~conn ~table_name () in
+	  let fs_result = get_fields_for_given_table ~conn ~table_name ~schema () in
 	  if is_ok fs_result then
 	    let newmap = ok_or_failwith fs_result in
 	     let combinedmaps =

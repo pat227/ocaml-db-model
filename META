@@ -1,0 +1,6 @@
+name="ocaml_db_model"
+version = "0.1"
+description = "Support for database modeling via a command line built time tool; no linking required."
+requires = "core, bignum, fieldslib, mysql, pcre, ppx_deriving, ppx_deriving.show, ppx_deriving_yojson.runtime, ppx_fields_conv, uint, yojson"
+archive(byte) = "ocaml_db_model.cma"
+archive(native) = "ocaml_db_model.cmxa"
