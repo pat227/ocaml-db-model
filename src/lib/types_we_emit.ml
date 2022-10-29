@@ -81,7 +81,7 @@ module Types_we_emit = struct
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
    t - the type of the field
    *)
-  let converter_of_string_of_type ~is_optional ~t ~fieldname =
+  let converter_of_string_of_type ~is_optional ?(zoneoffset=0) ~t ~fieldname () =
     let open Core in 
     match is_optional, t with
       false, String ->
@@ -120,14 +120,16 @@ module Types_we_emit = struct
     | true, Float -> String.concat ["Utilities.parse_optional_float_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | false, Date -> String.concat ["Utilities.parse_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
     | true, Date -> String.concat ["Utilities.parse_optional_date_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | false, Time -> String.concat ["Utilities.parse_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
-    | true, Time -> String.concat ["Utilities.parse_optional_datetime_field_exn ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | false, Time ->
+       String.concat ["Utilities.parse_datetime_field_exn ~zoneoffset:(";(Int.to_string zoneoffset);") ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
+    | true, Time ->
+       String.concat ["Utilities.parse_optional_datetime_field_exn ~zoneoffset:(";(Int.to_string zoneoffset);") ~fieldname:\"";fieldname;"\" ~results ~arrayofstring"]
 
   (**
    is_optional - is the field, of whatever type, optional in the type t of the module and nullable in the db?
    t - the type of the field
    *)
-  let converter_to_string_of_type ~is_optional ~t =
+  let converter_to_string_of_type ~is_optional ?(zoneoffset=0) ~t () =
     let open Core in 
     match is_optional, t with
       false, String ->
@@ -160,6 +162,6 @@ module Types_we_emit = struct
     | true, Float -> "(conv (fun x -> match x with None -> \"NULL\" | Some i -> (Float.to_string_round_trippable i)))"
     | false, Date -> "(conv (fun x -> (\"'\" ^ (Date_extended.to_string x) ^ \"'\")))"
     | true, Date -> "(conv (fun x -> Utilities.serialize_optional_date_field ~field:x))"
-    | false, Time -> "(conv (fun x -> (\"'\" ^ (Date_time_extended.to_string x) ^ \"'\")))"
+    | false, Time -> "(conv (fun x -> (\"'\" ^ (Date_time_extended.to_string zoneoffset:(" ^ (Int.to_string zoneoffset) ^ ") x) ^ \"'\")))"
     | true, Time -> "(conv (fun x -> Utilities.serialize_optional_date_time_field ~field:x))"
 end

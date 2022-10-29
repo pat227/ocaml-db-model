@@ -1,34 +1,34 @@
-(*Does SQL allow us to insert using a float value?
-  New module for date type, represented as days since epoch? 
-    As intervals of 24 hours starting from epoch + 1 second?
-  New module for time type, as seconds?
-READ sql standard...literals.
-*)
+(*READ sql standard...literals. Set your server timezone and supply a timezone 
+if you wish, eles don't supply a time zone and all values inserted are presumed 
+to be in server tz. And regardless of all that, queries never show the tz that 
+was supplied during the insert, ie, the tz supplied during insert is lost.
+Core.Time, like sql, applies time zones to supplied datetimes to alter 
+the value to utc. The initially supplied timezone must be supplied again
+upon conversion back to string to make a rountrip of the same value possible.
+ie, we store utc time values on the server, the client must supply a timezone
+during inserts and queries, the latter needed so that values displayed are in
+the client's local time. Without ever supplying a tz, we only insert and see utc.*)
 module Date_time_extended = struct
   include Core.Time
   (*                                                0123456789ABCDEFGHIJKLM*)
   (*MUST support alernate format with this example: 20190304000000 [-5:EST] *)
-  let of_string s =
+  let of_string ?(zoneoffset=0) s =
     try
-      of_string s
+      (*a query of an sql datetime does not show the time zone even if one was 
+        supplied during insert and column type includes timezone. The server tz
+        becomes relevant if a time zone is supplied during inserts. of_localized_string 
+        must be supplied with a space between date and time portion, not a T in between 
+        those parts and without a trailing tz*)
+      match (Core.String.contains s 'T') with
+      | true -> let s2 = Core.String.tr ~target:'T' ~replacement:' ' s in
+                of_localized_string ~zone:(Zone.of_utc_offset ~hours:zoneoffset) s2
+      | false -> of_localized_string ~zone:(Zone.of_utc_offset ~hours:zoneoffset) s
     with _ ->
-	 (*try alternate format*)
-	 let year_part = Core.String.slice s 0 4 in
-	 let month_part = Core.String.slice s 4 6 in
-	 let day_part = Core.String.slice s 6 8 in
-	 let hour_part = Core.String.slice s 8 10 in
-	 let minute_part = Core.String.slice s 10 12 in
-	 let seconds_part = Core.String.slice s 12 14 in
-	 let hours_offset_gmt = int_of_string (Core.String.slice s 16 18) in 
-	 (*can parse in format: %Y-%m-%dT%H:%M:%S.%s%Z and then some...*)
-	 let composed =
-	   Core.String.concat [year_part;"-";month_part;"-";day_part;"T";
-			  hour_part;":";minute_part;":";seconds_part] in
-	 let z = Core.Time.Zone.of_utc_offset ~hours:hours_offset_gmt in 
-	 (*of_string_gen ~default_zone:z ~find_zone:"new york" ~if_no_time_zone:(Use_this_one z) s*)
-	 of_string_gen ~if_no_timezone:(`Use_this_one z) composed
+      (*pure sql query results should never end up in here since they lack tz info*)
+      of_string_with_utc_offset s
 
-  let show t = to_string_abs ~zone:(Core.Time.Zone.of_utc_offset ~hours:(-5)) t;;
+  let show ?(zoneoffset=0) t = to_string_abs ~zone:(Core.Time.Zone.of_utc_offset ~hours:(zoneoffset)) t;;
+  let to_string ?(zoneoffset=0) t = show ~zoneoffset t;;
 
   let to_yojson t =
     let s = show t in 
@@ -50,20 +50,4 @@ module Date_time_extended = struct
   let compare t1 t2 = if is_earlier t1 ~than:t2 then 1
 		      else if is_earlier t2 ~than:t1 then -1
 		      else 0
-(*Not useful unless have local hacked version of csvfields
-  let to_xml v =
-    [Csvfields.Xml.parse_string
-       (Core.String.concat [(to_string v)])]
-
-  let of_xml xml =
-    let sopt = Csvfields.Xml.contents xml in
-    match sopt with
-    | None -> raise (Failure "date_extended::of_xml() passed None as input")
-    | Some s -> of_string s
-
-  let xsd_format =
-    let open Csvfields.Xml.Restriction.Format in
-    `string
-  let xsd_restrictions = []
-  let xsd = [] *)
 end

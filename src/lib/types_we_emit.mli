@@ -18,6 +18,6 @@ module Types_we_emit : sig
 	[@@deriving show]
 
   val to_string : t:t -> is_nullable:bool -> string
-  val converter_of_string_of_type : is_optional:bool -> t:t -> fieldname:string -> string
-  val converter_to_string_of_type : is_optional:bool -> t:t -> string
+  val converter_of_string_of_type : is_optional:bool -> ?zoneoffset:int -> t:t -> fieldname:string -> unit -> string
+  val converter_to_string_of_type : is_optional:bool -> ?zoneoffset:int -> t:t -> unit -> string
 end 

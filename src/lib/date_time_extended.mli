@@ -2,11 +2,13 @@ module Date_time_extended : sig
   (*type t = Core.Time.t*)
   include (module type of Core.Time)
   
-  val show : t -> Ppx_deriving_runtime.string
-  val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
-				      
-  (*val to_string : t -> string*)
-  val of_string : string -> t
+  val show : ?zoneoffset:int -> t -> Ppx_deriving_runtime.string
+
+  val to_string : ?zoneoffset:int -> t -> string
+  (*of_string internally supports parsing date time values without time zone 
+   offsets since mysql does not display time zone offsets even if a time zone 
+   offset was supplied when inserting the value.*)
+  val of_string : ?zoneoffset:int -> string -> t
 	  
   val compare : t -> t -> Ppx_deriving_runtime.int
   val equal : t -> t -> Ppx_deriving_runtime.bool

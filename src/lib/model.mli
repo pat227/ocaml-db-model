@@ -22,9 +22,9 @@ module Model : sig
     (t list Core.String.Map.t, string) Core.Result.t 
   val construct_body : table_name:string -> map:t list Core.String.Map.t -> 
 		       ppx_decorators:string list -> fields2ignore: string list option ->
-		       comparable_modules:string list -> allcomparable:bool ->
+		       comparable_modules:string list -> allcomparable:bool -> ?zoneoffset:int ->
 		       host:string -> user:string -> password:string ->
-		       database:string -> string
+		       database:string -> unit -> string
   val construct_mli : table_name:string -> map:t list Core.String.Map.t ->
 		      ppx_decorators:string list -> fields2ignore: string list option ->
 		      comparable_modules:string list -> allcomparable:bool -> string

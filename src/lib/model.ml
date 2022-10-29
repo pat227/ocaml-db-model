@@ -24,9 +24,9 @@ module Model = struct
       interface.*)
     let fields_query = String.concat [
 			   "SELECT column_name, is_nullable, column_comment,
-			    column_type, data_type, column_key, extra, column_comment FROM 
+			    column_type, data_type, column_key, extra FROM 
 			    information_schema.columns 
-			    WHERE schema='";schema;"' AND table_name='";table_name;"';"] in
+			    WHERE table_schema='";schema;"' AND table_name='";table_name;"';"] in
     (* numeric_scale, column_default, character_maximum_length, 
     character_octet_length, numeric_precision,*)
     let conn = (fun c -> if is_none c then
@@ -54,8 +54,6 @@ module Model = struct
 	       let is_pri = Utilities.extract_field_as_string_exn
 			      ~fieldname:"column_key" ~results ~arrayofstring in 
 	       (fun x -> match x with "pri" -> true | _ -> false) is_pri in
-	     (*--todo--convert data types and nullables into ml types as 
-               strings for use in writing a module*)
 	     let type_for_module =
 	       Sql_supported_types.one_step ~data_type ~col_type ~col_name in
 	     let new_field_record =
@@ -193,7 +191,7 @@ module Model = struct
      Cannot use long line continuation backslashes here; screws up the formatting 
      in the output.*)
   let construct_sql_query_function ~table_name ~fields_list ~host
-				   ~user ~password ~database =
+				   ~user ~password ~database ~zoneoffset =
     let open Core in 
     let preamble =
       String.concat ["  let get_from_db ~query =\n";
@@ -220,48 +218,13 @@ module Model = struct
 	 "       let () = Utilities.print_n_flush \"Query successful from ";table_name;" table.\" in \n";
          "       let () = Utilities.closecon conn in\n";
 	 "       helper [] queryresult (fetch queryresult);;\n"] in
-(*    let rec build_a_line_from_a_list_wrap_at_x_columns parts maxwidth length_of_growingline
-						       indentation acc =
-      match parts with
-      | [] -> String.concat ~sep:" " (List.rev acc)
-      | h :: t ->
-	 let newlength = ((String.length h) + length_of_growingline) in
-	 if newlength > maxwidth && ((String.length h) > 2) then
-	   let elem = (Core.String.concat [h;"\n";indentation]) in 
-	   build_a_line_from_a_list_wrap_at_x_columns
-	     t maxwidth (String.length indentation) indentation (elem::acc)
-	 else
-	   build_a_line_from_a_list_wrap_at_x_columns
-	     t maxwidth newlength indentation (h::acc) in *)
     let rec for_each_field ~flist ~accum =
       match flist with
       | [] -> String.concat ~sep:"\n" accum
       | h :: t ->
 	 let parser_function_call =
 	   Types_we_emit.converter_of_string_of_type
-	     ~is_optional:h.is_nullable ~t:h.data_type ~fieldname:h.col_name in
-	 (*support breaking line at least into 2 parts if too long
-	 let parser_function_call_split_on_spaces =
-	   String.split ~on:' ' parser_function_call in*)
-	 (*let len_so_far_of_line = 12 + (String.length h.col_name) + 7 in
-	 let tabs = len_so_far_of_line / 8 in
-	 let spaces = len_so_far_of_line % 8 in
-	 let indentation = Core.String.concat
-			     [(Core.String.make tabs '\t');(Core.String.make spaces ' ')] in
-	 let output = build_a_line_from_a_list_wrap_at_x_columns
-			parser_function_call_split_on_spaces 110
-			(*These tabs are specific to the parser functions*)
-			len_so_far_of_line indentation [] in *)
-	 (*let output =
-	   if ((String.length (List.hd_exn parser_function_call_split_on_spaces))
-	       + len_so_far_of_line > 90) then
-	     String.concat
-	       ["            let ";h.col_name;" = \n";
-		(List.hd_exn parser_function_call_split_on_spaces);"\n";
-		(List.slice parser_function_call_split_on_spaces 1 0);" in "] else
-	     String.concat
-	       ["            let ";h.col_name;" = \n";
-		parser_function_call;" in "] in *)
+	     ~is_optional:h.is_nullable ~zoneoffset ~t:h.data_type ~fieldname:h.col_name () in
 	 for_each_field
 	   ~flist:t
 	   ~accum:((String.concat
@@ -269,8 +232,6 @@ module Model = struct
     let rec make_fields_create_line ~flist ~accum =
       match flist with
       | [] -> let fields = String.concat ~sep:" " accum in
-	 (*let fields_w_newlines =
-	   build_a_line_from_a_list_wrap_at_x_columns accum 120 38 "\t\t\t\t     " accum in*)
 	 String.concat ["            let new_t = Fields.create ";fields;" in "]
       | h :: t ->
 	 let onef = String.concat ["~";h.col_name] in
@@ -286,7 +247,7 @@ module Model = struct
 
   (**Construct an otherwise tedious function that creates SQL needed to save 
      records of type t to a db.*)
-  let construct_sql_serialize_function ~fields_list =
+  let construct_sql_serialize_function ?(zoneoffset=0) ~fields_list () =
     let open Core in 
     let preamble =
       String.concat ["  let generateSQLvalue_for_insert t conn =\n";
@@ -308,7 +269,7 @@ module Model = struct
       | h :: t ->
 	 let serialize_function_call =
 	   Types_we_emit.converter_to_string_of_type
-	     ~is_optional:h.is_nullable ~t:h.data_type (*~fieldname:h.col_name*) in
+	     ~is_optional:h.is_nullable ~zoneoffset ~t:h.data_type () in
 	 let output = String.concat ["                 ~";h.col_name;":";
 				     serialize_function_call] in
 	 for_each_field ~flist:t ~accum:(output::accum) in
@@ -319,8 +280,8 @@ module Model = struct
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
       statement (include Ocaml_db_model.Utilities) and customized over-ridden versions of the connections 
       establishment functions that require db  credentials, plus any additional functions a user may want.*)
-    Core.String.concat ~sep:"\n" ["(*===DO NOT EDIT===This file was autogenerated by ocaml-db-model and might be overwritten on subsequent builds.
-                                  DONT FORGET to create your own Utilities module and to 'include Ocaml_db_model.Utilities' alongside";
+    Core.String.concat ~sep:"\n" ["(*===DO NOT EDIT===This file was autogenerated by ocaml-db-model and might be overwritten on subsequent builds.";
+                                  "DONT FORGET to create your own Utilities module and to 'include Ocaml_db_model.Utilities' alongside";
                                   "any customized functions you may need*)";
                                   "module Utilities = Utilities.Utilities";
                                   "module CoreInt32_extended = Coreint32_extended.CoreInt32_extended";
@@ -337,7 +298,7 @@ module Model = struct
     (*Refer to this project's implementation where possible; utilities MUST be locally provided using an include 
       statement and customized over-ridden versions of the connections establishment functions that require db 
       credentials, plus any additional functions a user may want.*)                  
-    Core.String.concat ~sep:"\n" ["===DO NOT EDIT===This file was autogenerated by ocaml-db-model and might be overwritten on subsequent builds.";
+    Core.String.concat ~sep:"\n" ["(*===DO NOT EDIT===This file was autogenerated by ocaml-db-model and might be overwritten on subsequent builds.*)";
                                   "module Utilities = Utilities.Utilities";
                                   "module CoreInt32_extended = Coreint32_extended.CoreInt32_extended";
                                   "module CoreInt64_extended = Coreint64_extended.CoreInt64_extended";
@@ -466,7 +427,7 @@ module Model = struct
        "      Core.Result.Ok ();;\n"];;
 
   let construct_body ~table_name ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable
-		     ~host ~user ~password ~database =
+		     ?(zoneoffset=0) ~host ~user ~password ~database () =
     let open Core in
     let module_first_char = String.get table_name 0 in
     let uppercased_first_char = Char.uppercase module_first_char in
@@ -592,10 +553,10 @@ module Model = struct
 		     "    let fs_csv = String.concat ~sep:\",\" fs in \n";
 		     "    String.concat [\"SELECT \";fs_csv;\" FROM \";tablename;\" WHERE TRUE;\"];;\n"] in
     let query_function = construct_sql_query_function ~table_name ~fields_list:tfields_list ~host
-						      ~user ~password ~database in
+						      ~user ~password ~database ~zoneoffset in
     (*Saving records to SQL would also be useful*)
     let toSQLfunction =
-      construct_sql_serialize_function ~fields_list:tfields_list in
+      construct_sql_serialize_function ~zoneoffset ~fields_list:tfields_list () in
     let insert_prefix =
       String.concat
 	["  let get_sql_insert_statement () =\n";
@@ -617,9 +578,15 @@ module Model = struct
 	] in
     let duplicate_clause = duplicate_clause_function ~fields:tfields_list () in
     let save_function = construct_save_function ~table_name in
-    String.concat ~sep:"\n" [finished_type_t;table_related_lines;sql_query_function;
-			     query_function;insert_prefix;duplicate_clause;toSQLfunction;
-			     generate_values_of_list;save_function;"end"];;
+    String.concat ~sep:"\n" [finished_type_t;
+                             table_related_lines;
+                             sql_query_function;
+			     query_function;
+                             insert_prefix;
+                             duplicate_clause;
+                             toSQLfunction;
+			     generate_values_of_list;
+                             save_function;"end"];;
     
   let construct_mli ~table_name ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable =
     let open Core in
@@ -696,7 +663,7 @@ module Model = struct
   (*Intention is for invocation from root dir of a project from Make file. 
     In which case current directory sits atop src and build subdirs.*)
   let write_module ~outputdir ~fname ~body = 
-    let open Core.Unix in
+    let open Core_unix in
     let myf sbuf fd = single_write fd ~buf:sbuf in
     let check_or_create_dir ~dir =
       try 
@@ -709,21 +676,6 @@ module Model = struct
 	with_file (Core.String.concat [outputdir;fname]) ~mode:[O_RDWR;O_CREAT;O_TRUNC]
 		  ~perm:0o664 ~f:(myf body) in ()
     with err -> Utilities.print_n_flush (Core.String.concat ["\nFailed to write to file:";(Core.Exn.to_string err)])
-
-  (*NOT USED YET -- do NOT use while testing in place else we'll overwrite our own version.
-    ON SECOND THOUGHT -- NO NEED TO ever do this...once this is an installed package, just
-    use the package maintained utilities file or else include and extend it.
-  let copy_utilities ~destinationdir =
-    let open Core in 
-    let open Core.Unix in
-    (*--how to specify the (opam install) path to utilities.ml---most likely 
-     would need to use ocamlfind query <thispackagename> just to get the directory.*)
-    let r = system (String.concat ["cp src/lib/utilities.ml ";destinationdir]) in
-    let result = Core.Unix.Exit_or_signal.to_string_hum r in 
-    let () = Utilities.print_n_flush result in 
-    match r with
-    | Result.Ok () -> Utilities.print_n_flush "\nCopied the utilities file."
-    | Error _e -> Utilities.print_n_flush "\nFailed to copy the utilities file." *)
 
   let write_appending_module ~outputdir ~fname ~body =
     let open Unix in

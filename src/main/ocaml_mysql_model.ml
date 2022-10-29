@@ -12,7 +12,7 @@ module Command = struct
    *)
 
   let execute regexp_opt table_list_opt ppx_list_opt fields2ignore comparable_modules
-	      allcomparable host user password database destination () =
+	      allcomparable host user password database destination ?(localtzoffset=0) () =
     try
       (*--TODO--do not invoke getcon here, and stop passing it around*)
       let conn = Utilities.getcon ~host ~user ~password ~database () in
@@ -33,7 +33,7 @@ module Command = struct
                   Else user could specify non-existent or not yet installed ppx rewriters?*)
 		ppx_list in
 	   let body = Model.construct_body ~table_name:h ~map ~ppx_decorators ~fields2ignore ~comparable_modules
-					   ~allcomparable ~host ~user ~password ~database in
+					   ~allcomparable ~host ~user ~password ~database ~zoneoffset:localtzoffset () in
 	   let mli = Model.construct_mli ~table_name:h ~map ~ppx_decorators ~fields2ignore ~comparable_modules ~allcomparable in
 	   let () = Model.write_module ~outputdir:destination ~fname:(Core.String.concat [h;".ml"]) ~body:(Bytes.of_string body) in
 	   let () = Model.write_module ~outputdir:destination ~fname:(h ^ ".mli") ~body:(Bytes.of_string mli) in
@@ -64,7 +64,8 @@ module Command = struct
     let ppx_list = ref "" in
     let fields2ignore = ref "" in
     let tables2makecomparable = ref "" in
-    let allcomparable = ref false in 
+    let allcomparable = ref false in
+    let localtzoffset = ref "" in
     let options = [("-host",Arg.Set_string host,"Required IP of db host");
 		   ("-user",Arg.Set_string user,"Required DB username");
 		   ("-password",Arg.Set_string password,"Required DB user password");
@@ -91,6 +92,9 @@ module Command = struct
 		   ("-comparable-tables", Arg.Set_string tables2makecomparable,
 		    "Optional list of modules that shall include the Core.Comparable interface.");
 		   ("-allcomparable", Arg.Bool (fun x -> allcomparable := x), "Set all modules to include Core.Comparable interface.");
+                   ("-localtzoffset", Arg.Set_string localtzoffset,
+		    "Optional local time zone, as offset in hours from UTC, else all datetimes \
+                     will be saved and displayed in the time zone of the server.");
 		  ] in 
     let () = Arg.parse options (fun _x -> ()) usage_msg in
     let regexp_opt =
@@ -136,6 +140,11 @@ module Command = struct
 	   (Core.String.split !tables2makecomparable ~on:';')
 	 else 
 	   [!tables2makecomparable] in
-    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt comparable_modules !allcomparable !host !user !password !database !destination ()
+
+    let localtz =
+      match (String.length !localtzoffset) with
+      | 0 -> 0
+      | _ -> Core.Int.of_string !localtzoffset in
+    execute regexp_opt table_list_opt ppx_list_opt fields2ignore_opt comparable_modules !allcomparable !host !user !password !database !destination ~localtzoffset:localtz ()
 
 end

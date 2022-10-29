@@ -61,9 +61,9 @@ module Utilities = struct
     match field with
     | Some d -> "'" ^ (Date_extended.to_string d) ^ "'"
     | None -> "NULL";;
-  let serialize_optional_date_time_field ~field =
+  let serialize_optional_date_time_field ~zoneoffset ~field =
     match field with
-    | Some dt -> "'" ^ (Date_time_extended.to_string dt) ^ "'"
+    | Some dt -> "'" ^ (Date_time_extended.to_string ~zoneoffset dt) ^ "'"
     | None -> "NULL";;
   (*===========parsers=============*)
   let parse_boolean_field_exn ~field =
@@ -245,14 +245,16 @@ module Utilities = struct
     | Some s -> let dt = Core.Date.of_string s in Some dt
     | None -> None;;
 
-  let parse_datetime_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_datetime_field_exn ~zoneoffset ~fieldname ~results ~arrayofstring =
     let s = extract_field_as_string_exn ~fieldname ~results ~arrayofstring in
-    Core.Time.of_string s;;
+    Core.Time.of_localized_string ~zone:(Core.Time.Zone.of_utc_offset ~hours:(zoneoffset)) s;;
 
-  let parse_optional_datetime_field_exn ~fieldname ~results ~arrayofstring =
+  let parse_optional_datetime_field_exn ~zoneoffset ~fieldname ~results ~arrayofstring =
     let s_opt = extract_optional_field ~fieldname ~results ~arrayofstring in
     match s_opt with
-    | Some s -> let dt = Core.Time.of_string s in Some dt
+    | Some s ->
+       let dt = Core.Time.of_localized_string ~zone:(Core.Time.Zone.of_utc_offset ~hours:(zoneoffset)) s in
+       Some dt
     | None -> None;;
 
 end
